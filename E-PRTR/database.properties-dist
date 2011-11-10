@@ -1,0 +1,7 @@
+#
+# Database parameters
+#
+driver=net.sourceforge.jtds.jdbc.Driver
+database= jdbc:jtds:sqlserver://hostname/database
+user=databaseuser
+password=XXXXXXXX

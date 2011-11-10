@@ -1,0 +1,3 @@
+#!/bin/sh
+CP="../java/GenerateRDF:../java/GenerateRDF/jtds-1.2.5.jar"
+java -cp $CP GenerateRDF stations >waterbasestations.rdf

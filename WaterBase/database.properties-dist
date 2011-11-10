@@ -1,0 +1,12 @@
+#
+# Database parameters
+#
+driver = net.sourceforge.jtds.jdbc.Driver
+database = jdbc:jtds:sqlserver://hostname/database
+user = databaseuser
+password = password
+#
+#driver = com.microsoft.sqlserver.jdbc.SQLServerDriver
+#database = jdbc:sqlserver://localhost:1433/
+#database = jdbc:sqlserver://localhost;user=MyUserName;password=*****;
+#database = jdbc:sqlserver://localhost:1433;databaseName=AdventureWorks;integratedSecurity=true;
