@@ -1,3 +1,5 @@
 #!/bin/sh
 CP="../java/GenerateRDF:../java/GenerateRDF/jtds-1.2.5.jar"
-java -cp $CP GenerateRDF emissions >emissions.rdf
+#java -cp $CP GenerateRDF sectors >sectors.rdf
+#java -cp $CP GenerateRDF emissions >emissions.rdf
+java -cp $CP GenerateRDF sectors notations emissions |gzip >lrtap.rdf.gz
