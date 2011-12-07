@@ -4,7 +4,7 @@ extract: ../java/GenerateRDF/GenerateRDF.class rdfexport.properties
 	rm -f *.rdf.gz *.rdf
 	java -cp $(CLASSPATH) GenerateRDF >art17report2008.rdf
 	gzip art17report2008.rdf
-	scp *.rdf.gz root@koala:/var/local/rdfdata/htdocs/rdf
+	scp *.rdf.gz root@koala:/var/local/rdfdata/htdocs/
 
 %.rdf.gz: %.rdf
 	gzip $<
