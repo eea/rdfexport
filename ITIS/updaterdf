@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# Ensure there is a ITISMySql.zip by creating one with a long-gone date
+[ -f ITISMySql.zip ] || touch -t 201101010101 ITISMySql.zip
+oldtimestamp=`date -r ITISMySql.zip`
+# ITIS changes the file name from month to month. We simply try all combinations
+# If we get a hit on the first name, then the local file isn't going to be updated when
+# we get 404 on the others.
+for file in itisMySqlBulk.zip itisMySQLBulk.zip
+do
+  mv ITISMySql.zip $file
+  wget -N http://www.itis.gov/downloads/$file
+  mv $file ITISMySql.zip
+done
+newtimestamp=`date -r ITISMySql.zip`
+
+if [ "$oldtimestamp" != "$newtimestamp" ]; then
+    unzip -jo ITISMySql.zip '*/ITIS.sql' '*/createdb.sql'
+    . ./database.properties
+    mysql -u "$user" "-p$password" ITIS <createdb.sql
+    CP="../java/GenerateRDF:/usr/share/java/mysql-connector-java.jar"
+    for segment in author expert jurisdiction kingdom publication rank source taxon vernacular
+    do
+        java -cp $CP GenerateRDF $segment | gzip - >$segment.rdf.gz
+    done
+fi
+
+

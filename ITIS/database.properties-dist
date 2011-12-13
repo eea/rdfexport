@@ -1,0 +1,7 @@
+#
+# Database parameters
+#
+driver=com.mysql.jdbc.Driver
+database = jdbc:jtds:sqlserver://hostname/database
+user = databaseuser
+password = password
