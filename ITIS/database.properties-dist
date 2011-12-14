@@ -2,6 +2,6 @@
 # Database parameters
 #
 driver=com.mysql.jdbc.Driver
-database = jdbc:jtds:sqlserver://hostname/database
-user = databaseuser
-password = password
+database=jdbc:mysql://localhost:3306/ITIS
+user=databaseuser
+password=password
