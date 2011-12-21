@@ -25,4 +25,4 @@ if [ "$oldtimestamp" != "$newtimestamp" ]; then
     done
 fi
 
-
+mv *.rdf.gz ../../htdocs/itis/

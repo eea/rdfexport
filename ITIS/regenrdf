@@ -1,0 +1,9 @@
+#!/bin/sh
+
+CP="../java/GenerateRDF:/usr/share/java/mysql-connector-java.jar"
+for segment in author expert jurisdiction kingdom publication rank source taxon vernacular
+do
+    java -cp $CP GenerateRDF $segment | gzip - >$segment.rdf.gz
+done
+
+mv *.rdf.gz ../../htdocs/itis/
