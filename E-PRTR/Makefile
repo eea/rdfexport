@@ -3,22 +3,26 @@ CLASSPATH=../java/GenerateRDF:../java/GenerateRDF/jtds-1.2.5.jar
 extract: ../java/GenerateRDF/GenerateRDF.class rdfexport.properties
 	rm -f *.rdf.gz *.rdf
 	java -cp $(CLASSPATH) GenerateRDF contry medium pollutant pollutantthreshold wastethreshold wastetype unit method methodtype rbd >lookuptables.rdf
+	java -cp $(CLASSPATH) GenerateRDF facility >facility.rdf
 	java -cp $(CLASSPATH) GenerateRDF facilityreport >facilityreport.rdf
+	java -cp $(CLASSPATH) GenerateRDF nationalreport >nationalreport.rdf
 	java -cp $(CLASSPATH) GenerateRDF pollutantrelease >pollutantrelease.rdf
 	java -cp $(CLASSPATH) GenerateRDF pollutanttransfer >pollutanttransfer.rdf
 	java -cp $(CLASSPATH) GenerateRDF wastetransfer >wastetransfer.rdf
-	gzip lookuptables.rdf pollutantrelease.rdf facilityreport.rdf pollutanttransfer.rdf wastetransfer.rdf
-	scp *.rdf.gz root@koala:/var/local/rdfdata/htdocs/rdf/eprtr
+	gzip lookuptables.rdf pollutantrelease.rdf facility.rdf facilityreport.rdf nationalreport.rdf pollutanttransfer.rdf wastetransfer.rdf
+	scp *.rdf.gz root@koala:/var/local/rdfdata/htdocs/eprtr
 
 test: ../java/GenerateRDF/GenerateRDF.class
 	java -cp $(CLASSPATH) GenerateRDF -i WATER medium
 
 individual: \
 contry.rdf.gz \
+facility.rdf.gz \
 facilityreport.rdf.gz \
 medium.rdf.gz \
 method.rdf.gz \
 methodtype.rdf.gz \
+nationalreport.rdf.gz \
 pollutant.rdf.gz \
 pollutantrelease.rdf.gz \
 pollutantthreshold.rdf.gz \
