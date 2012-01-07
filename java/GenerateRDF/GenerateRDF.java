@@ -166,19 +166,20 @@ public class GenerateRDF {
      * Constructor.
      * @param writer - The output stream to send output to
      * @param dbCon - The database connection
+     * @param propFilename - The file to load the configuration from
      * @throws IOException - if the properties file is missing
      * @throws SQLException - if the SQL database is not available
      * @throws ClassNotFoundException - if the SQL driver is unavailable
      * @throws InstantiationException - if the SQL driver can't be instantiatied
      * @throws IllegalAccessException - unknown
      */
-    public GenerateRDF(PrintStream writer, Connection dbCon) throws IOException,
+    public GenerateRDF(PrintStream writer, Connection dbCon, String propFilename) throws IOException,
                                 SQLException, ClassNotFoundException,
                                 InstantiationException, IllegalAccessException {
         props = new Properties();
 
         outputStream = writer;
-        props.load(new FileInputStream("rdfexport.properties"));
+        props.load(new FileInputStream(propFilename));
 
         tables = props.getProperty("tables").split(" ");
 
@@ -707,20 +708,24 @@ public class GenerateRDF {
         ArrayList<String> unusedArgs;
         String[] tables;
         String identifier = null;
+        String propFilename = "rdfexport.properties";
 
         unusedArgs = new ArrayList<String>(args.length);
 
         // Parse arguments. Just find an -i option
         // The -i takes an argument that is the record id we're interested in
         // variable "i" is in fact used.
-        for (int a = 0, i = 0; a < args.length; a++) {
-            if (args[a].equals("-i")) {
+        for (int a = 0; a < args.length; a++) {
+            if (args[a].equals("-f")) {
+                propFilename = args[++a];
+            } else if (args[a].startsWith("-f")) {
+                propFilename = args[a].substring(2);
+            } else if (args[a].equals("-i")) {
                 identifier = args[++a];
             } else if (args[a].startsWith("-i")) {
                 identifier = args[a].substring(2);
             } else {
                  unusedArgs.add(args[a]);
-                 i++;
             }
         }
         try {
@@ -734,7 +739,7 @@ public class GenerateRDF {
 
             Class.forName(driver).newInstance();
             Connection con = DriverManager.getConnection(dbUrl, userName, password);
-            GenerateRDF r = new GenerateRDF(System.out, con);
+            GenerateRDF r = new GenerateRDF(System.out, con, propFilename);
 
             if (unusedArgs.size() == 0) {
                 tables = r.getAllTables();
