@@ -5,7 +5,7 @@ run: ../GenerateRDF/GenerateRDF.class
 
 
 extract: ../java/GenerateRDF/GenerateRDF.class rdfexport.properties habitatdistribution.rdf.gz
-	scp habitatdistribution.rdf.gz root@koala:/var/local/rdfdata/eunis/
+	scp habitatdistribution.rdf.gz root@koala:/var/local/rdfdata/htdocs/eunis/
 
 birdlife.rdf: birdlife.properties ../java/GenerateRDF/GenerateRDF.class
 	java -cp $(CLASSPATH) GenerateRDF -f birdlife.properties >birdlife.rdf
