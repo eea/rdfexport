@@ -708,7 +708,8 @@ public class GenerateRDF {
         ArrayList<String> unusedArgs;
         String[] tables;
         String identifier = null;
-        String propFilename = "rdfexport.properties";
+        String rdfPropFilename = "rdfexport.properties";
+        String dbPropFilename = "database.properties";
 
         unusedArgs = new ArrayList<String>(args.length);
 
@@ -716,10 +717,14 @@ public class GenerateRDF {
         // The -i takes an argument that is the record id we're interested in
         // variable "i" is in fact used.
         for (int a = 0; a < args.length; a++) {
-            if (args[a].equals("-f")) {
-                propFilename = args[++a];
+            if (args[a].equals("-d")) {
+                dbPropFilename = args[++a];
+            } else if (args[a].startsWith("-d")) {
+                dbPropFilename = args[a].substring(2);
+            } else if (args[a].equals("-f")) {
+                rdfPropFilename = args[++a];
             } else if (args[a].startsWith("-f")) {
-                propFilename = args[a].substring(2);
+                rdfPropFilename = args[a].substring(2);
             } else if (args[a].equals("-i")) {
                 identifier = args[++a];
             } else if (args[a].startsWith("-i")) {
@@ -730,7 +735,7 @@ public class GenerateRDF {
         }
         try {
             Properties props = new Properties();
-            props.load(new FileInputStream("database.properties"));
+            props.load(new FileInputStream(dbPropFilename));
 
             String driver = props.getProperty("driver");
             String dbUrl = props.getProperty("database");
@@ -739,7 +744,7 @@ public class GenerateRDF {
 
             Class.forName(driver).newInstance();
             Connection con = DriverManager.getConnection(dbUrl, userName, password);
-            GenerateRDF r = new GenerateRDF(System.out, con, propFilename);
+            GenerateRDF r = new GenerateRDF(System.out, con, rdfPropFilename);
 
             if (unusedArgs.size() == 0) {
                 tables = r.getAllTables();

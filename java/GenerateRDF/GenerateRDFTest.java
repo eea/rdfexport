@@ -14,7 +14,7 @@ class GenerateRDFTest extends TestCase {
 
     private void callParseName(String testString, String testDatatype,
               String expectedName, String expectedDatatype, String expectedLangcode) throws Exception {
-        GenerateRDF classToTest = new GenerateRDF(System.out, null);
+        GenerateRDF classToTest = new GenerateRDF(System.out, null, "rdfexport.properties");
         Field f;
         final Method method = classToTest.getClass().getDeclaredMethod("parseName",
                    new Class[]{String.class, String.class});
@@ -45,7 +45,7 @@ class GenerateRDFTest extends TestCase {
 
     private void callInjectIdentifier(String testQuery, String testIdentifier,
               String expectedQuery) throws Exception {
-        GenerateRDF classToTest = new GenerateRDF(System.out, null);
+        GenerateRDF classToTest = new GenerateRDF(System.out, null, "rdfexport.properties");
         String f;
         final Method method = classToTest.getClass().getDeclaredMethod("injectHaving",
                    new Class[]{String.class, String.class});
@@ -75,7 +75,7 @@ class GenerateRDFTest extends TestCase {
 
     private void callInjectWhere(String testQuery, String testIdentifier, String testKey,
               String expectedQuery) throws Exception {
-        GenerateRDF classToTest = new GenerateRDF(System.out, null);
+        GenerateRDF classToTest = new GenerateRDF(System.out, null, "rdfexport.properties");
         String f;
         final Method method = classToTest.getClass().getDeclaredMethod("injectWhere",
                    new Class[]{String.class, String.class, String.class});
