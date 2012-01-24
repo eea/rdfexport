@@ -1,0 +1,6 @@
+#!/bin/sh
+CP="../java/GenerateRDF:../java/GenerateRDF/jtds-1.2.5.jar"
+#java -cp $CP GenerateRDF sectors >sectors.rdf
+#java -cp $CP GenerateRDF installations >installations.rdf
+java -cp $CP GenerateRDF |gzip >citl.rdf.gz
+scp citl.rdf.gz root@koala:/var/local/rdfdata/htdocs/
