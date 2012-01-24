@@ -534,7 +534,7 @@ public class GenerateRDF {
                         output(" rdf:about=\"");
                         output(segment);
                         output("/");
-                        output(id);
+                        output(StringHelper.escapeXml(id));
                         output("\">\n");
                         currentId = id;
                         firstTime = false;
@@ -596,7 +596,7 @@ public class GenerateRDF {
                         output(" rdf:about=\"");
                         output(segment);
                         output("/");
-                        output(id);
+                        output(StringHelper.escapeXml(id));
                         output("\">\n");
                         currentId = id;
                         firstTime = false;
