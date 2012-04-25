@@ -181,7 +181,7 @@ public class GenerateRDF {
         outputStream = writer;
         props.load(new FileInputStream(propFilename));
 
-        tables = props.getProperty("tables").split(" ");
+        tables = props.getProperty("tables").split("\\s+");
 
         con = dbCon;
         // Generate exception if there is no vocabulary property
