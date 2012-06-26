@@ -1,7 +1,7 @@
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+
 import junit.framework.TestCase;
-import junit.framework.Assert;
 
 /**
  * Uses the Reflection API to get private members
@@ -109,6 +109,14 @@ class GenerateRDFTest extends TestCase {
                 "SELECT X AS id, count(*) FROM Y WHERE X='819' GROUP BY id HAVING id='819' AND Z=1");
         callInjectWhere("SELECT X AS id, count(*) FROM Y GROUP BY id HAVING Z=1 ORDER BY ID", "819", "X",
                 "SELECT X AS id, count(*) FROM Y WHERE X='819' GROUP BY id HAVING Z=1 ORDER BY ID");
+    }
+
+    public void test_encodeURIComponent() {
+
+        String testString = ";/?:@&=+$,aA-_.!~*'()[]<>#%\"{}\n\t ";
+        String expected = "%3B%2F%3F%3A%40%26%3D%2B%24%2CaA-_.!~*'()%5B%5D%3C%3E%23%25%22%7B%7D%0A%09%20";
+        String actual = StringHelper.encodeURIComponent(testString, "UTF-8");
+        assertEquals(expected, actual);
     }
 
     public static void main(String args[]) throws Exception {

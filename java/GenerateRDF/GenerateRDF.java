@@ -21,18 +21,19 @@
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Properties;
-import java.util.Arrays;
-import java.util.TreeSet;
-
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.Statement;
-import java.sql.SQLException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
-import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Properties;
+import java.util.TreeSet;
 
 /**
  * A struct to hold a complex type.
@@ -57,8 +58,9 @@ class RDFField {
 }
 
 /**
- * Class to help XML escape strings.
+ * Class to help escape strings for XML and URI components.
  * @see http://www.java2s.com/Tutorial/Java/0120__Development/EscapeHTML.htm
+ * @see http://www.ietf.org/rfc/rfc3986.txt
  */
 final class StringHelper {
     /**
@@ -125,6 +127,34 @@ final class StringHelper {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * %-escapes the given string for a legal URI component.
+     * See http://www.ietf.org/rfc/rfc3986.txt section 2.4 for more.
+     *
+     * Does java.net.URLEncoder.encode(String, String) and then on the resulting string does the following corrections:
+     *   - the "+" signs are converted into "%20".
+     *   - "%21", "%27", "%28", "%29" and "%7E" are unescaped back (i.e. "!", "'", "(", ")" and "~").
+     * See the JavaDoc of java.net.URLEncoder and the above RFC specification for why this is done.
+     *
+     * @param s   The string to %-escape.
+     * @param enc The encoding scheme to use.
+     * @return    The escaped string.
+     */
+    public static String encodeURIComponent(String s, String enc){
+        try {
+            return URLEncoder.encode(s, enc)
+            .replaceAll("\\+", "%20")
+            .replaceAll("\\%21", "!")
+            .replaceAll("\\%27", "'")
+            .replaceAll("\\%28", "(")
+            .replaceAll("\\%29", ")")
+            .replaceAll("\\%7E", "~");
+        } catch (UnsupportedEncodingException e) {
+            // This exception should never occur.
+            return s;
+        }
     }
 }
 
@@ -534,7 +564,7 @@ public class GenerateRDF {
                         output(" rdf:about=\"");
                         output(segment);
                         output("/");
-                        output(StringHelper.escapeXml(id));
+                        output(StringHelper.escapeXml(StringHelper.encodeURIComponent(id, "UTF-8")));
                         output("\">\n");
                         currentId = id;
                         firstTime = false;
@@ -596,7 +626,7 @@ public class GenerateRDF {
                         output(" rdf:about=\"");
                         output(segment);
                         output("/");
-                        output(StringHelper.escapeXml(id));
+                        output(StringHelper.escapeXml(StringHelper.encodeURIComponent(id, "UTF-8")));
                         output("\">\n");
                         currentId = id;
                         firstTime = false;
