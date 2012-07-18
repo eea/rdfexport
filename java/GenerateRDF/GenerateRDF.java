@@ -558,7 +558,7 @@ public class GenerateRDF {
 
                 while (rs.next()) {
                     Object id = rs.getObject(1);
-                    if (!currentId.equals(id)) {
+                    if (currentId != null && !currentId.equals(id)) {
                         if (!firstTime) {
                             output("</");
                             output(rdfClass);
@@ -623,7 +623,7 @@ public class GenerateRDF {
                         continue;
                     }
                     Object id = rs.getObject(1);
-                    if (!currentId.equals(id)) {
+                    if (currentId != null && !currentId.equals(id)) {
                         if (!firstTime) {
                             output("</");
                             output(rdfClass);

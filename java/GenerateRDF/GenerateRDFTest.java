@@ -119,6 +119,21 @@ class GenerateRDFTest extends TestCase {
         assertEquals(expected, actual);
     }
 
+    private boolean callSwitch(Object id, Object currentId) {
+        boolean result;
+
+        return (currentId != null && !currentId.equals(id));
+    }
+
+    public void test_idSwitch() {
+
+        assertEquals(false, callSwitch(null, null));
+        assertEquals(true,  callSwitch(null, (Object)"/.."));
+        assertEquals(false, callSwitch((Object)"x", (Object)"x"));
+        assertEquals(true,  callSwitch((Object)"A", (Object)"x"));
+        assertEquals(true, callSwitch((Object)"id", null));
+    }
+
     public static void main(String args[]) throws Exception {
         GenerateRDFTest testClass = new GenerateRDFTest();
         testClass.test_parseName();
