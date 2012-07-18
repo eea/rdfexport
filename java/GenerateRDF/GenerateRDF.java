@@ -519,7 +519,7 @@ public class GenerateRDF {
             output(baseurl);
             output("\"");
         }
-        output(">\n");
+        output(">\n\n");
         rdfHeaderWritten = true;
     }
 

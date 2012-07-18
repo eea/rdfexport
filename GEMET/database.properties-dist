@@ -1,0 +1,7 @@
+#
+# Database parameters
+#
+driver=com.mysql.jdbc.Driver
+database=jdbc:mysql://localhost:3306/GEMET
+user=databaseuser
+password=password
