@@ -16,7 +16,10 @@
  * (C) European Environment Agency.  All Rights Reserved.
  *
  * Contributor(s):
+ *  Søren Roug, EEA
+ *  Jaanus Heinlaid, TripleDev
  *
+ * $Id$
  */
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -528,7 +531,9 @@ public class GenerateRDF {
     }
 
     /**
-     * Run a query.
+     * Run a query. First value is the key. The others are the attributes. The
+     * column names are the attribute names. If first value is null, then the
+     * attributes are assigned to the namespace of the table.
      *
      * @param segment - the namespace of the table
      * @param sql - the query to run.
@@ -537,7 +542,7 @@ public class GenerateRDF {
      */
     private void runQuery(String segment, String sql, String rdfClass) throws SQLException {
         Statement stmt = null;
-        String currentId = null;
+        Object currentId = (Object)"/..";
         Boolean firstTime = true;
         try {
             stmt = con.createStatement();
@@ -552,8 +557,8 @@ public class GenerateRDF {
                 int numcols = rsmd.getColumnCount();
 
                 while (rs.next()) {
-                    String id = rs.getObject(1).toString();
-                    if (!id.equals(currentId)) {
+                    Object id = rs.getObject(1);
+                    if (!currentId.equals(id)) {
                         if (!firstTime) {
                             output("</");
                             output(rdfClass);
@@ -563,8 +568,10 @@ public class GenerateRDF {
                         output(rdfClass);
                         output(" rdf:about=\"");
                         output(segment);
-                        output("/");
-                        output(StringHelper.escapeXml(StringHelper.encodeURIComponent(id, "UTF-8")));
+                        if (id != null) {
+                            output("/");
+                            output(StringHelper.escapeXml(StringHelper.encodeURIComponent(id.toString(), "UTF-8")));
+                        }
                         output("\">\n");
                         currentId = id;
                         firstTime = false;
@@ -590,6 +597,7 @@ public class GenerateRDF {
      * Query attributes table. The result must have one + X * four columns.
      *  1. id, 2. attribute name, 3. value, 4. datatype, 5. languagecode,
      *         6. attribute name, 7. value, 8. datatype, 9. languagecode, etc.
+     * If id is null, then the attributes are assigned to the namespace of the table.
      *
      * @param segment - the namespace of the table
      * @param sql - the query
@@ -598,7 +606,7 @@ public class GenerateRDF {
      */
     private void runAttributes(String segment, String sql, String rdfClass) throws SQLException {
         Statement stmt = null;
-        String currentId = null;
+        Object currentId = (Object)"/..";
         Boolean firstTime = true;
         try {
             stmt = con.createStatement();
@@ -614,8 +622,8 @@ public class GenerateRDF {
                     if (rs.getObject(1) == null) {
                         continue;
                     }
-                    String id = rs.getObject(1).toString();
-                    if (!id.equals(currentId)) {
+                    Object id = rs.getObject(1);
+                    if (!currentId.equals(id)) {
                         if (!firstTime) {
                             output("</");
                             output(rdfClass);
@@ -625,8 +633,10 @@ public class GenerateRDF {
                         output(rdfClass);
                         output(" rdf:about=\"");
                         output(segment);
-                        output("/");
-                        output(StringHelper.escapeXml(StringHelper.encodeURIComponent(id, "UTF-8")));
+                        if (id != null) {
+                            output("/");
+                            output(StringHelper.escapeXml(StringHelper.encodeURIComponent(id.toString(), "UTF-8")));
+                        }
                         output("\">\n");
                         currentId = id;
                         firstTime = false;
