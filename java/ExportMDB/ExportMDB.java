@@ -344,8 +344,8 @@ public class ExportMDB {
                     // dmd.getImportedKeys(null, ss, rs2.getString(3))
                     String tableQueryKey = table.concat(".query");
                     // If no primary key exists, then we use the table row.
-                    // (indicated by making the first column be null)
-                    props.setProperty(tableQueryKey,"SELECT NULL, * FROM " + table);
+                    // (indicated by making the first column be '##')
+                    props.setProperty(tableQueryKey,"SELECT '##', * FROM " + table);
                 }
             }
 
@@ -504,8 +504,8 @@ public class ExportMDB {
                 while (rs.next()) {
                     currentRow += 1;
                     Object id = rs.getObject(1);
-                    // If the first column is NULL, then use row number as key
-                    if (id == null) {
+                    // If the first column is "##", then use row number as key
+                    if (id != null && id.equals("##")) {
                         id = currentRow;
                     }
                     if (currentId != null && !currentId.equals(id)) {
