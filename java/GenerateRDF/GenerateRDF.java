@@ -199,21 +199,19 @@ public class GenerateRDF {
      * Constructor.
      * @param writer - The output stream to send output to
      * @param dbCon - The database connection
-     * @param propFilename - The file to load the configuration from
+     * @param properties - The properties
      * @throws IOException - if the properties file is missing
      * @throws SQLException - if the SQL database is not available
      * @throws ClassNotFoundException - if the SQL driver is unavailable
      * @throws InstantiationException - if the SQL driver can't be instantiatied
      * @throws IllegalAccessException - unknown
      */
-    public GenerateRDF(PrintStream writer, Connection dbCon, String propFilename) throws IOException,
+    public GenerateRDF(PrintStream writer, Connection dbCon, Properties properties) throws IOException,
                                 SQLException, ClassNotFoundException,
                                 InstantiationException, IllegalAccessException {
-        props = new Properties();
-
         outputStream = writer;
-        props.load(new FileInputStream(propFilename));
-
+        props = properties;
+        
         tables = props.getProperty("tables").split("\\s+");
 
         con = dbCon;
@@ -543,6 +541,7 @@ public class GenerateRDF {
     private void runQuery(String segment, String sql, String rdfClass) throws SQLException {
         Statement stmt = null;
         Object currentId = (Object)"/..";
+        Integer currentRow = 0;
         Boolean firstTime = true;
         try {
             stmt = con.createStatement();
@@ -557,7 +556,12 @@ public class GenerateRDF {
                 int numcols = rsmd.getColumnCount();
 
                 while (rs.next()) {
+                    currentRow += 1;
                     Object id = rs.getObject(1);
+                    // If the first column is "##", then use row number as key
+                    if (id != null && id.equals("##")) {
+                        id = currentRow;
+                    }
                     if (currentId != null && !currentId.equals(id)) {
                         if (!firstTime) {
                             output("</");
@@ -775,6 +779,7 @@ public class GenerateRDF {
         }
         try {
             Properties props = new Properties();
+            Properties rdfProps = new Properties();
             props.load(new FileInputStream(dbPropFilename));
 
             String driver = props.getProperty("driver");
@@ -784,7 +789,8 @@ public class GenerateRDF {
 
             Class.forName(driver).newInstance();
             Connection con = DriverManager.getConnection(dbUrl, userName, password);
-            GenerateRDF r = new GenerateRDF(System.out, con, rdfPropFilename);
+            rdfProps.load(new FileInputStream(rdfPropFilename));
+            GenerateRDF r = new GenerateRDF(System.out, con, rdfProps);
 
             if (unusedArgs.size() == 0) {
                 tables = r.getAllTables();
