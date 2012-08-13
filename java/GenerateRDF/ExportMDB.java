@@ -84,6 +84,17 @@ class TableSpec {
 /**
  * Export Database. The purpose of this class is to discover the table relationships
  * and then create an export in RDF where the tables are interlinked.
+ * This code is an early start on an export to RDF module that
+ * can automatically find all tables in a database, the internal
+ * relations and then export the database as one RDF file.
+ *
+ * Intended use is to convert MS-Access databases.
+ *
+ * To use it with MS-Access download the trial version of the HXTT driver from
+ * http://www.hxtt.com/access.zip or http://www.hxtt.com/access.html
+ * The trial version will only return 1000 rows and allow 50 queries in the
+ * same connection.
+ *
  */
 public class ExportMDB {
     /** Connection to database. */
@@ -164,7 +175,6 @@ public class ExportMDB {
 
     /**
      * Discover all tables in the database and create SELECT statements for the properties file.
-     * @return list of strings.
      */
     public void discoverTables() throws SQLException {
         Statement stmt = null;
@@ -204,15 +214,16 @@ public class ExportMDB {
             //to construct the subject URL for foreign keys.
             // You can use:
             // dmd.getPrimaryKeys(null, ss, rs2.getString(3))
+            for(String t : tables.keySet()) {
+                ResultSet pks = dmd.getPrimaryKeys(null, null, t);
+            }
+
             //TODO: Find the references from this table to other tables'
             //primary keys. These will be used to create links in the RDF output
             // You can use:
             // dmd.getImportedKeys(null, ss, rs2.getString(3))
             // If no primary key exists, then we use the table row.
             // (indicated by making the first column be '##')
-            for(String t : tables.keySet()) {
-                ResultSet pks = dmd.getPrimaryKeys(null, null, t);
-            }
 
         } finally {
             if (stmt != null) {
@@ -237,12 +248,15 @@ public class ExportMDB {
 
     /**
      * Main routine. Primarily to demonstrate the use.
+     * Flags: -p <i>filename</i> - save the discovered information as a properties file.
+     *        -f <i>filename</i> - load the template properties from the specified file.
+     *        -m <i>filename</i> - the name of the MS-Access file to investigate.
      */
     public static void main(String[] args) {
         ArrayList<String> unusedArgs;
         String[] tables;
         String rdfPropFilename = "exportmdb.properties";
-        String dbPropFilename = "database.properties";
+//      String dbPropFilename = "database.properties";
         String mdbFilename = null;
         String writeProperties = null;
 
@@ -250,19 +264,19 @@ public class ExportMDB {
 
         // Parse arguments.
         for (int a = 0; a < args.length; a++) {
-            if (args[a].equals("-d")) {
-                dbPropFilename = args[++a];
-            } else if (args[a].startsWith("-d")) {
-                dbPropFilename = args[a].substring(2);
+            if (args[a].startsWith("-p")) {
+                if (args[a].length() > 2) writeProperties = args[a].substring(2);
+                else writeProperties = args[++a];
+//          } else if (args[a].equals("-d")) {
+//              dbPropFilename = args[++a];
+//          } else if (args[a].startsWith("-d")) {
+//              dbPropFilename = args[a].substring(2);
             } else if (args[a].startsWith("-f")) {
                 if (args[a].length() > 2) rdfPropFilename = args[a].substring(2);
                 else rdfPropFilename = args[++a];
             } else if (args[a].startsWith("-m")) {
                 if (args[a].length() > 2) mdbFilename = args[a].substring(2);
                 else mdbFilename = args[++a];
-            } else if (args[a].startsWith("-p")) {
-                if (args[a].length() > 2) writeProperties = args[a].substring(2);
-                else writeProperties = args[++a];
             } else {
                  unusedArgs.add(args[a]);
             }
