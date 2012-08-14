@@ -256,7 +256,7 @@ public class ExportMDB {
         ArrayList<String> unusedArgs;
         String[] tables;
         String rdfPropFilename = "exportmdb.properties";
-//      String dbPropFilename = "database.properties";
+        String dbPropFilename = "database.properties";
         String mdbFilename = null;
         String writeProperties = null;
 
@@ -267,10 +267,10 @@ public class ExportMDB {
             if (args[a].startsWith("-p")) {
                 if (args[a].length() > 2) writeProperties = args[a].substring(2);
                 else writeProperties = args[++a];
-//          } else if (args[a].equals("-d")) {
-//              dbPropFilename = args[++a];
-//          } else if (args[a].startsWith("-d")) {
-//              dbPropFilename = args[a].substring(2);
+            } else if (args[a].equals("-d")) {
+                dbPropFilename = args[++a];
+            } else if (args[a].startsWith("-d")) {
+                dbPropFilename = args[a].substring(2);
             } else if (args[a].startsWith("-f")) {
                 if (args[a].length() > 2) rdfPropFilename = args[a].substring(2);
                 else rdfPropFilename = args[++a];
@@ -282,19 +282,22 @@ public class ExportMDB {
             }
         }
         try {
-//          Properties props = new Properties();
+            Properties props = new Properties();
             Properties rdfProps = new Properties();
-//          props.load(new FileInputStream(dbPropFilename));
+            props.load(new FileInputStream(dbPropFilename));
 
-//          String driver = props.getProperty("driver");
-//          String dbUrl = props.getProperty("database");
-//          String userName = props.getProperty("user");
-//          String password = props.getProperty("password");
+            String driver = props.getProperty("driver");
+            String dbUrl = props.getProperty("database");
+            if (mdbFilename != null) {
+                dbUrl = dbUrl.concat(mdbFilename);
+            }
+            String userName = props.getProperty("user");
+            String password = props.getProperty("password");
 
-            String driver = "com.hxtt.sql.access.AccessDriver";
-            String dbUrl = "jdbc:access:/".concat(mdbFilename);
-            String userName = "user";
-            String password = "password";
+//          String driver = "com.hxtt.sql.access.AccessDriver";
+//          String dbUrl = "jdbc:access:/".concat(mdbFilename);
+//          String userName = "user";
+//          String password = "password";
 
             Class.forName(driver).newInstance();
             Connection con = DriverManager.getConnection(dbUrl, userName, password);

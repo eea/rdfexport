@@ -1,7 +1,7 @@
 CLASSPATH=.:/usr/share/java/mysql-connector-java.jar:lib/Access_JDBC40.jar:/usr/share/java/junit.jar
 
 mdb: ExportMDB.class GenerateRDF.class
-	java -cp .:lib/Access_JDBC40.jar ExportMDB -m WFD.mdb
+	java -cp .:lib/Access_JDBC40.jar ExportMDB -d mdb.properties -m WFD.mdb
 
 test: compile
 	java -cp $(CLASSPATH) GenerateRDFTest

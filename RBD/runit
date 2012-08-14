@@ -1,0 +1,4 @@
+#!/bin/sh
+
+java -cp ../java/GenerateRDF:../java/GenerateRDF/lib/DBF_JDBC40.jar GenerateRDF -d RBD.properties -f RBD.properties rbd
+
