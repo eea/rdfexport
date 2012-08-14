@@ -6,7 +6,7 @@ mdb: ExportMDB.class GenerateRDF.class
 test: compile
 	java -cp $(CLASSPATH) GenerateRDFTest
 
-compile: GenerateRDF.class GenerateRDFTest.class
+compile: GenerateRDF.class GenerateRDFTest.class ExportMDB.class
 
 GenerateRDF.class: GenerateRDF.java
 	javac -cp $(CLASSPATH) GenerateRDF.java

@@ -64,7 +64,7 @@ class TableSpec {
     public String createQuery() {
         StringBuilder columnList = new StringBuilder();
 
-        columnList.append("SELECT '##'");
+        columnList.append("SELECT '@'");
         for (int i = 0; i < columns.size(); i++) {
             String c = columns.get(i);
             columnList.append(", ");
@@ -223,7 +223,7 @@ public class ExportMDB {
             // You can use:
             // dmd.getImportedKeys(null, ss, rs2.getString(3))
             // If no primary key exists, then we use the table row.
-            // (indicated by making the first column be '##')
+            // (indicated by making the first column be '@')
 
         } finally {
             if (stmt != null) {

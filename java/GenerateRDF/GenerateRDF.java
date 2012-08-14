@@ -22,8 +22,9 @@
  * $Id$
  */
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.sql.Connection;
@@ -37,6 +38,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.TreeSet;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * A struct to hold a complex type.
@@ -193,7 +195,7 @@ public class GenerateRDF {
     /** Hashtable of loaded properties. */
     private Properties props;
     /** The output stream to send output to. */
-    private PrintStream outputStream;
+    private OutputStream outputStream;
 
     /**
      * Constructor.
@@ -206,7 +208,7 @@ public class GenerateRDF {
      * @throws InstantiationException - if the SQL driver can't be instantiatied
      * @throws IllegalAccessException - unknown
      */
-    public GenerateRDF(PrintStream writer, Connection dbCon, Properties properties) throws IOException,
+    public GenerateRDF(OutputStream writer, Connection dbCon, Properties properties) throws IOException,
                                 SQLException, ClassNotFoundException,
                                 InstantiationException, IllegalAccessException {
         outputStream = writer;
@@ -256,7 +258,7 @@ public class GenerateRDF {
      *
      * @throws SQLException if there is a database problem.
      */
-    public void close() throws SQLException {
+    public void close() throws SQLException, IOException {
         rdfFooter();
         if (con != null) {
             con.close();
@@ -269,8 +271,8 @@ public class GenerateRDF {
      *
      * @param v - value to print.
      */
-    private void output(String v) {
-        outputStream.print(v);
+    private void output(String v) throws IOException {
+        outputStream.write(v.getBytes());
     }
 
     /**
@@ -279,7 +281,7 @@ public class GenerateRDF {
      * @param property triple consisting of name, datatype and langcode
      * @param value from database.
      */
-    private void writeProperty(RDFField property, Object value) {
+    private void writeProperty(RDFField property, Object value) throws IOException {
         String typelangAttr = "";
 
         if (value == null) {
@@ -393,7 +395,7 @@ public class GenerateRDF {
      * @param table - name of table in properties file
      * @throws SQLException if there is a database problem.
      */
-    public void exportTable(String table) throws SQLException {
+    public void exportTable(String table) throws SQLException, IOException {
         exportTable(table, null);
     }
 
@@ -407,7 +409,7 @@ public class GenerateRDF {
      * @param identifier - primary key of the record we want or null for all records.
      * @throws SQLException if there is a database problem.
      */
-    public void exportTable(String table, String identifier) throws SQLException {
+    public void exportTable(String table, String identifier) throws SQLException, IOException {
         String voc = props.getProperty(table.concat(".vocabulary"));
         if (voc != null) {
             setVocabulary(voc);
@@ -495,7 +497,7 @@ public class GenerateRDF {
     /**
      * Generate the RDF header element.
      */
-    private void rdfHeader() {
+    private void rdfHeader() throws IOException {
         if (rdfHeaderWritten) {
             throw new RuntimeException("Can't write header twice!");
         }
@@ -524,7 +526,7 @@ public class GenerateRDF {
     /**
      * Generate the RDF footer element.
      */
-    private void rdfFooter() {
+    private void rdfFooter() throws IOException {
         output("</rdf:RDF>\n");
     }
 
@@ -538,7 +540,7 @@ public class GenerateRDF {
      * @param rdfClass - the class to assign or rdf:Description
      * @throws SQLException - if the SQL database is not available
      */
-    private void runQuery(String segment, String sql, String rdfClass) throws SQLException {
+    private void runQuery(String segment, String sql, String rdfClass) throws SQLException, IOException {
         Statement stmt = null;
         Object currentId = (Object)"/..";
         Integer currentRow = 0;
@@ -558,8 +560,8 @@ public class GenerateRDF {
                 while (rs.next()) {
                     currentRow += 1;
                     Object id = rs.getObject(1);
-                    // If the first column is "##", then use row number as key
-                    if (id != null && id.equals("##")) {
+                    // If the first column is "@", then use row number as key
+                    if (id != null && id.equals("@")) {
                         id = currentRow;
                     }
                     if (currentId != null && !currentId.equals(id)) {
@@ -608,7 +610,7 @@ public class GenerateRDF {
      * @param rdfClass - the class to assign or rdf:Description
      * @throws SQLException - if the SQL database is not available
      */
-    private void runAttributes(String segment, String sql, String rdfClass) throws SQLException {
+    private void runAttributes(String segment, String sql, String rdfClass) throws SQLException, IOException {
         Statement stmt = null;
         Object currentId = (Object)"/..";
         Boolean firstTime = true;
@@ -747,6 +749,12 @@ public class GenerateRDF {
 
     /**
      * Main routine. Primarily to demonstrate the use.
+     * Flags: -o <i>filename</i> - save the generated RDF in file.
+     *        -f <i>filename</i> - load the properties from the specified file.
+     *        -d <i>filename</i> - load the properties for the database connection from the specified file.
+     *        -z - gzip the output.
+     *        -i <i>identifier</i> - Only export the record with the identifier
+     * All other arguments are expected to be table names.
      */
     public static void main(String[] args) {
         ArrayList<String> unusedArgs;
@@ -754,6 +762,9 @@ public class GenerateRDF {
         String identifier = null;
         String rdfPropFilename = "rdfexport.properties";
         String dbPropFilename = "database.properties";
+        Boolean zipIt = false;
+        OutputStream outStream;
+        String outputFile = null;
 
         unusedArgs = new ArrayList<String>(args.length);
 
@@ -761,7 +772,13 @@ public class GenerateRDF {
         // The -i takes an argument that is the record id we're interested in
         // variable "i" is in fact used.
         for (int a = 0; a < args.length; a++) {
-            if (args[a].equals("-d")) {
+            if (args[a].equals("-z")) {
+                zipIt = true;
+            } else if (args[a].startsWith("-o")) {
+                if (args[a].length() > 2) outputFile = args[a].substring(2);
+                else outputFile = args[++a];
+                if ("-".equals(outputFile)) outputFile = null; // Linux convention
+            } else if (args[a].equals("-d")) {
                 dbPropFilename = args[++a];
             } else if (args[a].startsWith("-d")) {
                 dbPropFilename = args[a].substring(2);
@@ -790,14 +807,21 @@ public class GenerateRDF {
             Class.forName(driver).newInstance();
             Connection con = DriverManager.getConnection(dbUrl, userName, password);
             rdfProps.load(new FileInputStream(rdfPropFilename));
-            GenerateRDF r = new GenerateRDF(System.out, con, rdfProps);
+            outStream = System.out;
+            if (outputFile != null) {
+                outStream = new FileOutputStream(outputFile);
+            }
+            if (zipIt) {
+                outStream = new GZIPOutputStream(outStream);
+            }
+            GenerateRDF r = new GenerateRDF(outStream, con, rdfProps);
 
             if (unusedArgs.size() == 0) {
                 tables = r.getAllTables();
             } else {
                 tables = new String[unusedArgs.size()];
                 for (int i = 0; i < unusedArgs.size(); i++) {
-                    tables[i] = (String) unusedArgs.get(i).toString();
+                    tables[i] = (String)unusedArgs.get(i).toString();
                 }
             }
 
@@ -806,6 +830,10 @@ public class GenerateRDF {
             }
             r.close();
             con.close();
+            if (zipIt) {
+                GZIPOutputStream g = (GZIPOutputStream)outStream;
+                g.finish();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
