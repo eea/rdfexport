@@ -573,6 +573,9 @@ public class GenerateRDF {
                         output("<");
                         output(rdfClass);
                         output(" rdf:about=\"");
+                        if (baseurl == null) {
+                            output("#");
+                        }
                         output(segment);
                         if (id != null) {
                             output("/");
@@ -638,6 +641,9 @@ public class GenerateRDF {
                         output("<");
                         output(rdfClass);
                         output(" rdf:about=\"");
+                        if (baseurl == null) {
+                            output("#");
+                        }
                         output(segment);
                         if (id != null) {
                             output("/");
