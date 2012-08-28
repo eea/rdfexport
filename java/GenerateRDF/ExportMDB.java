@@ -304,6 +304,17 @@ public class ExportMDB {
             Class.forName(driver).newInstance();
             Connection con = DriverManager.getConnection(dbUrl, userName, password);
             rdfProps.load(new FileInputStream(rdfPropFilename));
+
+            String vocabulary = rdfProps.getProperty("vocabulary");
+            String baseurl = rdfProps.getProperty("baseurl");
+            if (vocabulary == null || "".equals(vocabulary)) {
+                if (baseurl == null) {
+                    vocabulary = "#properties/";
+                } else {
+                    vocabulary = baseurl.concat("properties/");
+                }
+                rdfProps.setProperty("vocabulary", vocabulary);
+            }
             //TODO: the 'vocabulary' property has to generated if it is not in the template file.
             //and then written to the properties file.
             rdfProps.setProperty("driver", driver);
