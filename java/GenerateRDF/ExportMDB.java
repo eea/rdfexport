@@ -64,15 +64,17 @@ class TableSpec {
     public String createQuery() {
         StringBuilder columnList = new StringBuilder();
 
-        columnList.append("SELECT '@'");
+        columnList.append("SELECT '@' AS id");
         for (int i = 0; i < columns.size(); i++) {
             String c = columns.get(i);
-            columnList.append(", ");
+            columnList.append(", [");
             columnList.append(c);
-//          columnList.append(" AS '");
-//          String label = c.substring(0, 1).toLowerCase() + c.substring(1);
-//          columnList.append(label);
-//          columnList.append("'");
+            columnList.append("]");
+            columnList.append(" AS '");
+            String label = c.substring(0, 1).toLowerCase() + c.substring(1);
+            label = label.replace(" ", "_");
+            columnList.append(label);
+            columnList.append("'");
         }
         columnList.append(" FROM " + tableName);
 
@@ -256,7 +258,7 @@ public class ExportMDB {
         ArrayList<String> unusedArgs;
         String[] tables;
         String rdfPropFilename = "exportmdb.properties";
-        String dbPropFilename = "database.properties";
+        String dbPropFilename = "exportmdb.properties";
         String mdbFilename = null;
         String writeProperties = null;
 
@@ -302,6 +304,12 @@ public class ExportMDB {
             Class.forName(driver).newInstance();
             Connection con = DriverManager.getConnection(dbUrl, userName, password);
             rdfProps.load(new FileInputStream(rdfPropFilename));
+            //TODO: the 'vocabulary' property has to generated if it is not in the template file.
+            //and then written to the properties file.
+            rdfProps.setProperty("driver", driver);
+            rdfProps.setProperty("database", dbUrl);
+            rdfProps.setProperty("user", userName);
+            rdfProps.setProperty("password", password);
 
             ExportMDB inspector = new ExportMDB(con, rdfProps);
             inspector.discoverTables();
