@@ -74,6 +74,7 @@ final class StringHelper {
     private StringHelper() {
         throw new UnsupportedOperationException();
     }
+
     /**
      * Escape characters that have special meaning in XML.
      *
@@ -257,6 +258,7 @@ public class GenerateRDF {
      * Close the connection to the database.
      *
      * @throws SQLException if there is a database problem.
+     * @throws IOException - if the connection is not open.
      */
     public void close() throws SQLException, IOException {
         rdfFooter();
@@ -270,6 +272,7 @@ public class GenerateRDF {
      * Called from the other methods to do the output.
      *
      * @param v - value to print.
+     * @throws IOException - if the output is not open.
      */
     private void output(String v) throws IOException {
         outputStream.write(v.getBytes());
@@ -280,6 +283,7 @@ public class GenerateRDF {
      *
      * @param property triple consisting of name, datatype and langcode
      * @param value from database.
+     * @throws IOException - if the output is not open.
      */
     private void writeProperty(RDFField property, Object value) throws IOException {
         String typelangAttr = "";
@@ -292,12 +296,20 @@ public class GenerateRDF {
         if (property.datatype.startsWith("->")) {
             // Handle pointers
             if (property.datatype.length() == 2) {
+                // Handle the case where the value contains the pointer.
                 output(" rdf:resource=\"");
                 output(StringHelper.escapeXml(value.toString()));
                 output("\"/>\n");
             } else {
+                // Handle the case of ->countries or ->http://...
+                // If the ref-segment contains a colon then it can't be a fragment
+                // http://www.w3.org/TR/REC-xml-names/#NT-NCName
+                String refSegment = property.datatype.substring(2);
                 output(" rdf:resource=\"");
-                output(property.datatype.substring(2));
+                if (baseurl == null && refSegment.indexOf(":") == -1) {
+                    output("#");
+                }
+                output(refSegment);
                 output("/");
                 output(StringHelper.escapeXml(value.toString()));
                 output("\"/>\n");
@@ -394,6 +406,7 @@ public class GenerateRDF {
      *
      * @param table - name of table in properties file
      * @throws SQLException if there is a database problem.
+     * @throws IOException - if the output is not open.
      */
     public void exportTable(String table) throws SQLException, IOException {
         exportTable(table, null);
@@ -408,6 +421,7 @@ public class GenerateRDF {
      * @param table - name of table in properties file
      * @param identifier - primary key of the record we want or null for all records.
      * @throws SQLException if there is a database problem.
+     * @throws IOException - if the output is not open.
      */
     public void exportTable(String table, String identifier) throws SQLException, IOException {
         String voc = props.getProperty(table.concat(".vocabulary"));
@@ -496,6 +510,7 @@ public class GenerateRDF {
 
     /**
      * Generate the RDF header element.
+     * @throws IOException - if the output is not open.
      */
     private void rdfHeader() throws IOException {
         if (rdfHeaderWritten) {
@@ -525,6 +540,7 @@ public class GenerateRDF {
 
     /**
      * Generate the RDF footer element.
+     * @throws IOException - if the output is not open.
      */
     private void rdfFooter() throws IOException {
         output("</rdf:RDF>\n");
@@ -539,6 +555,7 @@ public class GenerateRDF {
      * @param sql - the query to run.
      * @param rdfClass - the class to assign or rdf:Description
      * @throws SQLException - if the SQL database is not available
+     * @throws IOException - if the output is not open.
      */
     private void runQuery(String segment, String sql, String rdfClass) throws SQLException, IOException {
         Statement stmt = null;
@@ -612,6 +629,7 @@ public class GenerateRDF {
      * @param sql - the query
      * @param rdfClass - the class to assign or rdf:Description
      * @throws SQLException - if the SQL database is not available
+     * @throws IOException - if the output is not open.
      */
     private void runAttributes(String segment, String sql, String rdfClass) throws SQLException, IOException {
         Statement stmt = null;
