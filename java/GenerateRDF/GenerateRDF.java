@@ -23,8 +23,8 @@
  */
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.sql.Connection;
@@ -41,8 +41,7 @@ import java.util.TreeSet;
 import java.util.zip.GZIPOutputStream;
 
 /**
- * A struct to hold a complex type.
- * No need to do data encapsulation.
+ * A struct to hold a complex type. No need to do data encapsulation.
  */
 class RDFField {
     /** Name of column. */
@@ -64,6 +63,7 @@ class RDFField {
 
 /**
  * Class to help escape strings for XML and URI components.
+ *
  * @see http://www.java2s.com/Tutorial/Java/0120__Development/EscapeHTML.htm
  * @see http://www.ietf.org/rfc/rfc3986.txt
  */
@@ -78,7 +78,8 @@ final class StringHelper {
     /**
      * Escape characters that have special meaning in XML.
      *
-     * @param s - The string to escape.
+     * @param s
+     *            - The string to escape.
      * @return escaped string.
      */
     public static String escapeXml(String s) {
@@ -136,27 +137,22 @@ final class StringHelper {
     }
 
     /**
-     * %-escapes the given string for a legal URI component.
-     * See http://www.ietf.org/rfc/rfc3986.txt section 2.4 for more.
+     * %-escapes the given string for a legal URI component. See http://www.ietf.org/rfc/rfc3986.txt section 2.4 for more.
      *
-     * Does java.net.URLEncoder.encode(String, String) and then on the resulting string does the following corrections:
-     *   - the "+" signs are converted into "%20".
-     *   - "%21", "%27", "%28", "%29" and "%7E" are unescaped back (i.e. "!", "'", "(", ")" and "~").
+     * Does java.net.URLEncoder.encode(String, String) and then on the resulting string does the following corrections: - the "+"
+     * signs are converted into "%20". - "%21", "%27", "%28", "%29" and "%7E" are unescaped back (i.e. "!", "'", "(", ")" and "~").
      * See the JavaDoc of java.net.URLEncoder and the above RFC specification for why this is done.
      *
-     * @param s   The string to %-escape.
-     * @param enc The encoding scheme to use.
-     * @return    The escaped string.
+     * @param s
+     *            The string to %-escape.
+     * @param enc
+     *            The encoding scheme to use.
+     * @return The escaped string.
      */
-    public static String encodeURIComponent(String s, String enc){
+    public static String encodeURIComponent(String s, String enc) {
         try {
-            return URLEncoder.encode(s, enc)
-            .replaceAll("\\+", "%20")
-            .replaceAll("\\%21", "!")
-            .replaceAll("\\%27", "'")
-            .replaceAll("\\%28", "(")
-            .replaceAll("\\%29", ")")
-            .replaceAll("\\%7E", "~");
+            return URLEncoder.encode(s, enc).replaceAll("\\+", "%20").replaceAll("\\%21", "!").replaceAll("\\%27", "'")
+                    .replaceAll("\\%28", "(").replaceAll("\\%29", ")").replaceAll("\\%7E", "~");
         } catch (UnsupportedEncodingException e) {
             // This exception should never occur.
             return s;
@@ -165,14 +161,12 @@ final class StringHelper {
 }
 
 /**
- * RDF generator. The queries are stored in a properties file. There
- * are two types of queries. A plain select and an attributes table.
- * For the plain select the class will use the first column as the
- * <em>identifier</em>, and create RDF properties for the other columns.
+ * RDF generator. The queries are stored in a properties file. There are two types of queries. A plain select and an attributes
+ * table. For the plain select the class will use the first column as the <em>identifier</em>, and create RDF properties for the
+ * other columns.
  *
- * For the attributes table the result must have one + X * four columns:
- *  1. id, 2. attribute name, 3. value, 4. datatype, 5. languagecode,
- *         6. attribute name, 7. value, 8. datatype, 9. languagecode, etc.
+ * For the attributes table the result must have one + X * four columns: 1. id, 2. attribute name, 3. value, 4. datatype, 5.
+ * languagecode, 6. attribute name, 7. value, 8. datatype, 9. languagecode, etc.
  */
 public class GenerateRDF {
     /** Base of XML file. */
@@ -200,21 +194,29 @@ public class GenerateRDF {
 
     /**
      * Constructor.
-     * @param writer - The output stream to send output to
-     * @param dbCon - The database connection
-     * @param properties - The properties
-     * @throws IOException - if the properties file is missing
-     * @throws SQLException - if the SQL database is not available
-     * @throws ClassNotFoundException - if the SQL driver is unavailable
-     * @throws InstantiationException - if the SQL driver can't be instantiatied
-     * @throws IllegalAccessException - unknown
+     *
+     * @param writer
+     *            - The output stream to send output to
+     * @param dbCon
+     *            - The database connection
+     * @param properties
+     *            - The properties
+     * @throws IOException
+     *             - if the properties file is missing
+     * @throws SQLException
+     *             - if the SQL database is not available
+     * @throws ClassNotFoundException
+     *             - if the SQL driver is unavailable
+     * @throws InstantiationException
+     *             - if the SQL driver can't be instantiatied
+     * @throws IllegalAccessException
+     *             - unknown
      */
-    public GenerateRDF(OutputStream writer, Connection dbCon, Properties properties) throws IOException,
-                                SQLException, ClassNotFoundException,
-                                InstantiationException, IllegalAccessException {
+    public GenerateRDF(OutputStream writer, Connection dbCon, Properties properties) throws IOException, SQLException,
+            ClassNotFoundException, InstantiationException, IllegalAccessException {
         outputStream = writer;
         props = properties;
-        
+
         tables = props.getProperty("tables").split("\\s+");
 
         con = dbCon;
@@ -244,7 +246,8 @@ public class GenerateRDF {
     /**
      * Do a nice shutdown in case the user forgets to call close().
      *
-     * @throws Throwable - ignored
+     * @throws Throwable
+     *             - ignored
      */
     protected void finalize() throws Throwable {
         try {
@@ -257,8 +260,10 @@ public class GenerateRDF {
     /**
      * Close the connection to the database.
      *
-     * @throws SQLException if there is a database problem.
-     * @throws IOException - if the connection is not open.
+     * @throws SQLException
+     *             if there is a database problem.
+     * @throws IOException
+     *             - if the connection is not open.
      */
     public void close() throws SQLException, IOException {
         rdfFooter();
@@ -271,8 +276,10 @@ public class GenerateRDF {
     /**
      * Called from the other methods to do the output.
      *
-     * @param v - value to print.
-     * @throws IOException - if the output is not open.
+     * @param v
+     *            - value to print.
+     * @throws IOException
+     *             - if the output is not open.
      */
     private void output(String v) throws IOException {
         outputStream.write(v.getBytes());
@@ -281,9 +288,12 @@ public class GenerateRDF {
     /**
      * Write a property. If the property.datatype is "->" then it is a resource reference.
      *
-     * @param property triple consisting of name, datatype and langcode
-     * @param value from database.
-     * @throws IOException - if the output is not open.
+     * @param property
+     *            triple consisting of name, datatype and langcode
+     * @param value
+     *            from database.
+     * @throws IOException
+     *             - if the output is not open.
      */
     private void writeProperty(RDFField property, Object value) throws IOException {
         String typelangAttr = "";
@@ -332,16 +342,17 @@ public class GenerateRDF {
     }
 
     /**
-     * The user can choose one record to output. This is done by inserting
-     *  a HAVING ID=... into the SELECT statement. (using HAVING is slow).
-     *  If the ID is numeric, then Mysql will convert the type to match
+     * The user can choose one record to output. This is done by inserting a HAVING ID=... into the SELECT statement. (using HAVING
+     * is slow). If the ID is numeric, then Mysql will convert the type to match
      *
-     *  @param query - SQL query to patch
-     *  @param identifier to insert into query
-     *  @return patched SQL query
+     * @param query
+     *            - SQL query to patch
+     * @param identifier
+     *            to insert into query
+     * @return patched SQL query
      */
     private String injectHaving(String query, String identifier) {
-        String[] keywords = {" order ", " limit ", " procedure ", " into ", " for ", " lock " };
+        String[] keywords = {" order ", " limit ", " procedure ", " into ", " for ", " lock "};
         String lquery = query.toLowerCase().replace("\n", " ");
         int insertBefore = lquery.length();
         for (String k : keywords) {
@@ -352,28 +363,30 @@ public class GenerateRDF {
         }
         int h = lquery.indexOf(" having ");
         if (h == -1) {
-            query = query.substring(0, insertBefore) + " HAVING id='" + identifier.replace("'", "''") + "'"
-                    + query.substring(insertBefore);
+            query =
+                    query.substring(0, insertBefore) + " HAVING id='" + identifier.replace("'", "''") + "'"
+                            + query.substring(insertBefore);
         } else {
-            query = query.substring(0, h + 8) + "id='" + identifier.replace("'", "''") + "' AND "
-                    + query.substring(h + 8);
+            query = query.substring(0, h + 8) + "id='" + identifier.replace("'", "''") + "' AND " + query.substring(h + 8);
         }
         return query;
     }
 
     /**
-     * The user can choose one record to output. This is done by inserting
-     *  a WHERE <em>key</em>=... into the SELECT statement.
-     *  If the ID is numeric, then Mysql will convert the type to match
+     * The user can choose one record to output. This is done by inserting a WHERE <em>key</em>=... into the SELECT statement. If
+     * the ID is numeric, then Mysql will convert the type to match
      *
-     *  @param query - SQL query to patch
-     *  @param key - Name of column that can be used as key in index
-     *  @param identifier to insert into query
-     *  @return patched SQL query
+     * @param query
+     *            - SQL query to patch
+     * @param key
+     *            - Name of column that can be used as key in index
+     * @param identifier
+     *            to insert into query
+     * @return patched SQL query
      */
     private String injectWhere(String query, String key, String identifier) {
         // Handle WHERE for key hints
-        String[] keywords = {" group ", " having ", " order ", " limit ", " procedure ", " into ", " for ", " lock " };
+        String[] keywords = {" group ", " having ", " order ", " limit ", " procedure ", " into ", " for ", " lock "};
         String lquery = query.toLowerCase().replace("\n", " ");
         int insertBefore = lquery.length();
         for (String k : keywords) {
@@ -384,17 +397,18 @@ public class GenerateRDF {
         }
         int h = lquery.indexOf(" where ");
         if (h == -1) {
-            query = query.substring(0, insertBefore) + " WHERE " + key + "='" + identifier.replace("'", "''") + "'"
-                    + query.substring(insertBefore);
+            query =
+                    query.substring(0, insertBefore) + " WHERE " + key + "='" + identifier.replace("'", "''") + "'"
+                            + query.substring(insertBefore);
         } else {
-            query = query.substring(0, h + 7) + key + "='" + identifier.replace("'", "''") + "' AND "
-                    + query.substring(h + 7);
+            query = query.substring(0, h + 7) + key + "='" + identifier.replace("'", "''") + "' AND " + query.substring(h + 7);
         }
         return query;
     }
 
     /**
      * Return all known tables in properties file.
+     *
      * @return list of strings.
      */
     public String[] getAllTables() {
@@ -404,24 +418,30 @@ public class GenerateRDF {
     /**
      * Export a table as RDF. A table can consist of several queries.
      *
-     * @param table - name of table in properties file
-     * @throws SQLException if there is a database problem.
-     * @throws IOException - if the output is not open.
+     * @param table
+     *            - name of table in properties file
+     * @throws SQLException
+     *             if there is a database problem.
+     * @throws IOException
+     *             - if the output is not open.
      */
     public void exportTable(String table) throws SQLException, IOException {
         exportTable(table, null);
     }
 
     /**
-     * Export a table as RDF. A table can consist of several queries specified
-     * as property names table.query1, table.query2, table.attributetable1 etc.
-     * The queries are sorted on name before being executed with the x.query
-     * first then x.attributetable second.
+     * Export a table as RDF. A table can consist of several queries specified as property names table.query1, table.query2,
+     * table.attributetable1 etc. The queries are sorted on name before being executed with the x.query first then x.attributetable
+     * second.
      *
-     * @param table - name of table in properties file
-     * @param identifier - primary key of the record we want or null for all records.
-     * @throws SQLException if there is a database problem.
-     * @throws IOException - if the output is not open.
+     * @param table
+     *            - name of table in properties file
+     * @param identifier
+     *            - primary key of the record we want or null for all records.
+     * @throws SQLException
+     *             if there is a database problem.
+     * @throws IOException
+     *             - if the output is not open.
      */
     public void exportTable(String table, String identifier) throws SQLException, IOException {
         String voc = props.getProperty(table.concat(".vocabulary"));
@@ -477,10 +497,44 @@ public class GenerateRDF {
     }
 
     /**
+     * Looks for 'class' and 'query' properties from the rdf properties file like this:
+     *
+     * <pre>
+     *  class = bibo:Document
+     *  query = SELECT NULL AS 'id', \
+     *    'GEMET RDF file' AS 'rdfs:label', \
+     *    'Søren Roug' AS 'dcterms:creator', \
+     * 'http://creativecommons.org/licenses/by/2.5/dk/' AS 'dcterms:licence->'
+     *
+     * <pre>
+     * When found, {@code <bibo:Document rdf:about="">} section with given properties will be exported.
+     * @throws IOException
+     * @throws SQLException
+     */
+    public void exportDocumentInformation() throws IOException, SQLException {
+        TreeSet<String> sortedProps = new TreeSet<String>(props.stringPropertyNames());
+        String rdfClass = null;
+        String query = null;
+        for (String prop : sortedProps) {
+            if (prop.trim().equalsIgnoreCase("class")) {
+                rdfClass = props.getProperty(prop);
+            }
+            if (prop.trim().equalsIgnoreCase("query")) {
+                query = props.getProperty(prop);
+            }
+        }
+        if (query != null && query.length() > 0 && rdfClass != null && rdfClass.length() > 0) {
+            runQuery("", query, rdfClass);
+        }
+    }
+
+    /**
      * Add namespace to table.
      *
-     * @param name - namespace token.
-     * @param url - namespace url.
+     * @param name
+     *            - namespace token.
+     * @param url
+     *            - namespace url.
      */
     private void addNamespace(String name, String url) {
         namespaces.put(name, url);
@@ -489,8 +543,10 @@ public class GenerateRDF {
     /**
      * Add name of property to table of object properties.
      *
-     * @param name - name of column.
-     * @param reference - will always start with '->'.
+     * @param name
+     *            - name of column.
+     * @param reference
+     *            - will always start with '->'.
      */
     private void addObjectProperty(String name, String reference) {
         objectProperties.put(name, reference);
@@ -499,7 +555,8 @@ public class GenerateRDF {
     /**
      * Set the vocabulary in case it needs to be different from the properties file.
      *
-     * @param url - namespace url.
+     * @param url
+     *            - namespace url.
      */
     private void setVocabulary(String url) {
         if (!url.equals(nullNamespace) && rdfHeaderWritten) {
@@ -510,7 +567,9 @@ public class GenerateRDF {
 
     /**
      * Generate the RDF header element.
-     * @throws IOException - if the output is not open.
+     *
+     * @throws IOException
+     *             - if the output is not open.
      */
     private void rdfHeader() throws IOException {
         if (rdfHeaderWritten) {
@@ -540,26 +599,32 @@ public class GenerateRDF {
 
     /**
      * Generate the RDF footer element.
-     * @throws IOException - if the output is not open.
+     *
+     * @throws IOException
+     *             - if the output is not open.
      */
     private void rdfFooter() throws IOException {
         output("</rdf:RDF>\n");
     }
 
     /**
-     * Run a query. First value is the key. The others are the attributes. The
-     * column names are the attribute names. If first value is null, then the
-     * attributes are assigned to the namespace of the table.
+     * Run a query. First value is the key. The others are the attributes. The column names are the attribute names. If first value
+     * is null, then the attributes are assigned to the namespace of the table.
      *
-     * @param segment - the namespace of the table
-     * @param sql - the query to run.
-     * @param rdfClass - the class to assign or rdf:Description
-     * @throws SQLException - if the SQL database is not available
-     * @throws IOException - if the output is not open.
+     * @param segment
+     *            - the namespace of the table
+     * @param sql
+     *            - the query to run.
+     * @param rdfClass
+     *            - the class to assign or rdf:Description
+     * @throws SQLException
+     *             - if the SQL database is not available
+     * @throws IOException
+     *             - if the output is not open.
      */
     private void runQuery(String segment, String sql, String rdfClass) throws SQLException, IOException {
         Statement stmt = null;
-        Object currentId = (Object)"/..";
+        Object currentId = (Object) "/..";
         Integer currentRow = 0;
         Boolean firstTime = true;
         try {
@@ -620,20 +685,24 @@ public class GenerateRDF {
     }
 
     /**
-     * Query attributes table. The result must have one + X * four columns.
-     *  1. id, 2. attribute name, 3. value, 4. datatype, 5. languagecode,
-     *         6. attribute name, 7. value, 8. datatype, 9. languagecode, etc.
-     * If id is null, then the attributes are assigned to the namespace of the table.
+     * Query attributes table. The result must have one + X * four columns. 1. id, 2. attribute name, 3. value, 4. datatype, 5.
+     * languagecode, 6. attribute name, 7. value, 8. datatype, 9. languagecode, etc. If id is null, then the attributes are assigned
+     * to the namespace of the table.
      *
-     * @param segment - the namespace of the table
-     * @param sql - the query
-     * @param rdfClass - the class to assign or rdf:Description
-     * @throws SQLException - if the SQL database is not available
-     * @throws IOException - if the output is not open.
+     * @param segment
+     *            - the namespace of the table
+     * @param sql
+     *            - the query
+     * @param rdfClass
+     *            - the class to assign or rdf:Description
+     * @throws SQLException
+     *             - if the SQL database is not available
+     * @throws IOException
+     *             - if the output is not open.
      */
     private void runAttributes(String segment, String sql, String rdfClass) throws SQLException, IOException {
         Statement stmt = null;
-        Object currentId = (Object)"/..";
+        Object currentId = (Object) "/..";
         Boolean firstTime = true;
         try {
             stmt = con.createStatement();
@@ -705,11 +774,13 @@ public class GenerateRDF {
     }
 
     /**
-     * Get the metadata from the columns. Check what datatype the database delivers.
-     * but override if the user has specified something else in the column label.
+     * Get the metadata from the columns. Check what datatype the database delivers. but override if the user has specified
+     * something else in the column label.
      *
-     * @param rsmd - metadata extracted from database.
-     * @throws SQLException - if the SQL database is not available
+     * @param rsmd
+     *            - metadata extracted from database.
+     * @throws SQLException
+     *             - if the SQL database is not available
      */
     private void queryStruct(ResultSetMetaData rsmd) throws SQLException {
         String dbDatatype;
@@ -732,14 +803,14 @@ public class GenerateRDF {
     }
 
     /**
-     * Parses a column label. It can be parsed into three parts: name, datatype, language.
-     *      hasRef-&gt; becomes "hasRef","-&gt;",""
-     *      hasRef-&gt;expert becomes "hasRef","-&gt;expert",""
-     *      price^^xsd:decimal becomes "price","xsd:decimal",""
-     *      rdfs:label@fr becomes "rdfs:label","","fr"
+     * Parses a column label. It can be parsed into three parts: name, datatype, language. hasRef-&gt; becomes "hasRef","-&gt;",""
+     * hasRef-&gt;expert becomes "hasRef","-&gt;expert","" price^^xsd:decimal becomes "price","xsd:decimal","" rdfs:label@fr becomes
+     * "rdfs:label","","fr"
      *
-     * @param complexname - name containing column name plus datatype or language code.
-     * @param datatype - suggested datatype from database.
+     * @param complexname
+     *            - name containing column name plus datatype or language code.
+     * @param datatype
+     *            - suggested datatype from database.
      * @return RDFField - struct of three strings: Name, datatype and langcode.
      */
     private RDFField parseName(String complexname, String datatype) {
@@ -772,12 +843,9 @@ public class GenerateRDF {
     }
 
     /**
-     * Main routine. Primarily to demonstrate the use.
-     * Flags: -o <i>filename</i> - save the generated RDF in file.
-     *        -f <i>filename</i> - load the properties from the specified file.
-     *        -d <i>filename</i> - load the properties for the database connection from the specified file.
-     *        -z - gzip the output.
-     *        -i <i>identifier</i> - Only export the record with the identifier
+     * Main routine. Primarily to demonstrate the use. Flags: -o <i>filename</i> - save the generated RDF in file. -f
+     * <i>filename</i> - load the properties from the specified file. -d <i>filename</i> - load the properties for the database
+     * connection from the specified file. -z - gzip the output. -i <i>identifier</i> - Only export the record with the identifier
      * All other arguments are expected to be table names.
      */
     public static void main(String[] args) {
@@ -799,9 +867,12 @@ public class GenerateRDF {
             if (args[a].equals("-z")) {
                 zipIt = true;
             } else if (args[a].startsWith("-o")) {
-                if (args[a].length() > 2) outputFile = args[a].substring(2);
-                else outputFile = args[++a];
-                if ("-".equals(outputFile)) outputFile = null; // Linux convention
+                if (args[a].length() > 2)
+                    outputFile = args[a].substring(2);
+                else
+                    outputFile = args[++a];
+                if ("-".equals(outputFile))
+                    outputFile = null; // Linux convention
             } else if (args[a].equals("-d")) {
                 dbPropFilename = args[++a];
             } else if (args[a].startsWith("-d")) {
@@ -815,13 +886,14 @@ public class GenerateRDF {
             } else if (args[a].startsWith("-i")) {
                 identifier = args[a].substring(2);
             } else {
-                 unusedArgs.add(args[a]);
+                unusedArgs.add(args[a]);
             }
         }
         try {
             Properties props = new Properties();
             Properties rdfProps = new Properties();
             props.load(new FileInputStream(dbPropFilename));
+            // props.load(GenerateRDF.class.getClassLoader().getResourceAsStream(dbPropFilename));
 
             String driver = props.getProperty("driver");
             String dbUrl = props.getProperty("database");
@@ -831,7 +903,9 @@ public class GenerateRDF {
             Class.forName(driver).newInstance();
             Connection con = DriverManager.getConnection(dbUrl, userName, password);
             rdfProps.load(new FileInputStream(rdfPropFilename));
+            // rdfProps.load(GenerateRDF.class.getClassLoader().getResourceAsStream(rdfPropFilename));
             outStream = System.out;
+
             if (outputFile != null) {
                 outStream = new FileOutputStream(outputFile);
             }
@@ -845,17 +919,19 @@ public class GenerateRDF {
             } else {
                 tables = new String[unusedArgs.size()];
                 for (int i = 0; i < unusedArgs.size(); i++) {
-                    tables[i] = (String)unusedArgs.get(i).toString();
+                    tables[i] = (String) unusedArgs.get(i).toString();
                 }
             }
 
             for (String table : tables) {
                 r.exportTable(table, identifier);
             }
+            r.exportDocumentInformation();
+
             r.close();
             con.close();
             if (zipIt) {
-                GZIPOutputStream g = (GZIPOutputStream)outStream;
+                GZIPOutputStream g = (GZIPOutputStream) outStream;
                 g.finish();
             }
         } catch (Exception e) {
@@ -864,4 +940,4 @@ public class GenerateRDF {
 
     }
 }
-//vim: set expandtab sw=4 :
+// vim: set expandtab sw=4 :
