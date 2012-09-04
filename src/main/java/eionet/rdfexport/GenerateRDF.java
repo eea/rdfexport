@@ -1,4 +1,5 @@
 package eionet.rdfexport;
+
 /*
  * The contents of this file are subject to the Mozilla Public
  * License Version 1.1 (the "License"); you may not use this file
@@ -34,8 +35,11 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.TreeSet;
@@ -170,6 +174,12 @@ final class StringHelper {
  * languagecode, 6. attribute name, 7. value, 8. datatype, 9. languagecode, etc.
  */
 public class GenerateRDF {
+
+    /** Format of xsd:date value. */
+    private static final String DATE_FORMAT = "yyyy-MM-dd";
+    /** Format of xsd:dateTime value. */
+    private static final String DATE_TIME_FORMAT = "yyyy-MM-dd'T'hh:mm:ss";
+
     /** Base of XML file. */
     private String baseurl;
     /** Connection to database. */
@@ -192,6 +202,10 @@ public class GenerateRDF {
     private Properties props;
     /** The output stream to send output to. */
     private OutputStream outputStream;
+    /** Date format. */
+    private SimpleDateFormat dateFormat;
+    /** Date-time format. */
+    private SimpleDateFormat dateTimeFormat;
 
     /**
      * Constructor.
@@ -242,6 +256,9 @@ public class GenerateRDF {
                 datatypeMap.put(key.substring(9), props.getProperty(key));
             }
         }
+
+        dateFormat = new SimpleDateFormat(DATE_FORMAT);
+        dateTimeFormat = new SimpleDateFormat(DATE_TIME_FORMAT);
     }
 
     /**
@@ -336,7 +353,7 @@ public class GenerateRDF {
         }
         output(typelangAttr);
         output(">");
-        output(StringHelper.escapeXml(value.toString()));
+        output(getFormattedValue(value));
         output("</");
         output(property.name);
         output(">\n");
@@ -527,6 +544,31 @@ public class GenerateRDF {
         if (query != null && query.length() > 0 && rdfClass != null && rdfClass.length() > 0) {
             runQuery("", query, rdfClass);
         }
+    }
+
+    /**
+     * Returns formatted string representation of the value object.
+     *
+     * @param value
+     * @return
+     */
+    private String getFormattedValue(Object value) {
+        if (value instanceof java.sql.Date) {
+            java.sql.Date sqlDate = (java.sql.Date) value;
+            return dateFormat.format(new Date(sqlDate.getTime()));
+        }
+
+        if (value instanceof java.sql.Timestamp) {
+            java.sql.Timestamp sqlDate = (Timestamp) value;
+            return dateTimeFormat.format(new Date(sqlDate.getTime()));
+        }
+
+        if (value instanceof byte[]) {
+            return StringHelper.escapeXml(new String((byte[]) value));
+        }
+
+        return StringHelper.escapeXml(value.toString());
+
     }
 
     /**
