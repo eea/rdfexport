@@ -262,36 +262,6 @@ public class GenerateRDF {
     }
 
     /**
-     * Do a nice shutdown in case the user forgets to call close().
-     *
-     * @throws Throwable
-     *             - ignored
-     */
-    protected void finalize() throws Throwable {
-        try {
-            close();
-        } finally {
-            super.finalize();
-        }
-    }
-
-    /**
-     * Close the connection to the database.
-     *
-     * @throws SQLException
-     *             if there is a database problem.
-     * @throws IOException
-     *             - if the connection is not open.
-     */
-    public void close() throws SQLException, IOException {
-        rdfFooter();
-        if (con != null) {
-            con.close();
-            con = null;
-        }
-    }
-
-    /**
      * Called from the other methods to do the output.
      *
      * @param v
@@ -547,6 +517,16 @@ public class GenerateRDF {
     }
 
     /**
+     * Generate the RDF footer element.
+     *
+     * @throws IOException
+     *             - if the output is not open.
+     */
+    public void writeRdfFooter() throws IOException {
+        output("</rdf:RDF>\n");
+    }
+
+    /**
      * Returns formatted string representation of the value object.
      *
      * @param value
@@ -638,16 +618,6 @@ public class GenerateRDF {
         }
         output(">\n\n");
         rdfHeaderWritten = true;
-    }
-
-    /**
-     * Generate the RDF footer element.
-     *
-     * @throws IOException
-     *             - if the output is not open.
-     */
-    private void rdfFooter() throws IOException {
-        output("</rdf:RDF>\n");
     }
 
     /**
@@ -971,7 +941,7 @@ public class GenerateRDF {
             }
             r.exportDocumentInformation();
 
-            r.close();
+            r.writeRdfFooter();
             con.close();
             if (zipIt) {
                 GZIPOutputStream g = (GZIPOutputStream) outStream;

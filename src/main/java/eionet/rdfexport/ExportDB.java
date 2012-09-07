@@ -25,21 +25,15 @@ package eionet.rdfexport;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Properties;
-import java.util.TreeSet;
 
 class TableSpec {
     /** Name of table. */
@@ -99,7 +93,7 @@ class TableSpec {
  * same connection.
  *
  */
-public class ExportMDB {
+public class ExportDB {
     /** Connection to database. */
     private Connection con;
     /** The namespaces to add to the rdf:RDF element. */
@@ -124,7 +118,7 @@ public class ExportMDB {
      * @throws InstantiationException - if the SQL driver can't be instantiatied
      * @throws IllegalAccessException - unknown
      */
-    public ExportMDB(Connection dbCon, Properties properties) throws IOException,
+    public ExportDB(Connection dbCon, Properties properties) throws IOException,
                                 SQLException, ClassNotFoundException,
                                 InstantiationException, IllegalAccessException {
         props = properties;
@@ -323,7 +317,7 @@ public class ExportMDB {
             rdfProps.setProperty("user", userName);
             rdfProps.setProperty("password", password);
 
-            ExportMDB inspector = new ExportMDB(con, rdfProps);
+            ExportDB inspector = new ExportDB(con, rdfProps);
             inspector.discoverTables();
             if (writeProperties != null) {
                 FileOutputStream propOut = new FileOutputStream(writeProperties);
@@ -345,7 +339,7 @@ public class ExportMDB {
                 for (String table : tables) {
                     exporter.exportTable(table);
                 }
-                exporter.close();
+                exporter.writeRdfFooter();
                 con.close();
             }
         } catch (Exception e) {
