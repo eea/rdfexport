@@ -13,7 +13,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.java.version>1.6</project.java.version>
+        <java.version>1.6</java.version>
     </properties>
 
     <distributionManagement>
@@ -36,9 +36,9 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>2.3.2</version>
                 <configuration>
-                    <compilerVersion>${project.java.version}</compilerVersion>
-                    <source>${project.java.version}</source>
-                    <target>${project.java.version}</target>
+                    <compilerVersion>${java.version}</compilerVersion>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -112,7 +112,7 @@
                     <linkXref>false</linkXref>
                     <sourceEncoding>utf-8</sourceEncoding>
                     <minimumTokens>300</minimumTokens>
-                    <targetJdk>1.6</targetJdk>
+                    <targetJdk>${java.version}</targetJdk>
                 </configuration>
             </plugin>
             <plugin>
