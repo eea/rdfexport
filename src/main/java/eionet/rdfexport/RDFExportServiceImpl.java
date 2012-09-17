@@ -59,6 +59,7 @@ public class RDFExportServiceImpl implements RDFExportService {
     public void exportTable(String table, String identifier) throws Exception {
         GenerateRDF generateRDF = new GenerateRDF(outputStream, connection, properties);
         generateRDF.exportTable(table, identifier);
+        generateRDF.exportDocumentInformation();
         generateRDF.writeRdfFooter();
     }
 
