@@ -1,49 +1,21 @@
 package eionet.rdfexport;
 
-/*
- * The contents of this file are subject to the Mozilla Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- *
- * The Original Code is RDFExport 1.0
- *
- * The Initial Owner of the Original Code is European Environment
- * Agency.  Portions created by TripleDev are Copyright
- * (C) European Environment Agency.  All Rights Reserved.
- *
- * Contributor(s):
- *  Søren Roug, EEA
- *  Jaanus Heinlaid, TripleDev
- *
- * $Id: GenerateRDF.java 12567 2012-08-31 09:38:22Z voolajuh $
- */
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.TreeSet;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * A struct to hold a complex type. No need to do data encapsulation.
@@ -197,7 +169,7 @@ public class GenerateRDF {
     /** The datatype mappings. */
     private HashMap<String, String> datatypeMap;
     /** All the tables in the properties file. */
-    private String[] tables;
+    private String[] tables = new String[0];
     /** Hashtable of loaded properties. */
     private Properties props;
     /** The output stream to send output to. */
@@ -220,19 +192,15 @@ public class GenerateRDF {
      *             - if the properties file is missing
      * @throws SQLException
      *             - if the SQL database is not available
-     * @throws ClassNotFoundException
-     *             - if the SQL driver is unavailable
-     * @throws InstantiationException
-     *             - if the SQL driver can't be instantiatied
-     * @throws IllegalAccessException
-     *             - unknown
      */
-    public GenerateRDF(OutputStream writer, Connection dbCon, Properties properties) throws IOException, SQLException,
-            ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public GenerateRDF(OutputStream writer, Connection dbCon, Properties properties) throws IOException, SQLException {
         outputStream = writer;
         props = properties;
 
-        tables = props.getProperty("tables").split("\\s+");
+        String tablesProperty = props.getProperty("tables");
+        if (tablesProperty != null && !tablesProperty.isEmpty()){
+            tables = tablesProperty.split("\\s+");
+        }
 
         con = dbCon;
         // Generate exception if there is no vocabulary property
@@ -400,7 +368,7 @@ public class GenerateRDF {
      * @return list of strings.
      */
     public String[] getAllTables() {
-        return Arrays.copyOf(tables, tables.length);
+        return tables == null ? null : Arrays.copyOf(tables, tables.length);
     }
 
     /**
@@ -459,6 +427,7 @@ public class GenerateRDF {
                         query = injectHaving(query, identifier);
                     }
                 }
+
                 runQuery(table, query, firstQuery ? rdfClass : "rdf:Description");
                 firstQuery = false;
             }
@@ -636,16 +605,21 @@ public class GenerateRDF {
      *             - if the output is not open.
      */
     private void runQuery(String segment, String sql, String rdfClass) throws SQLException, IOException {
+
         Statement stmt = null;
-        Object currentId = (Object) "/..";
+        ResultSet rs = null;
+
+        Object currentId = "/..";
         Integer currentRow = 0;
         Boolean firstTime = true;
         try {
             stmt = con.createStatement();
 
+            //System.out.println("Executing: " + sql);
+
             if (stmt.execute(sql)) {
-                // There's a ResultSet to be had
-                ResultSet rs = stmt.getResultSet();
+
+                rs = stmt.getResultSet();
 
                 ResultSetMetaData rsmd = rs.getMetaData();
                 queryStruct(rsmd);
@@ -653,12 +627,14 @@ public class GenerateRDF {
                 int numcols = rsmd.getColumnCount();
 
                 while (rs.next()) {
+
                     currentRow += 1;
+
                     Object id = rs.getObject(1);
-                    // If the first column is "@", then use row number as key
                     if (id != null && id.equals("@")) {
                         id = currentRow;
                     }
+
                     if (currentId != null && !currentId.equals(id)) {
                         if (!firstTime) {
                             output("</");
@@ -680,6 +656,7 @@ public class GenerateRDF {
                         currentId = id;
                         firstTime = false;
                     }
+
                     for (int i = 2; i <= numcols; i++) {
                         writeProperty(names[i], rs.getObject(i));
                     }
@@ -691,8 +668,35 @@ public class GenerateRDF {
                 }
             }
         } finally {
-            if (stmt != null) {
+            close(rs);
+            close(stmt);
+        }
+    }
+
+    /**
+     *
+     * @param rs
+     */
+    private static void close(ResultSet rs) {
+        if (rs != null) {
+            try {
+                rs.close();
+            } catch (Exception e) {
+                // Deliberately ignore.
+            }
+        }
+    }
+
+    /**
+     *
+     * @param stmt
+     */
+    private static void close(Statement stmt) {
+        if (stmt != null) {
+            try {
                 stmt.close();
+            } catch (Exception e) {
+                // Deliberately ignore.
             }
         }
     }
@@ -715,7 +719,7 @@ public class GenerateRDF {
      */
     private void runAttributes(String segment, String sql, String rdfClass) throws SQLException, IOException {
         Statement stmt = null;
-        Object currentId = (Object) "/..";
+        Object currentId = "/..";
         Boolean firstTime = true;
         try {
             stmt = con.createStatement();
@@ -804,14 +808,15 @@ public class GenerateRDF {
 
         for (int i = 1; i <= numcols; i++) {
             dbDatatype = rsmd.getColumnTypeName(i).toLowerCase();
-            rdfDatatype = datatypeMap.get((Object) dbDatatype);
+            rdfDatatype = datatypeMap.get(dbDatatype);
             if (rdfDatatype == null) {
                 rdfDatatype = "";
             }
-            if (objectProperties.containsKey(rsmd.getColumnLabel(i))) {
-                rdfDatatype = objectProperties.get(rsmd.getColumnLabel(i)).toString();
+            String columnLabel = rsmd.getColumnLabel(i);
+            if (objectProperties.containsKey(columnLabel)) {
+                rdfDatatype = objectProperties.get(columnLabel).toString();
             }
-            names[i] = parseName(rsmd.getColumnLabel(i), rdfDatatype);
+            names[i] = parseName(columnLabel, rdfDatatype);
         }
     }
 
@@ -853,104 +858,6 @@ public class GenerateRDF {
         result.datatype = datatype;
         result.langcode = language;
         return result;
-    }
-
-    /**
-     * Main routine. Primarily to demonstrate the use. Flags: -o <i>filename</i> - save the generated RDF in file. -f
-     * <i>filename</i> - load the properties from the specified file. -d <i>filename</i> - load the properties for the database
-     * connection from the specified file. -z - gzip the output. -i <i>identifier</i> - Only export the record with the identifier
-     * All other arguments are expected to be table names.
-     */
-    public static void main(String[] args) {
-        ArrayList<String> unusedArgs;
-        String[] tables;
-        String identifier = null;
-        String rdfPropFilename = "rdfexport.properties";
-        String dbPropFilename = "database.properties";
-        Boolean zipIt = false;
-        OutputStream outStream;
-        String outputFile = null;
-
-        unusedArgs = new ArrayList<String>(args.length);
-
-        // Parse arguments. Just find an -i option
-        // The -i takes an argument that is the record id we're interested in
-        // variable "i" is in fact used.
-        for (int a = 0; a < args.length; a++) {
-            if (args[a].equals("-z")) {
-                zipIt = true;
-            } else if (args[a].startsWith("-o")) {
-                if (args[a].length() > 2)
-                    outputFile = args[a].substring(2);
-                else
-                    outputFile = args[++a];
-                if ("-".equals(outputFile))
-                    outputFile = null; // Linux convention
-            } else if (args[a].equals("-d")) {
-                dbPropFilename = args[++a];
-            } else if (args[a].startsWith("-d")) {
-                dbPropFilename = args[a].substring(2);
-            } else if (args[a].equals("-f")) {
-                rdfPropFilename = args[++a];
-            } else if (args[a].startsWith("-f")) {
-                rdfPropFilename = args[a].substring(2);
-            } else if (args[a].equals("-i")) {
-                identifier = args[++a];
-            } else if (args[a].startsWith("-i")) {
-                identifier = args[a].substring(2);
-            } else {
-                unusedArgs.add(args[a]);
-            }
-        }
-        try {
-            Properties props = new Properties();
-            Properties rdfProps = new Properties();
-            props.load(new FileInputStream(dbPropFilename));
-            // props.load(GenerateRDF.class.getClassLoader().getResourceAsStream(dbPropFilename));
-
-            String driver = props.getProperty("driver");
-            String dbUrl = props.getProperty("database");
-            String userName = props.getProperty("user");
-            String password = props.getProperty("password");
-
-            Class.forName(driver).newInstance();
-            Connection con = DriverManager.getConnection(dbUrl, userName, password);
-            rdfProps.load(new FileInputStream(rdfPropFilename));
-            // rdfProps.load(GenerateRDF.class.getClassLoader().getResourceAsStream(rdfPropFilename));
-            outStream = System.out;
-
-            if (outputFile != null) {
-                outStream = new FileOutputStream(outputFile);
-            }
-            if (zipIt) {
-                outStream = new GZIPOutputStream(outStream);
-            }
-            GenerateRDF r = new GenerateRDF(outStream, con, rdfProps);
-
-            if (unusedArgs.size() == 0) {
-                tables = r.getAllTables();
-            } else {
-                tables = new String[unusedArgs.size()];
-                for (int i = 0; i < unusedArgs.size(); i++) {
-                    tables[i] = (String) unusedArgs.get(i).toString();
-                }
-            }
-
-            for (String table : tables) {
-                r.exportTable(table, identifier);
-            }
-            r.exportDocumentInformation();
-
-            r.writeRdfFooter();
-            con.close();
-            if (zipIt) {
-                GZIPOutputStream g = (GZIPOutputStream) outStream;
-                g.finish();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
     }
 }
 // vim: set expandtab sw=4 :

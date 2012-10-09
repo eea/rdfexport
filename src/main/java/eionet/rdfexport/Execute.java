@@ -21,283 +21,367 @@
 
 package eionet.rdfexport;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
+import java.util.Scanner;
 import java.util.zip.GZIPOutputStream;
 
 /**
- * Rdf export main class. This provides running the functionality of this libreary on command line.
- *
- * @author Juhan Voolaid
+ * RDF export main class. Executed from command line.
  */
 public class Execute {
 
-    /** RDF mode. */
-    public static final String RDF_MODE = "rdf";
-    /** DB mode. */
-    public static final String DB_MODE = "db";
+    /** Default file path of the database connection properties file. */
+    private static final String DEFAULT_DB_PROP_FILE_PATH = "database.properties";
+
+    /** Default file path of the RDF export properties file. */
+    private static final String DEFAULT_RDF_PROP_FILE_PATH = "rdfexport.properties";
+
+    /** Will be used as user input scanner from command line. */
+    protected static final Scanner USER_INPUT = new Scanner(System.in);
+
+    /** List of unrecognized command line arguments. They will be interpreted as names of tables to export. */
+    private ArrayList<String> unusedArguments = new ArrayList<String>();
+
+    /** If true, the generated RDF output shall be zipped. */
+    private boolean zipOutput = false;
+
+    /** Path to the file where the RDF shall be generated into. */
+    private String outputFilePath = null;
+
+    /** Path to the database connection properties file. */
+    private String dbPropFilePath = null;
+
+    /** Path to the RDF export properties file. */
+    private String rdfPropFilePath = null;
+
+    /** The primary-key value of the row to export, if only one row from one table is to be exported. */
+    private String rowId = null;
+
+    /** If true, the tables and primary/foreign keys shall be auto-discovered, disregarding the ones given in properties file. */
+    private boolean selfExplore = false;
+
+    /** Path to the file where the auto-discovered tables and generated queries shall be written into, if requested so. */
+    private String propsOutputFilePath = null;
+
+    /** The properties to be loaded from database connection properties file. */
+    private Properties dbProps = new Properties();
+
+    /** The properties to be loaded from RDF export properties file. */
+    private Properties rdfProps = new Properties();
+
+    /** MS-Access to export. Concatenated to the value of "database" property from database connection properties file. */
+    private String msAccessFilePath;
+
+    /** The URI of the vocabulary of the RDF output that shall be generated. */
+    private String vocabularyUri = null;
+
+    /** The XML base URI of the generated RDF output. */
+    private String baseUri = null;
+
+    /** If true, the auto-disovery mode will ask for each table and foreign key whether to export it. */
+    private boolean interActiveMode = false;
 
     /**
-     * Main method, that let's to execute functionality from GenerateRDF (mode="rdf") and ExportDB (mode="db").
+     * Constructor.
      *
      * @param args
-     *            The first element of the arguments is mode ("rdf" or "db"), the following are flags for each mode accordingly.
+     *            - command line arguments.
+     * @throws IOException
+     *             - if anything goes wrong with reading the properties and/or writing the output
      */
-    public static void main(String[] args) {
-        if (args != null && args.length > 0) {
-            if (args[0].equalsIgnoreCase(RDF_MODE)) {
-                handleRDF(args);
-            } else if (args[0].equalsIgnoreCase(DB_MODE)) {
-                handleDB(args);
-            } else {
-                System.out.println("Illegal arguments.");
-                printHelp();
-            }
-        } else {
-            System.out.println("No arguments specified.");
-            printHelp();
+    private Execute(String args[]) throws IOException {
+
+        parseArguments(args);
+
+        if (dbPropFilePath == null || dbPropFilePath.isEmpty()) {
+            dbPropFilePath = DEFAULT_DB_PROP_FILE_PATH;
         }
-    }
 
-    /**
-     * Handles the "rdf" mode, which generates RDF output based on the input properties.
-     *
-     * <pre>
-     * Primarily to demonstrate the use.
-     * Flags:   -o <i>filename</i> - save the generated RDF in file.
-     *          -f <i>filename</i> - load the properties from the specified file.
-     *          -d <i>filename</i> - load the properties for the database connection from the specified file.
-     *          -z - gzip the output.
-     *          -i <i>identifier</i> - Only export the record with the identifier All other arguments are expected to be table names.
-     * </pre>
-     *
-     * @param args
-     */
-    private static void handleRDF(String[] args) {
-        ArrayList<String> unusedArgs;
-        String[] tables;
-        String identifier = null;
-        String rdfPropFilename = "rdfexport.properties";
-        String dbPropFilename = "database.properties";
-        Boolean zipIt = false;
-        OutputStream outStream = System.out;
-        String outputFile = null;
-
-        unusedArgs = new ArrayList<String>(args.length);
-
-        for (int a = 1; a < args.length; a++) {
-            if (args[a].equals("-z")) {
-                zipIt = true;
-            } else if (args[a].startsWith("-o")) {
-                if (args[a].length() > 2)
-                    outputFile = args[a].substring(2);
-                else
-                    outputFile = args[++a];
-                if ("-".equals(outputFile))
-                    outputFile = null; // Linux convention
-            } else if (args[a].equals("-d")) {
-                dbPropFilename = args[++a];
-            } else if (args[a].startsWith("-d")) {
-                dbPropFilename = args[a].substring(2);
-            } else if (args[a].equals("-f")) {
-                rdfPropFilename = args[++a];
-            } else if (args[a].startsWith("-f")) {
-                rdfPropFilename = args[a].substring(2);
-            } else if (args[a].equals("-i")) {
-                identifier = args[++a];
-            } else if (args[a].startsWith("-i")) {
-                identifier = args[a].substring(2);
-            } else {
-                unusedArgs.add(args[a]);
-            }
+        if (rdfPropFilePath == null || rdfPropFilePath.isEmpty()) {
+            rdfPropFilePath = DEFAULT_RDF_PROP_FILE_PATH;
         }
-        try {
-            Properties props = new Properties();
-            Properties rdfProps = new Properties();
-            props.load(new FileInputStream(dbPropFilename));
-            // props.load(GenerateRDF.class.getClassLoader().getResourceAsStream(dbPropFilename));
 
-            String driver = props.getProperty("driver");
-            String dbUrl = props.getProperty("database");
-            String userName = props.getProperty("user");
-            String password = props.getProperty("password");
+        Execute.loadProperties(dbProps, dbPropFilePath);
+        Execute.loadProperties(rdfProps, rdfPropFilePath);
 
-            Class.forName(driver).newInstance();
-            Connection con = DriverManager.getConnection(dbUrl, userName, password);
-            rdfProps.load(new FileInputStream(rdfPropFilename));
-            // rdfProps.load(GenerateRDF.class.getClassLoader().getResourceAsStream(rdfPropFilename));
+        vocabularyUri = rdfProps.getProperty("vocabulary");
+        baseUri = rdfProps.getProperty("baseurl");
+        if (vocabularyUri == null || vocabularyUri.isEmpty()) {
 
-            if (outputFile != null) {
-                outStream = new FileOutputStream(outputFile);
-            }
-            if (zipIt) {
-                outStream = new GZIPOutputStream(outStream);
-            }
-            GenerateRDF r = new GenerateRDF(outStream, con, rdfProps);
-
-            if (unusedArgs.size() == 0) {
-                tables = r.getAllTables();
-            } else {
-                tables = new String[unusedArgs.size()];
-                for (int i = 0; i < unusedArgs.size(); i++) {
-                    tables[i] = (String) unusedArgs.get(i).toString();
-                }
-            }
-
-            for (String table : tables) {
-                r.exportTable(table, identifier);
-            }
-            r.exportDocumentInformation();
-
-            r.writeRdfFooter();
-            con.close();
-            if (zipIt) {
-                GZIPOutputStream g = (GZIPOutputStream) outStream;
-                g.finish();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Handles the "db" mode, which exports the MS-Access database into RDF.
-     *
-     * <pre>
-     * Primarily to demonstrate the use.
-     * Flags: -p <i>filename</i> - save the discovered information as a properties file.
-     *        -f <i>filename</i> - load the template properties from the specified file.
-     *        -m <i>filename</i> - the name of the MS-Access file to investigate.
-     * </pre>
-     *
-     * @param args
-     */
-    private static void handleDB(String[] args) {
-        ArrayList<String> unusedArgs;
-        String[] tables;
-        String rdfPropFilename = "exportmdb.properties";
-        String dbPropFilename = "exportmdb.properties";
-        String mdbFilename = null;
-        String writeProperties = null;
-
-        unusedArgs = new ArrayList<String>(args.length);
-
-        // Parse arguments.
-        for (int a = 1; a < args.length; a++) {
-            if (args[a].startsWith("-p")) {
-                if (args[a].length() > 2)
-                    writeProperties = args[a].substring(2);
-                else
-                    writeProperties = args[++a];
-            } else if (args[a].equals("-d")) {
-                dbPropFilename = args[++a];
-            } else if (args[a].startsWith("-d")) {
-                dbPropFilename = args[a].substring(2);
-            } else if (args[a].startsWith("-f")) {
-                if (args[a].length() > 2)
-                    rdfPropFilename = args[a].substring(2);
-                else
-                    rdfPropFilename = args[++a];
-            } else if (args[a].startsWith("-m")) {
-                if (args[a].length() > 2)
-                    mdbFilename = args[a].substring(2);
-                else
-                    mdbFilename = args[++a];
-            } else {
-                unusedArgs.add(args[a]);
-            }
-        }
-        try {
-            Properties props = new Properties();
-            Properties rdfProps = new Properties();
-            props.load(new FileInputStream(dbPropFilename));
-
-            String driver = props.getProperty("driver");
-            String dbUrl = props.getProperty("database");
-            if (mdbFilename != null) {
-                dbUrl = dbUrl.concat(mdbFilename);
-            }
-            String userName = props.getProperty("user");
-            String password = props.getProperty("password");
-
-            // String driver = "com.hxtt.sql.access.AccessDriver";
-            // String dbUrl = "jdbc:access:/".concat(mdbFilename);
-            // String userName = "user";
-            // String password = "password";
-
-            Class.forName(driver).newInstance();
-            Connection con = DriverManager.getConnection(dbUrl, userName, password);
-            rdfProps.load(new FileInputStream(rdfPropFilename));
-
-            String vocabulary = rdfProps.getProperty("vocabulary");
-            String baseurl = rdfProps.getProperty("baseurl");
-            if (vocabulary == null || "".equals(vocabulary)) {
-                if (baseurl == null) {
-                    vocabulary = "#properties/";
-                } else {
-                    vocabulary = baseurl.concat("properties/");
-                }
-                rdfProps.setProperty("vocabulary", vocabulary);
-            }
-            // TODO: the 'vocabulary' property has to generated if it is not in the template file.
+            // TODO: The 'vocabulary' property has to generated if it is not in the template file.
             // and then written to the properties file.
-            rdfProps.setProperty("driver", driver);
-            rdfProps.setProperty("database", dbUrl);
-            rdfProps.setProperty("user", userName);
-            rdfProps.setProperty("password", password);
 
-            ExportDB inspector = new ExportDB(con, rdfProps);
-            inspector.discoverTables();
-            if (writeProperties != null) {
-                FileOutputStream propOut = new FileOutputStream(writeProperties);
-                rdfProps.store(propOut, "");
-                propOut.close();
+            if (baseUri == null || baseUri.isEmpty()) {
+                vocabularyUri = "#properties/";
             } else {
-
-                GenerateRDF exporter = new GenerateRDF(System.out, con, rdfProps);
-
-                if (unusedArgs.size() == 0) {
-                    tables = exporter.getAllTables();
-                } else {
-                    tables = new String[unusedArgs.size()];
-                    for (int i = 0; i < unusedArgs.size(); i++) {
-                        tables[i] = (String) unusedArgs.get(i).toString();
-                    }
-                }
-
-                for (String table : tables) {
-                    exporter.exportTable(table);
-                }
-                exporter.writeRdfFooter();
-                con.close();
+                vocabularyUri = baseUri.concat("properties/");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            rdfProps.setProperty("vocabulary", vocabularyUri);
         }
     }
 
     /**
-     * Prints help text to console.
+     * Parses the given command line arguments, and sets the corresponding fields of this object.
+     *
+     * @param args
      */
-    private static void printHelp() {
-        System.out.println("Usage: java -cp rdf-export-xx.jar eionet.rdfexport.Execute {mode} {flags}");
-        System.out.println("If mode is 'rdf', generate rdf mode is selected and the following flags are in use: "
-                + "[-o output_file] [-f rdf_properties_file] [-d database_properties_file] [-i identifier_to_export] [-z]");
-        System.out.println("Flags: \t -o file name of the generated RDF in file (console output when not specified)");
-        System.out.println("\t -f rdf export properties file (rdfexport.properties when not specified)");
-        System.out.println("\t -d database connection properties (database.properties when not specified)");
-        System.out.println("\t -i only export the record with the identifier, all other arguments are expected to be table names");
-        System.out.println("\t -z gzip the output");
-        System.out.println("If mode is 'db', export database in rdf mode is selected and the following flags are in use: "
-                + "[-p output_file] [-f template_properties_file] [-d database_properties_file] [-m database_file]");
-        System.out.println("Flags: \t -p save the discovered information as a properties file");
-        System.out.println("\t -f load the template properties from the specified file");
-        System.out.println("\t -d load the database properties from the specified file");
-        System.out.println("\t -m the name of the database file to investigate");
+    private void parseArguments(String[] args) {
+
+        for (int i = 0; i < args.length; i++) {
+
+            if (args[i].equals("-x") || args[i].equals("-xa")) {
+                selfExplore = true;
+                if (args[i].equals("-xa")) {
+                    interActiveMode = true;
+                }
+            } else if (args[i].equals("-z")) {
+                zipOutput = true;
+            } else if (args[i].startsWith("-p")) {
+                if (args[i].length() > 2) {
+                    propsOutputFilePath = args[i].substring(2);
+                } else {
+                    propsOutputFilePath = args[++i];
+                }
+            } else if (args[i].startsWith("-m")) {
+                if (args[i].length() > 2) {
+                    msAccessFilePath = args[i].substring(2);
+                } else {
+                    msAccessFilePath = args[++i];
+                }
+            } else if (args[i].startsWith("-o")) {
+                if (args[i].length() > 2) {
+                    outputFilePath = args[i].substring(2);
+                } else {
+                    outputFilePath = args[++i];
+                }
+                if ("-".equals(outputFilePath)) {
+                    outputFilePath = null; // Linux convention
+                }
+            } else if (args[i].equals("-d")) {
+                dbPropFilePath = args[++i];
+            } else if (args[i].startsWith("-d")) {
+                dbPropFilePath = args[i].substring(2);
+            } else if (args[i].equals("-f")) {
+                rdfPropFilePath = args[++i];
+            } else if (args[i].startsWith("-f")) {
+                rdfPropFilePath = args[i].substring(2);
+            } else if (args[i].equals("-i")) {
+                rowId = args[++i];
+            } else if (args[i].startsWith("-i")) {
+                rowId = args[i].substring(2);
+            } else {
+                unusedArguments.add(args[i]);
+            }
+        }
+    }
+
+    /**
+     * The core method that performs the auto-discovery of tables/keys (if requested) and generates the RDF. Assumes input
+     * properties and command line arguments have been processed, and corresponding fields set in the object.
+     *
+     * @throws SQLException
+     * @throws IOException
+     */
+    private void run() throws SQLException, IOException {
+
+        Connection conn = null;
+        OutputStream outputStream = System.out;
+        try {
+            conn = getConnection();
+
+            if (selfExplore == true) {
+                ExploreDB dbExplorer = new ExploreDB(conn, rdfProps, interActiveMode);
+                dbExplorer.discoverTables();
+
+                if (propsOutputFilePath != null && !propsOutputFilePath.isEmpty()) {
+                    Execute.outputProperties(rdfProps, propsOutputFilePath);
+                    return;
+                }
+            }
+
+            if (outputFilePath != null && !outputFilePath.isEmpty()) {
+                outputStream = new FileOutputStream(outputFilePath);
+                if (zipOutput == true) {
+                    outputStream = new GZIPOutputStream(outputStream);
+                }
+            }
+
+            GenerateRDF exporter = new GenerateRDF(outputStream, conn, rdfProps);
+
+            List<String> tablesToExport = unusedArguments.isEmpty() ? Arrays.asList(exporter.getAllTables()) : unusedArguments;
+
+            // if (rowId == null || rowId.isEmpty()){
+            // System.out.println("Exporting these tables: " + tablesToExport);
+            // }
+            // else{
+            // System.out.println("Exporting row " + rowId + " of this table: " + tablesToExport);
+            // }
+
+            for (String table : tablesToExport) {
+                exporter.exportTable(table, rowId);
+            }
+
+            exporter.exportDocumentInformation();
+            exporter.writeRdfFooter();
+
+            if (outputStream instanceof GZIPOutputStream) {
+                ((GZIPOutputStream) outputStream).finish();
+            }
+        } finally {
+            Execute.close(outputStream);
+            Execute.close(conn);
+        }
+    }
+
+    /**
+     * Utility method that populates the given properties from the given file path.
+     *
+     * @param properties
+     * @param filePath
+     * @throws IOException
+     */
+    private static void loadProperties(Properties properties, String filePath) throws IOException {
+
+        File file = new File(filePath);
+        if (file.exists() && file.isFile()) {
+            FileInputStream inputStream = null;
+            try {
+                inputStream = new FileInputStream(file);
+                properties.load(inputStream);
+            } finally {
+                Execute.close(inputStream);
+            }
+        }
+    }
+
+    /**
+     * Utility method that returns a connection on the database given in the properties file.
+     *
+     * @return
+     * @throws SQLException
+     */
+    private Connection getConnection() throws SQLException {
+
+        String driver = dbProps.getProperty("driver");
+        String dbUrl = dbProps.getProperty("database");
+        String userName = dbProps.getProperty("user");
+        String password = dbProps.getProperty("password");
+
+        if (msAccessFilePath != null && dbUrl != null) {
+            dbUrl = dbUrl.concat(msAccessFilePath);
+        }
+
+        try {
+            Class.forName(driver);
+            return DriverManager.getConnection(dbUrl, userName, password);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Failed to find the driver class: " + driver, e);
+        }
+    }
+
+    /**
+     * Writes the given properties into the given file path.
+     *
+     * @param properties
+     * @param outputFilePath
+     * @throws IOException
+     */
+    private static void outputProperties(Properties properties, String outputFilePath) throws IOException {
+
+        FileOutputStream outputStream = null;
+        try {
+            outputStream = new FileOutputStream(outputFilePath);
+            properties.store(outputStream, "");
+        } finally {
+            Execute.close(outputStream);
+        }
+    }
+
+    /**
+     * @param inputStream
+     */
+    private static void close(InputStream inputStream) {
+        if (inputStream != null) {
+            try {
+                inputStream.close();
+            } catch (Exception e) {
+                // Ignore closing exceptions.
+            }
+        }
+    }
+
+    /**
+     * @param outputStream
+     */
+    private static void close(OutputStream outputStream) {
+        if (outputStream != null) {
+            try {
+                outputStream.close();
+            } catch (Exception e) {
+                // Ignore closing exceptions.
+            }
+        }
+    }
+
+    /**
+     *
+     * @param conn
+     */
+    private static void close(Connection conn) {
+        if (conn != null) {
+            try {
+                conn.close();
+            } catch (SQLException e) {
+                // Ignore closing exceptions
+            }
+        }
+    }
+
+    /**
+     *
+     * @param args
+     * @throws SQLException
+     * @throws IOException
+     */
+    public static void main(String[] args) throws SQLException, IOException {
+
+        if (args == null || args.length == 0 || args[0].equalsIgnoreCase("-?")) {
+            printUsage();
+            return;
+        }
+
+        Execute execute = new Execute(args);
+        execute.run();
+        // System.out.println("Done!");
+    }
+
+    /**
+     * Prints usage text to console.
+     */
+    private static void printUsage() {
+        System.out.println("This class accepts the following command line arguments:");
+        System.out.println(" (note that unrecognized arguments will be treated as names of tables to export)");
+        System.out.println();
+        System.out.println(" -d database_properties_file   Path to the database connection properties file.");
+        System.out.println(" -f rdf_properties_file        Path to the RDF export properties file.");
+        System.out.println(" -o rdf_output_file            Path to the RDF output file.");
+        System.out.println(" -m ms_access_file             Path to the MS-Access database file to export.");
+        System.out.println(" -z                            The RDF output file will be zipped.");
+        System.out.println(" -x                            Tables/keys will be auto-discovered.");
+        System.out.println(" -xa                           Tables/keys will be auto-discovered, user prompted for confirmation.");
+        System.out.println(" -p properties_output_file     If -x or -xa given then auto-discovered info is saved into this file.");
+        System.out.println(" -i rowId                      Only records with this primary key value will be exported.");
     }
 }
