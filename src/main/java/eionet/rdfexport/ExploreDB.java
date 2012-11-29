@@ -388,6 +388,12 @@ public class ExploreDB {
             HashSet<String> skipTables = new HashSet<String>();
             // This is a reserved table in MS-Access database templates generated from http://dd.eionet.europa.eu, lets skip.
             skipTables.add("VALIDATION_METADATA_DO_NOT_MODIFY");
+            skipTables.add("MSysAccessObjects".toUpperCase());
+            skipTables.add("MSysAccessXML".toUpperCase());
+            skipTables.add("MSysACEs".toUpperCase());
+            skipTables.add("MSysObjects".toUpperCase());
+            skipTables.add("MSysQueries".toUpperCase());
+            skipTables.add("MSysRelationships".toUpperCase());
 
             while (rs.next()) {
 

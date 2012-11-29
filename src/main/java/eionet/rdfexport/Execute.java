@@ -120,7 +120,7 @@ public class Execute {
         baseUri = rdfProps.getProperty("baseurl");
         if (vocabularyUri == null || vocabularyUri.isEmpty()) {
 
-            // TODO: The 'vocabulary' property has to generated if it is not in the template file.
+            // TODO: The 'vocabulary' property has to be generated if it is not in the template file.
             // and then written to the properties file.
 
             if (baseUri == null || baseUri.isEmpty()) {
@@ -213,9 +213,10 @@ public class Execute {
 
             if (outputFilePath != null && !outputFilePath.isEmpty()) {
                 outputStream = new FileOutputStream(outputFilePath);
-                if (zipOutput == true) {
-                    outputStream = new GZIPOutputStream(outputStream);
-                }
+            }
+
+            if (zipOutput == true) {
+                outputStream = new GZIPOutputStream(outputStream);
             }
 
             GenerateRDF exporter = new GenerateRDF(outputStream, conn, rdfProps);
