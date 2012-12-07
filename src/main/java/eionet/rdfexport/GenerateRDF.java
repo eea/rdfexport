@@ -606,8 +606,8 @@ public class GenerateRDF {
      */
     private void runQuery(String segment, String sql, String rdfClass) throws SQLException, IOException {
 
-        Statement stmt = null;
         ResultSet rs = null;
+        Statement stmt = null;
 
         Object currentId = "/..";
         Integer currentRow = 0;
@@ -718,6 +718,8 @@ public class GenerateRDF {
      *             - if the output is not open.
      */
     private void runAttributes(String segment, String sql, String rdfClass) throws SQLException, IOException {
+
+        ResultSet rs = null;
         Statement stmt = null;
         Object currentId = "/..";
         Boolean firstTime = true;
@@ -725,7 +727,7 @@ public class GenerateRDF {
             stmt = con.createStatement();
 
             if (stmt.execute(sql)) {
-                ResultSet rs = stmt.getResultSet();
+                rs = stmt.getResultSet();
 
                 ResultSetMetaData rsmd = rs.getMetaData();
                 int numcols = rsmd.getColumnCount();
@@ -784,9 +786,8 @@ public class GenerateRDF {
                 }
             }
         } finally {
-            if (stmt != null) {
-                stmt.close();
-            }
+            GenerateRDF.close(rs);
+            GenerateRDF.close(stmt);
         }
     }
 

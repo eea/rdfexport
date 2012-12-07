@@ -417,7 +417,7 @@ public class ExploreDB {
                     tableSpec.addColumn(rs.getString(4));
                 }
             }
-            rs.close();
+            ExploreDB.close(rs);
 
             // Loop through the discovered tables, and discover each one's primary and foreign keys too.
             // While at it, remember simple (i.e. non-compound) primary keys of every table for later use below.
@@ -433,7 +433,8 @@ public class ExploreDB {
                 while (rs.next()) {
                     primKeys.put(rs.getShort("KEY_SEQ"), rs.getString("COLUMN_NAME").toLowerCase());
                 }
-                rs.close();
+                ExploreDB.close(rs);
+
                 tableSpec.pkColumns = ExploreDB.listValuesSortedByKeys(primKeys);
                 if (primKeys.size() == 1) {
                     tablesPkColumns.put(tableName, primKeys.values().iterator().next());
@@ -460,34 +461,6 @@ public class ExploreDB {
     }
 
     /**
-     * Close the connection to the database.
-     *
-     * @throws SQLException
-     *             if there is a database problem.
-     */
-    public void close() throws SQLException {
-        if (con != null) {
-            con.close();
-            con = null;
-        }
-    }
-
-    /**
-     * Do a nice shutdown in case the user forgets to call close().
-     *
-     * @throws Throwable
-     *             - ignored
-     */
-    @Override
-    protected void finalize() throws Throwable {
-        try {
-            close();
-        } finally {
-            super.finalize();
-        }
-    }
-
-    /**
      * Add name of property to table of object properties.
      *
      * @param name
@@ -508,7 +481,7 @@ public class ExploreDB {
             try {
                 rs.close();
             } catch (Exception e) {
-                // Deliberately ignore.
+                // Deliberately ignore closing exceptions.
             }
         }
     }
