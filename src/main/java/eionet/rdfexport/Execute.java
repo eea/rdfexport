@@ -42,11 +42,8 @@ import java.util.zip.GZIPOutputStream;
  */
 public class Execute {
 
-    /** Default file path of the database connection properties file. */
-    private static final String DEFAULT_DB_PROP_FILE_PATH = "database.properties";
-
     /** Default file path of the RDF export properties file. */
-    private static final String DEFAULT_RDF_PROP_FILE_PATH = "rdfexport.properties";
+    private static final String DEFAULT_PROP_FILE_PATH = "rdfexport.properties";
 
     /** Will be used as user input scanner from command line. */
     protected static final Scanner USER_INPUT = new Scanner(System.in);
@@ -60,11 +57,8 @@ public class Execute {
     /** Path to the file where the RDF shall be generated into. */
     private String outputFilePath = null;
 
-    /** Path to the database connection properties file. */
-    private String dbPropFilePath = null;
-
     /** Path to the RDF export properties file. */
-    private String rdfPropFilePath = null;
+    private String propFilePath = null;
 
     /** The primary-key value of the row to export, if only one row from one table is to be exported. */
     private String rowId = null;
@@ -75,11 +69,8 @@ public class Execute {
     /** Path to the file where the auto-discovered tables and generated queries shall be written into, if requested so. */
     private String propsOutputFilePath = null;
 
-    /** The properties to be loaded from database connection properties file. */
-    private Properties dbProps = new Properties();
-
-    /** The properties to be loaded from RDF export properties file. */
-    private Properties rdfProps = new Properties();
+    /** RDF and database connection properties. */
+    private Properties props = new Properties();
 
     /** MS-Access to export. Concatenated to the value of "database" property from database connection properties file. */
     private String msAccessFilePath;
@@ -105,19 +96,18 @@ public class Execute {
 
         parseArguments(args);
 
-        if (dbPropFilePath == null || dbPropFilePath.isEmpty()) {
-            dbPropFilePath = DEFAULT_DB_PROP_FILE_PATH;
+        if (propFilePath == null || propFilePath.isEmpty()) {
+            propFilePath = DEFAULT_PROP_FILE_PATH;
         }
 
-        if (rdfPropFilePath == null || rdfPropFilePath.isEmpty()) {
-            rdfPropFilePath = DEFAULT_RDF_PROP_FILE_PATH;
+        Execute.loadProperties(props, propFilePath);
+
+        vocabularyUri = props.getProperty("vocabulary");
+        if (baseUri == null) {
+            baseUri = props.getProperty("baseurl");
+        } else {
+            props.setProperty("baseurl", baseUri);
         }
-
-        Execute.loadProperties(dbProps, dbPropFilePath);
-        Execute.loadProperties(rdfProps, rdfPropFilePath);
-
-        vocabularyUri = rdfProps.getProperty("vocabulary");
-        baseUri = rdfProps.getProperty("baseurl");
         if (vocabularyUri == null || vocabularyUri.isEmpty()) {
 
             // TODO: The 'vocabulary' property has to be generated if it is not in the template file.
@@ -128,7 +118,7 @@ public class Execute {
             } else {
                 vocabularyUri = baseUri.concat("properties/");
             }
-            rdfProps.setProperty("vocabulary", vocabularyUri);
+            props.setProperty("vocabulary", vocabularyUri);
         }
     }
 
@@ -154,7 +144,13 @@ public class Execute {
                 } else {
                     propsOutputFilePath = args[++i];
                 }
-            } else if (args[i].startsWith("-m")) {
+            } else if (args[i].startsWith("-b")) {
+                if (args[i].length() > 2) {
+                    baseUri = args[i].substring(2);
+                } else {
+                    baseUri = args[++i];
+                }
+            } else if (args[i].startsWith("-T")) {
                 if (args[i].length() > 2) {
                     msAccessFilePath = args[i].substring(2);
                 } else {
@@ -169,14 +165,10 @@ public class Execute {
                 if ("-".equals(outputFilePath)) {
                     outputFilePath = null; // Linux convention
                 }
-            } else if (args[i].equals("-d")) {
-                dbPropFilePath = args[++i];
-            } else if (args[i].startsWith("-d")) {
-                dbPropFilePath = args[i].substring(2);
             } else if (args[i].equals("-f")) {
-                rdfPropFilePath = args[++i];
+                propFilePath = args[++i];
             } else if (args[i].startsWith("-f")) {
-                rdfPropFilePath = args[i].substring(2);
+                propFilePath = args[i].substring(2);
             } else if (args[i].equals("-i")) {
                 rowId = args[++i];
             } else if (args[i].startsWith("-i")) {
@@ -202,11 +194,11 @@ public class Execute {
             conn = getConnection();
 
             if (selfExplore == true) {
-                ExploreDB dbExplorer = new ExploreDB(conn, rdfProps, interActiveMode);
-                dbExplorer.discoverTables();
+                ExploreDB dbExplorer = new ExploreDB(conn, props, interActiveMode);
+                dbExplorer.discoverTables(true);
 
                 if (propsOutputFilePath != null && !propsOutputFilePath.isEmpty()) {
-                    Execute.outputProperties(rdfProps, propsOutputFilePath);
+                    Execute.outputProperties(propsOutputFilePath, props);
                     return;
                 }
             }
@@ -219,7 +211,7 @@ public class Execute {
                 outputStream = new GZIPOutputStream(outputStream);
             }
 
-            GenerateRDF exporter = new GenerateRDF(outputStream, conn, rdfProps);
+            GenerateRDF exporter = new GenerateRDF(outputStream, conn, props);
 
             List<String> tablesToExport = unusedArguments.isEmpty() ? Arrays.asList(exporter.getAllTables()) : unusedArguments;
 
@@ -275,12 +267,24 @@ public class Execute {
      */
     private Connection getConnection() throws SQLException {
 
-        String driver = dbProps.getProperty("driver");
-        String dbUrl = dbProps.getProperty("database");
-        String userName = dbProps.getProperty("user");
-        String password = dbProps.getProperty("password");
+        String driver = props.getProperty("db.driver");
+        String dbUrl = props.getProperty("db.database");
+        String userName = props.getProperty("db.user");
+        String password = props.getProperty("db.password");
+
+        if (msAccessFilePath == null) {
+            msAccessFilePath = props.getProperty("db.templateFilePath");
+        } else {
+            props.put("db.templateFilePath", msAccessFilePath);
+        }
 
         if (msAccessFilePath != null && dbUrl != null) {
+            // Validate file/dir existence
+            File f = new File(msAccessFilePath);
+            if (!f.isFile() && !f.isDirectory()) {
+                throw new RuntimeException("The given file is not found: " + msAccessFilePath);
+            }
+
             dbUrl = dbUrl.concat(msAccessFilePath);
         }
 
@@ -299,12 +303,14 @@ public class Execute {
      * @param outputFilePath
      * @throws IOException
      */
-    private static void outputProperties(Properties properties, String outputFilePath) throws IOException {
+    private static void outputProperties(String outputFilePath, Properties properties) throws IOException {
 
         FileOutputStream outputStream = null;
         try {
             outputStream = new FileOutputStream(outputFilePath);
-            properties.store(outputStream, "");
+            SortedProperties props = new SortedProperties();
+            props.putAll(properties);
+            props.store(outputStream, "");
         } finally {
             Execute.close(outputStream);
         }
@@ -375,13 +381,14 @@ public class Execute {
         System.out.println("This class accepts the following command line arguments:");
         System.out.println(" (note that unrecognized arguments will be treated as names of tables to export)");
         System.out.println();
-        System.out.println(" -d database_properties_file   Path to the database connection properties file.");
-        System.out.println(" -f rdf_properties_file        Path to the RDF export properties file.");
+        System.out
+                .println(" -f rdf_properties_file        Path to the RDF export properties file (including database properties).");
         System.out.println(" -o rdf_output_file            Path to the RDF output file.");
-        System.out.println(" -m ms_access_file             Path to the MS-Access database file to export.");
+        System.out.println(" -T databae_template_file      Path to the template file to export (MS-Access database).");
         System.out.println(" -z                            The RDF output file will be zipped.");
         System.out.println(" -x                            Tables/keys will be auto-discovered.");
         System.out.println(" -xa                           Tables/keys will be auto-discovered, user prompted for confirmation.");
+        System.out.println(" -b base_uri                   Base URI which overrides the one in the properties file.");
         System.out.println(" -p properties_output_file     If -x or -xa given then auto-discovered info is saved into this file.");
         System.out.println(" -i rowId                      Only records with this primary key value will be exported.");
     }

@@ -33,15 +33,19 @@ file and no RDF exported, when you provide that file's path in the
 -p command line option.
 
 The database connection properties are provided by a properties
-file that we call below as "database connection properties file".
+file with the reserved keys:
+db.database=jdbc:access:/
+db.driver=com.hxtt.sql.access.AccessDriver
+db.password=databaspassword
+db.templateFilePath=file_path.mdb
 
 The RDF output file is specified with the -o option. If it's not given,
 standard output is used.
 
 If the database is a MS-Access file (aka MDB file) or a dBase (aka DBF)
-directory, then it can be provided with the -m command line option.
+directory, then it can be provided with the -T command line option.
 Aletrnatively, it can be provided through the full JDBC connection URL
-in database connection properties file.
+in database connection properties file or as property db.templateFilePath.
 
 Note that the DBF driver needs a directory name, and it then looks for DBF
 files in it. Those are then seen as tables. You therefore specify the folder-
@@ -59,13 +63,13 @@ The usage of rdf-exporter-xx.jar is as follows:
 
 If <options> is not supplied, then a help text on possible options is printed:
 
--d database_properties_file   Path to the database connection properties file.
--f rdf_properties_file        Path to the RDF export properties file.
+-f rdf_properties_file        Path to the RDF export properties file (including database properties).
 -o rdf_output_file            Path to the RDF output file.
--m ms_access_file             Path to the MS-Access database file or DBF to export.
+-T databae_template_file      Path to the template file to export (MS-Access database).
 -z                            The RDF output file will be zipped.
 -x                            Tables/keys will be auto-discovered.
 -xa                           Tables/keys will be auto-discovered, user prompted for confirmation.
+-b base_uri                   Base URI which overrides the one in the properties file.
 -p properties_output_file     If -x or -xa given then auto-discovered info is saved into this file.
 -i rowId                      Only records with this primary key value will be exported.
 

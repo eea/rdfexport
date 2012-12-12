@@ -27,11 +27,13 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -65,8 +67,8 @@ class TableSpec {
     /** Name of table. */
     String tableName;
 
-    /** List of columns found on this table. */
-    List<String> columns;
+    /** List of columns found on this table where key is column name and value is data type (java.sql.Types). */
+    Map<String, Integer> columns;
 
     /** Columns constituting the primary key, in that same order. */
     List<String> pkColumns;
@@ -89,12 +91,14 @@ class TableSpec {
      * Adds a column found on this table.
      *
      * @param col
+     * @param type
+     *            SQL type from java.sql.Types
      */
-    void addColumn(String col) {
+    void addColumn(String col, int type) {
         if (columns == null) {
-            columns = new ArrayList<String>();
+            columns = new LinkedHashMap<String, Integer>();
         }
-        columns.add(col.toLowerCase());
+        columns.put(col.toLowerCase(), type);
     }
 
     /**
@@ -177,7 +181,8 @@ class TableSpec {
      *            - if true, user will be prompted for each discovered table and foreign key
      * @return
      */
-    public String createQuery(String jdbcSubProtocol, Map<String, String> tablesPkColumns, boolean interActiveMode) {
+    public String createQuery(String jdbcSubProtocol, Map<String, String> tablesPkColumns, boolean interActiveMode,
+            boolean addDataTypes) {
 
         Map<String, String> simpleForeignKeys = getSimpleForeignKeysToTables(tablesPkColumns);
 
@@ -198,9 +203,10 @@ class TableSpec {
         }
 
         ArrayList<String> fkReferences = new ArrayList<String>();
-        for (int i = 0; i < columns.size(); i++) {
+        for (Map.Entry<String, Integer> columnEntry : columns.entrySet()) {
 
-            String col = columns.get(i);
+            String col = columnEntry.getKey();
+            String type = getRdfType(columnEntry.getValue());
             String label = (col.substring(0, 1).toLowerCase() + col.substring(1)).replace(" ", "_");
             String pkTable = simpleForeignKeys.get(col);
             if (pkTable != null) {
@@ -224,7 +230,21 @@ class TableSpec {
                 }
             }
 
-            query.append(", ").append(colEscapeStart).append(col).append(colEscapeEnd).append(" AS '").append(label).append("'");
+            query.append(", ").append(colEscapeStart).append(col).append(colEscapeEnd);
+            query.append(" AS '");
+            query.append(label);
+            if (addDataTypes) {
+                if (type.equals("xsd:string")) {
+                    // notation for an empty language code
+                    query.append("@'");
+                } else {
+                    query.append("^^");
+                    query.append(type);
+                    query.append("'");
+                }
+            } else {
+                query.append("'");
+            }
         }
         query.append(" FROM ").append(tableName);
 
@@ -237,6 +257,53 @@ class TableSpec {
         // System.out.println(tableName + " query:" + query);
 
         return query.toString();
+    }
+
+    /**
+     * Returns rdf type.
+     *
+     * @param sqlType
+     * @return
+     */
+    private String getRdfType(int sqlType) {
+        switch (sqlType) {
+            case Types.BIGINT:
+                return "xsd:long";
+            case Types.BINARY:
+                return "xsd:base64Binary";
+            case Types.BIT:
+                return "xsd:short";
+            case Types.BLOB:
+                return "xsd:base64Binary";
+            case Types.BOOLEAN:
+                return "xsd:boolean";
+            case Types.DATE:
+                return "xsd:date";
+            case Types.DECIMAL:
+                return "xsd:decimal";
+            case Types.DOUBLE:
+                return "xsd:double";
+            case Types.FLOAT:
+                return "xsd:float";
+            case Types.INTEGER:
+                return "xsd:int";
+            case Types.LONGVARBINARY:
+                return "xsd:base64Binary";
+            case Types.NUMERIC:
+                return "xsd:decimal";
+            case Types.REAL:
+                return "xsd:float";
+            case Types.SMALLINT:
+                return "xsd:short";
+            case Types.TIMESTAMP:
+                return "xsd:dateTime";
+            case Types.TINYINT:
+                return "xsd:short";
+            case Types.VARBINARY:
+                return "xsd:base64Binary";
+            default:
+                return "xsd:string";
+        }
     }
 
     /**
@@ -374,8 +441,10 @@ public class ExploreDB {
 
     /**
      * Discover all tables in the database and create SELECT statements for the properties file.
+     *
+     * @param addDataTypes
      */
-    public void discoverTables() throws SQLException {
+    public void discoverTables(boolean addDataTypes) throws SQLException {
 
         StringBuilder tablesListBuilder = new StringBuilder();
 
@@ -414,7 +483,7 @@ public class ExploreDB {
                         tables.put(tableName, tableSpec);
                         tablesListBuilder.append(tableName).append(" ");
                     }
-                    tableSpec.addColumn(rs.getString(4));
+                    tableSpec.addColumn(rs.getString(4), rs.getInt(5));
                 }
             }
             ExploreDB.close(rs);
@@ -450,7 +519,7 @@ public class ExploreDB {
             // Now that all tables' primary/foreign keys have been set, create every table's query, and set it in properties
             // that will be later used for RDF generation.
             for (Map.Entry<String, TableSpec> entry : tables.entrySet()) {
-                String query = entry.getValue().createQuery(jdbcSubProtocol, tablesPkColumns, interActiveMode);
+                String query = entry.getValue().createQuery(jdbcSubProtocol, tablesPkColumns, interActiveMode, addDataTypes);
                 props.setProperty(entry.getKey().concat(".query"), query);
             }
         } finally {
