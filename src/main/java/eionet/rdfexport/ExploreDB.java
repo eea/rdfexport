@@ -67,8 +67,8 @@ class TableSpec {
     /** Name of table. */
     String tableName;
 
-    /** List of columns found on this table where key is column name and value is data type (java.sql.Types). */
-    Map<String, Integer> columns;
+    /** The map of columns found on this table. Key = column name, value = column data type as in java.sql.Types. */
+    LinkedHashMap<String, Integer> columns;
 
     /** Columns constituting the primary key, in that same order. */
     List<String> pkColumns;
@@ -90,15 +90,14 @@ class TableSpec {
     /**
      * Adds a column found on this table.
      *
-     * @param col
-     * @param type
-     *            SQL type from java.sql.Types
+     * @param col The column's name.
+     * @param dataType The column's data type as in java.sql.Types.
      */
-    void addColumn(String col, int type) {
+    void addColumn(String col, int dataType) {
         if (columns == null) {
             columns = new LinkedHashMap<String, Integer>();
         }
-        columns.put(col.toLowerCase(), type);
+        columns.put(col.toLowerCase(), dataType);
     }
 
     /**
@@ -206,7 +205,7 @@ class TableSpec {
         for (Map.Entry<String, Integer> columnEntry : columns.entrySet()) {
 
             String col = columnEntry.getKey();
-            String type = getRdfType(columnEntry.getValue());
+            String type = getXsdDataType(columnEntry.getValue());
             String label = (col.substring(0, 1).toLowerCase() + col.substring(1)).replace(" ", "_");
             String pkTable = simpleForeignKeys.get(col);
             if (pkTable != null) {
@@ -238,9 +237,7 @@ class TableSpec {
                     // notation for an empty language code
                     query.append("@'");
                 } else {
-                    query.append("^^");
-                    query.append(type);
-                    query.append("'");
+                    query.append("^^").append(type).append("'");
                 }
             } else {
                 query.append("'");
@@ -260,12 +257,12 @@ class TableSpec {
     }
 
     /**
-     * Returns rdf type.
+     * Returns an XML Schema data type for the given SQL type (as in java.sql.Types).
      *
-     * @param sqlType
+     * @param sqlType The given SQL type.
      * @return
      */
-    private String getRdfType(int sqlType) {
+    private String getXsdDataType(int sqlType) {
         switch (sqlType) {
             case Types.BIGINT:
                 return "xsd:long";

@@ -381,15 +381,14 @@ public class Execute {
         System.out.println("This class accepts the following command line arguments:");
         System.out.println(" (note that unrecognized arguments will be treated as names of tables to export)");
         System.out.println();
-        System.out
-                .println(" -f rdf_properties_file        Path to the RDF export properties file (including database properties).");
-        System.out.println(" -o rdf_output_file            Path to the RDF output file.");
-        System.out.println(" -T databae_template_file      Path to the template file to export (MS-Access database).");
-        System.out.println(" -z                            The RDF output file will be zipped.");
-        System.out.println(" -x                            Tables/keys will be auto-discovered.");
-        System.out.println(" -xa                           Tables/keys will be auto-discovered, user prompted for confirmation.");
-        System.out.println(" -b base_uri                   Base URI which overrides the one in the properties file.");
-        System.out.println(" -p properties_output_file     If -x or -xa given then auto-discovered info is saved into this file.");
-        System.out.println(" -i rowId                      Only records with this primary key value will be exported.");
+        System.out.println(" -f properties_input_file   Path to the file with properties for DB connection and RDF generation.");
+        System.out.println(" -o rdf_output_file         Path to the RDF output file.");
+        System.out.println(" -T databae_template_file   Path to the template file to export (MSAccess database or DBF folder).");
+        System.out.println(" -z                         The RDF output file will be zipped.");
+        System.out.println(" -x                         Tables/keys will be auto-discovered.");
+        System.out.println(" -xa                        Tables/keys will be auto-discovered, user prompted for confirmation.");
+        System.out.println(" -b base_uri                Base URI which overrides the one in the properties file.");
+        System.out.println(" -p properties_output_file  If -x or -xa given then auto-discovered info is saved into this file.");
+        System.out.println(" -i rowId                   Only records with this primary key value will be exported.");
     }
 }

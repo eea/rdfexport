@@ -32,20 +32,17 @@ Auto-discovered information will be saved into a given properties
 file and no RDF exported, when you provide that file's path in the
 -p command line option.
 
-The database connection properties are provided by a properties
-file with the reserved keys:
-db.database=jdbc:access:/
-db.driver=com.hxtt.sql.access.AccessDriver
-db.password=databaspassword
-db.templateFilePath=file_path.mdb
+The database connection properties and also numerous properties required
+for the RDF generation are given in a properties file whose path is
+supplied via the -f command line option.
 
 The RDF output file is specified with the -o option. If it's not given,
 standard output is used.
 
-If the database is a MS-Access file (aka MDB file) or a dBase (aka DBF)
+If the database is an MS-Access file (aka MDB file) or a dBase (aka DBF)
 directory, then it can be provided with the -T command line option.
-Aletrnatively, it can be provided through the full JDBC connection URL
-in database connection properties file or as property db.templateFilePath.
+Alternatively, it can be provided through the full JDBC connection URL
+in database connection properties or via the db.templateFilePath property.
 
 Note that the DBF driver needs a directory name, and it then looks for DBF
 files in it. Those are then seen as tables. You therefore specify the folder-
@@ -63,7 +60,7 @@ The usage of rdf-exporter-xx.jar is as follows:
 
 If <options> is not supplied, then a help text on possible options is printed:
 
--f rdf_properties_file        Path to the RDF export properties file (including database properties).
+-f properties_input_file      Path to the file that contains properties for database connection and RDF generation.
 -o rdf_output_file            Path to the RDF output file.
 -T databae_template_file      Path to the template file to export (MS-Access database).
 -z                            The RDF output file will be zipped.
