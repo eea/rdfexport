@@ -198,7 +198,7 @@ public class GenerateRDF {
         props = properties;
 
         String tablesProperty = props.getProperty("tables");
-        if (tablesProperty != null && !tablesProperty.isEmpty()){
+        if (tablesProperty != null && !tablesProperty.isEmpty()) {
             tables = tablesProperty.split("\\s+");
         }
 
@@ -307,7 +307,7 @@ public class GenerateRDF {
      *            to insert into query
      * @return patched SQL query
      */
-    private String injectHaving(String query, String identifier) {
+    String injectHaving(String query, String identifier) {
         String[] keywords = {" order ", " limit ", " procedure ", " into ", " for ", " lock "};
         String lquery = query.toLowerCase().replace("\n", " ");
         int insertBefore = lquery.length();
@@ -340,7 +340,7 @@ public class GenerateRDF {
      *            to insert into query
      * @return patched SQL query
      */
-    private String injectWhere(String query, String key, String identifier) {
+    String injectWhere(String query, String key, String identifier) {
         // Handle WHERE for key hints
         String[] keywords = {" group ", " having ", " order ", " limit ", " procedure ", " into ", " for ", " lock "};
         String lquery = query.toLowerCase().replace("\n", " ");
@@ -463,7 +463,7 @@ public class GenerateRDF {
      *    'Søren Roug' AS 'dcterms:creator', \
      * 'http://creativecommons.org/licenses/by/2.5/dk/' AS 'dcterms:licence->'
      *
-     * <pre>
+     * </pre>
      * When found, {@code <bibo:Document rdf:about="">} section with given properties will be exported.
      * @throws IOException
      * @throws SQLException
@@ -832,7 +832,7 @@ public class GenerateRDF {
      *            - suggested datatype from database.
      * @return RDFField - struct of three strings: Name, datatype and langcode.
      */
-    private RDFField parseName(String complexname, String datatype) {
+    RDFField parseName(String complexname, String datatype) {
         RDFField result = new RDFField();
         String name = complexname;
         String language = "";

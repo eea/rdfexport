@@ -2,14 +2,12 @@ package eionet.rdfexport;
 
 import static junit.framework.Assert.assertEquals;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.Properties;
 
 import org.junit.Test;
 
 /**
- * Uses the Reflection API to get private members
+ * Test the module.
  *
  * @see http://onjava.com/pub/a/onjava/2003/11/12/reflection.html
  * @see http://download.oracle.com/javase/tutorial/reflect/class/index.html
@@ -24,25 +22,15 @@ public class GenerateRDFTest {
         props.setProperty("tables", "coubiogeoreg events");
         props.setProperty("vocabulary", "http://voc");
         GenerateRDF classToTest = new GenerateRDF(System.out, null, props);
-        Field f;
-        final Method method = classToTest.getClass().getDeclaredMethod("parseName", new Class[] {String.class, String.class});
-        method.setAccessible(true);
-        Object ret = method.invoke(classToTest, testString, testDatatype);
-        f = ret.getClass().getDeclaredField("name");
-        f.setAccessible(true);
-        assertEquals(expectedName, (String) f.get(ret));
-
-        f = ret.getClass().getDeclaredField("datatype");
-        f.setAccessible(true);
-        assertEquals(expectedDatatype, (String) f.get(ret));
-
-        f = ret.getClass().getDeclaredField("langcode");
-        f.setAccessible(true);
-        assertEquals(expectedLangcode, (String) f.get(ret));
+        RDFField f;
+        f = classToTest.parseName(testString, testDatatype);
+        assertEquals(expectedName, f.name);
+        assertEquals(expectedDatatype,  f.datatype);
+        assertEquals(expectedLangcode,  f.langcode);
     }
 
     @Test
-    public void test_parseName() throws Exception {
+    public void testParseName() throws Exception {
         callParseName("hasRef->export", "", "hasRef", "->export", "");
         callParseName("hasRef->", "", "hasRef", "->", "");
         callParseName("price^^xsd:decimal", "", "price", "xsd:decimal", "");
@@ -58,15 +46,12 @@ public class GenerateRDFTest {
         props.setProperty("vocabulary", "http://voc");
         GenerateRDF classToTest = new GenerateRDF(System.out, null, props);
         String f;
-        final Method method = classToTest.getClass().getDeclaredMethod("injectHaving", new Class[] {String.class, String.class});
-        method.setAccessible(true);
-        Object ret = method.invoke(classToTest, testQuery, testIdentifier);
-        f = (String) ret;
+        f = classToTest.injectHaving(testQuery, testIdentifier);
         assertEquals(expectedQuery, f);
     }
 
     @Test
-    public void test_injectHaving() throws Exception {
+    public void testInjectHaving() throws Exception {
         // Test injection of identifier
         callInjectIdentifier("SELECT X AS id, * FROM Y", "819", "SELECT X AS id, * FROM Y HAVING id='819'");
         callInjectIdentifier("SELECT X AS id, * FROM Y ORDER BY postcode", "819",
@@ -89,16 +74,12 @@ public class GenerateRDFTest {
         props.setProperty("vocabulary", "http://voc");
         GenerateRDF classToTest = new GenerateRDF(System.out, null, props);
         String f;
-        final Method method =
-                classToTest.getClass().getDeclaredMethod("injectWhere", new Class[] {String.class, String.class, String.class});
-        method.setAccessible(true);
-        Object ret = method.invoke(classToTest, testQuery, testKey, testIdentifier);
-        f = (String) ret;
+        f = classToTest.injectWhere(testQuery, testKey, testIdentifier);
         assertEquals(expectedQuery, f);
     }
 
     @Test
-    public void test_injectWhere() throws Exception {
+    public void testInjectWhere() throws Exception {
         // Test injection of identifier
         callInjectWhere("SELECT X AS id, * FROM Y", "819", "X", "SELECT X AS id, * FROM Y WHERE X='819'");
         callInjectWhere("SELECT X AS id, * FROM Y HAVING id='819'", "819", "X",
@@ -124,7 +105,7 @@ public class GenerateRDFTest {
     }
 
     @Test
-    public void test_encodeURIComponent() {
+    public void testEncodeURIComponent() {
         String testString = ";/?:@&=+$,aA-_.!~*'()[]<>#%\"{}\n\t ";
         String expected = "%3B%2F%3F%3A%40%26%3D%2B%24%2CaA-_.!~*'()%5B%5D%3C%3E%23%25%22%7B%7D%0A%09%20";
         String actual = StringHelper.encodeURIComponent(testString, "UTF-8");
@@ -136,7 +117,7 @@ public class GenerateRDFTest {
     }
 
     @Test
-    public void test_idSwitch() {
+    public void testIdSwitch() {
         assertEquals(false, callSwitch(null, null));
         assertEquals(true, callSwitch(null, (Object) "/.."));
         assertEquals(false, callSwitch((Object) "x", (Object) "x"));
