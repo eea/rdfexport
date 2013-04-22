@@ -245,14 +245,6 @@ class TableSpec {
         }
         query.append(" FROM ").append(tableName);
 
-        // if (pkColumns != null && !pkColumns.isEmpty()){
-        // System.out.println(tableName + " PK columns: " + pkColumns);
-        // }
-        // if (fkReferences != null && !fkReferences.isEmpty()){
-        // System.out.println(tableName + " FK references: " + fkReferences);
-        // }
-        // System.out.println(tableName + " query:" + query);
-
         return query.toString();
     }
 
@@ -354,7 +346,6 @@ class TableSpec {
                     result.append(" + CStr(").append(col).append(")");
                 }
             } else {
-                // System.out.println("Warning: SQL dialect not found for '" + jdbcSubProtocol + "', using ANSI-SQL!");
                 result.append("''");
                 for (String col : columns) {
                     result.append(" || ").append(col);

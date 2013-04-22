@@ -43,7 +43,7 @@ import java.util.zip.GZIPOutputStream;
 public class Execute {
 
     /** Default file path of the RDF export properties file. */
-    private static final String DEFAULT_PROP_FILE_PATH = "rdfexport.properties";
+    private static final String DEFAULT_INPUT_PROPS_FILE_PATH = "rdfexport.properties";
 
     /** Will be used as user input scanner from command line. */
     protected static final Scanner USER_INPUT = new Scanner(System.in);
@@ -51,29 +51,37 @@ public class Execute {
     /** List of unrecognized command line arguments. They will be interpreted as names of tables to export. */
     private ArrayList<String> unusedArguments = new ArrayList<String>();
 
-    /** If true, the generated RDF output shall be zipped. */
-    private boolean zipOutput = false;
+    /** Path to the input export properties file. */
+    private String inputPropsFilePath = null;
 
-    /** Path to the file where the RDF shall be generated into. */
-    private String outputFilePath = null;
+    /** Path to the file where the auto-discovered tables and generated queries shall be written into, if requested so. */
+    private String outputPropsFilePath = null;
 
-    /** Path to the RDF export properties file. */
-    private String propFilePath = null;
-
-    /** The primary-key value of the row to export, if only one row from one table is to be exported. */
-    private String rowId = null;
+    /**
+     * The template file used for the export's pre-configuration. Contains the JDBC driver's class name, various driver specific
+     * properties, the datatype mappings and the namespaces. The user then runs this command:
+     *
+     * rdfexport -T template.properties -x -m Waterbase_Rivers_DDviolations_solutions.mdb -p rdfexport.properties
+     *
+     * This command copies the properties from template.properties into rdfexport.properties (i.e. the one identified by "-f")
+     * and also constructs a db.database=jdbc:access:/Waterbase_Rivers_DDviolations_solutions.mdb that it puts
+     * into rdfexport.properties. From then on, the user can simply run this command:
+     *
+     * rdfexport -f rdfexport.properties
+     */
+    private String templatePropsFilePath = null;
 
     /** If true, the tables and primary/foreign keys shall be auto-discovered, disregarding the ones given in properties file. */
     private boolean selfExplore = false;
 
-    /** Path to the file where the auto-discovered tables and generated queries shall be written into, if requested so. */
-    private String propsOutputFilePath = null;
+    /** Path to the file where the RDF shall be generated into. */
+    private String rdfOutputFilePath = null;
 
-    /** RDF and database connection properties. */
-    private Properties props = new Properties();
+    /** If true, the generated RDF output shall be zipped. */
+    private boolean zipOutput = false;
 
     /** MS-Access to export. Concatenated to the value of "database" property from database connection properties file. */
-    private String msAccessFilePath;
+    private String mdbFilePath;
 
     /** The URI of the vocabulary of the RDF output that shall be generated. */
     private String vocabularyUri = null;
@@ -84,30 +92,59 @@ public class Execute {
     /** If true, the auto-disovery mode will ask for each table and foreign key whether to export it. */
     private boolean interActiveMode = false;
 
+    /** The primary-key value of the row to export, if only one row from one table is to be exported. */
+    private String rowId = null;
+
+    /** The map of properties, based on which the RDF generation will be executed or the output properties file generated. */
+    private Properties props = new Properties();
+
     /**
-     * Constructor.
+     * Constructs from the given command line arguments.
      *
-     * @param args
-     *            - command line arguments.
-     * @throws IOException
-     *             - if anything goes wrong with reading the properties and/or writing the output
+     * @param args - command line arguments.
+     * @throws IOException - if anything goes wrong with reading the properties and/or writing the output
      */
     private Execute(String args[]) throws IOException {
 
+        // First, parse the command line arguments.
         parseArguments(args);
 
-        if (propFilePath == null || propFilePath.isEmpty()) {
-            propFilePath = DEFAULT_PROP_FILE_PATH;
+        // Use default path for the input properties file if not given from command line arguments.
+        if (inputPropsFilePath == null || inputPropsFilePath.isEmpty()) {
+            inputPropsFilePath = DEFAULT_INPUT_PROPS_FILE_PATH;
         }
 
-        Execute.loadProperties(props, propFilePath);
+        // If properties template file and properties output file both given, then we're in the "pre-configuration" mode,
+        // meaning that we're not going to generate RDF, but we shall generate a properties output file based on the
+        // properties template file and auto-discovered information about the database if auto-discovery turned on.
+        // Otherwise we shall load properties from the properties input file.
+        if (templatePropsFilePath != null && !templatePropsFilePath.isEmpty() && outputPropsFilePath != null
+                && !outputPropsFilePath.isEmpty()) {
+            File file = new File(templatePropsFilePath);
+            if (!file.exists() || !file.isFile()) {
+                throw new IllegalArgumentException("Failed to find template properties at " + templatePropsFilePath);
+            }
+            Execute.loadProperties(props, templatePropsFilePath);
+        } else {
+            File file = new File(inputPropsFilePath);
+            if (!file.exists() || !file.isFile()) {
+                throw new IllegalArgumentException("Failed to find input properties at " + inputPropsFilePath);
+            }
+            Execute.loadProperties(props, inputPropsFilePath);
+        }
 
-        vocabularyUri = props.getProperty("vocabulary");
+        // If base URI was not given in command line, load it from the input properties,
+        // otherwise place it into the loaded input properties map.
         if (baseUri == null) {
             baseUri = props.getProperty("baseurl");
         } else {
             props.setProperty("baseurl", baseUri);
         }
+
+        // Get the vocabulary URI from the loaded input properties.If it's null or empty, then generate it on the basis of the
+        // given base URI. If the latter is not given either, just set it to "#properties/".
+        // Finally, place the resulting vocabulary URI into the loaded input properties map.
+        vocabularyUri = props.getProperty("vocabulary");
         if (vocabularyUri == null || vocabularyUri.isEmpty()) {
 
             // TODO: The 'vocabulary' property has to be generated if it is not in the template file.
@@ -140,9 +177,9 @@ public class Execute {
                 zipOutput = true;
             } else if (args[i].startsWith("-p")) {
                 if (args[i].length() > 2) {
-                    propsOutputFilePath = args[i].substring(2);
+                    outputPropsFilePath = args[i].substring(2);
                 } else {
-                    propsOutputFilePath = args[++i];
+                    outputPropsFilePath = args[++i];
                 }
             } else if (args[i].startsWith("-b")) {
                 if (args[i].length() > 2) {
@@ -152,23 +189,29 @@ public class Execute {
                 }
             } else if (args[i].startsWith("-T")) {
                 if (args[i].length() > 2) {
-                    msAccessFilePath = args[i].substring(2);
+                    templatePropsFilePath = args[i].substring(2);
                 } else {
-                    msAccessFilePath = args[++i];
+                    templatePropsFilePath = args[++i];
+                }
+            } else if (args[i].startsWith("-m")) {
+                if (args[i].length() > 2) {
+                    mdbFilePath = args[i].substring(2);
+                } else {
+                    mdbFilePath = args[++i];
                 }
             } else if (args[i].startsWith("-o")) {
                 if (args[i].length() > 2) {
-                    outputFilePath = args[i].substring(2);
+                    rdfOutputFilePath = args[i].substring(2);
                 } else {
-                    outputFilePath = args[++i];
+                    rdfOutputFilePath = args[++i];
                 }
-                if ("-".equals(outputFilePath)) {
-                    outputFilePath = null; // Linux convention
+                if ("-".equals(rdfOutputFilePath)) {
+                    rdfOutputFilePath = null; // Linux convention
                 }
             } else if (args[i].equals("-f")) {
-                propFilePath = args[++i];
+                inputPropsFilePath = args[++i];
             } else if (args[i].startsWith("-f")) {
-                propFilePath = args[i].substring(2);
+                inputPropsFilePath = args[i].substring(2);
             } else if (args[i].equals("-i")) {
                 rowId = args[++i];
             } else if (args[i].startsWith("-i")) {
@@ -196,15 +239,15 @@ public class Execute {
             if (selfExplore == true) {
                 ExploreDB dbExplorer = new ExploreDB(conn, props, interActiveMode);
                 dbExplorer.discoverTables(true);
-
-                if (propsOutputFilePath != null && !propsOutputFilePath.isEmpty()) {
-                    Execute.outputProperties(propsOutputFilePath, props);
-                    return;
-                }
             }
 
-            if (outputFilePath != null && !outputFilePath.isEmpty()) {
-                outputStream = new FileOutputStream(outputFilePath);
+            if (outputPropsFilePath != null && !outputPropsFilePath.isEmpty()) {
+                Execute.outputProperties(outputPropsFilePath, props);
+                return;
+            }
+
+            if (rdfOutputFilePath != null && !rdfOutputFilePath.isEmpty()) {
+                outputStream = new FileOutputStream(rdfOutputFilePath);
             }
 
             if (zipOutput == true) {
@@ -214,13 +257,6 @@ public class Execute {
             GenerateRDF exporter = new GenerateRDF(outputStream, conn, props);
 
             List<String> tablesToExport = unusedArguments.isEmpty() ? Arrays.asList(exporter.getAllTables()) : unusedArguments;
-
-            // if (rowId == null || rowId.isEmpty()){
-            // System.out.println("Exporting these tables: " + tablesToExport);
-            // }
-            // else{
-            // System.out.println("Exporting row " + rowId + " of this table: " + tablesToExport);
-            // }
 
             for (String table : tablesToExport) {
                 exporter.exportTable(table, rowId);
@@ -260,32 +296,35 @@ public class Execute {
     }
 
     /**
-     * Utility method that returns a connection on the database given in the properties file.
+     * Utility method that returns a connection on the database given on the command line or in the properties file.
      *
      * @return
      * @throws SQLException
      */
     private Connection getConnection() throws SQLException {
 
+        // An MS Access file given from command line always overrides the one given in properties file.
+        if (mdbFilePath != null && !mdbFilePath.isEmpty()) {
+
+            File mdbFile = new File(mdbFilePath);
+            if (!mdbFile.exists() || !mdbFile.isFile()) {
+                throw new IllegalArgumentException("The given file is not found: " + mdbFilePath);
+            }
+
+            String dbUrl = "jdbc:access:/" + mdbFile;
+            props.setProperty("db.database", dbUrl);
+        }
+
         String driver = props.getProperty("db.driver");
         String dbUrl = props.getProperty("db.database");
         String userName = props.getProperty("db.user");
         String password = props.getProperty("db.password");
 
-        if (msAccessFilePath == null) {
-            msAccessFilePath = props.getProperty("db.templateFilePath");
-        } else {
-            props.put("db.templateFilePath", msAccessFilePath);
+        if (driver == null || driver.isEmpty()) {
+            throw new IllegalArgumentException("The database driver property must not be empty!");
         }
-
-        if (msAccessFilePath != null && dbUrl != null) {
-            // Validate file/dir existence
-            File f = new File(msAccessFilePath);
-            if (!f.isFile() && !f.isDirectory()) {
-                throw new RuntimeException("The given file is not found: " + msAccessFilePath);
-            }
-
-            dbUrl = dbUrl.concat(msAccessFilePath);
+        if (dbUrl == null || dbUrl.isEmpty()) {
+            throw new IllegalArgumentException("Failed to detect database from command line or properties file!");
         }
 
         try {
@@ -300,7 +339,7 @@ public class Execute {
      * Writes the given properties into the given file path.
      *
      * @param properties
-     * @param outputFilePath
+     * @param rdfOutputFilePath
      * @throws IOException
      */
     private static void outputProperties(String outputFilePath, Properties properties) throws IOException {
@@ -371,7 +410,6 @@ public class Execute {
 
         Execute execute = new Execute(args);
         execute.run();
-        // System.out.println("Done!");
     }
 
     /**
@@ -381,14 +419,28 @@ public class Execute {
         System.out.println("This class accepts the following command line arguments:");
         System.out.println(" (note that unrecognized arguments will be treated as names of tables to export)");
         System.out.println();
-        System.out.println(" -f properties_input_file   Path to the file with properties for DB connection and RDF generation.");
-        System.out.println(" -o rdf_output_file         Path to the RDF output file.");
-        System.out.println(" -T databae_template_file   Path to the template file to export (MSAccess database or DBF folder).");
-        System.out.println(" -z                         The RDF output file will be zipped.");
-        System.out.println(" -x                         Tables/keys will be auto-discovered.");
-        System.out.println(" -xa                        Tables/keys will be auto-discovered, user prompted for confirmation.");
-        System.out.println(" -b base_uri                Base URI which overrides the one in the properties file.");
-        System.out.println(" -p properties_output_file  If -x or -xa given then auto-discovered info is saved into this file.");
-        System.out.println(" -i rowId                   Only records with this primary key value will be exported.");
+        System.out.println(" -f input_properties_file    Path of the input properties file containing everything needed"
+                + " for RDF generation. That includes the database's JDBC url, JDBC driver class name,"
+                + " datatype mappings, namespaces, SQL queries to export, etc.");
+
+        System.out.println(" -o rdf_output_file          Path of the RDF output file to be generated.");
+
+        System.out.println(" -T template_properties_file From this file and auto-discovered info about the database,"
+                + " the output_properties_file is generated"
+                + " that can then be used as an input_properties_file for multiple reuse.");
+
+        System.out.println(" -p output_properties_file   Generated from template_properties_file and auto-discovered info."
+                + " If -T and -p have been specified, then -f is ignored and no RDF output generated."
+                + " Instead, the output_properties_file will be genared and the program exits.");
+
+        System.out.println(" -z                          The RDF output file will be zipped. if this argument present.");
+
+        System.out.println(" -m                          Path of the MS Access file to exort."
+                + " Overrides the one given in input_properties_file or template_properties_file.");
+        System.out.println(" -x                          Tables/keys of the database will be auto-discovered.");
+        System.out.println(" -xa                         Tables/keys will be auto-discovered, user prompted for confirmation.");
+        System.out.println(" -b base_uri                 Base URI which overrides the one in the"
+                + " input_properties_file or template_properties_file.");
+        System.out.println(" -i rowId                    Only records with this primary key value will be exported.");
     }
 }

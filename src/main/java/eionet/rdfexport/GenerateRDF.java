@@ -614,9 +614,6 @@ public class GenerateRDF {
         Boolean firstTime = true;
         try {
             stmt = con.createStatement();
-
-            //System.out.println("Executing: " + sql);
-
             if (stmt.execute(sql)) {
 
                 rs = stmt.getResultSet();
