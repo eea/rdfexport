@@ -5,6 +5,8 @@ import static junit.framework.Assert.assertEquals;
 import java.util.Properties;
 
 import org.junit.Test;
+import org.junit.Before;
+import java.io.ByteArrayOutputStream;
 
 /**
  * Test the module.
@@ -15,15 +17,22 @@ import org.junit.Test;
  */
 public class GenerateRDFTest {
 
-    private void callParseName(String testString, String testDatatype, String expectedName, String expectedDatatype,
-            String expectedLangcode) throws Exception {
+    private GenerateRDF classToTest;
+    private ByteArrayOutputStream testOutput;
 
+    @Before
+    public void setUp() throws Exception {
+        testOutput = new ByteArrayOutputStream();
         Properties props = new Properties();
         props.setProperty("tables", "coubiogeoreg events");
         props.setProperty("vocabulary", "http://voc");
-        GenerateRDF classToTest = new GenerateRDF(System.out, null, props);
-        RDFField f;
-        f = classToTest.parseName(testString, testDatatype);
+        classToTest = new GenerateRDF(testOutput, null, props);
+    }
+
+    private void callParseName(String testString, String testDatatype, String expectedName, String expectedDatatype,
+            String expectedLangcode) throws Exception {
+
+        RDFField f = classToTest.parseName(testString, testDatatype);
         assertEquals(expectedName, f.name);
         assertEquals(expectedDatatype,  f.datatype);
         assertEquals(expectedLangcode,  f.langcode);
@@ -41,10 +50,6 @@ public class GenerateRDFTest {
     }
 
     private void callInjectIdentifier(String testQuery, String testIdentifier, String expectedQuery) throws Exception {
-        Properties props = new Properties();
-        props.setProperty("tables", "coubiogeoreg events");
-        props.setProperty("vocabulary", "http://voc");
-        GenerateRDF classToTest = new GenerateRDF(System.out, null, props);
         String f;
         f = classToTest.injectHaving(testQuery, testIdentifier);
         assertEquals(expectedQuery, f);
@@ -69,10 +74,6 @@ public class GenerateRDFTest {
     }
 
     private void callInjectWhere(String testQuery, String testIdentifier, String testKey, String expectedQuery) throws Exception {
-        Properties props = new Properties();
-        props.setProperty("tables", "coubiogeoreg events");
-        props.setProperty("vocabulary", "http://voc");
-        GenerateRDF classToTest = new GenerateRDF(System.out, null, props);
         String f;
         f = classToTest.injectWhere(testQuery, testKey, testIdentifier);
         assertEquals(expectedQuery, f);
@@ -123,6 +124,83 @@ public class GenerateRDFTest {
         assertEquals(false, callSwitch((Object) "x", (Object) "x"));
         assertEquals(true, callSwitch((Object) "A", (Object) "x"));
         assertEquals(false, callSwitch((Object) "id", null));
+    }
+
+    @Test
+    public void writeLiteral1() throws Exception {
+        RDFField f = new RDFField();
+        f.name = "rdfs:label";
+        f.datatype = "";
+        f.langcode = "";
+        classToTest.writeProperty(f, "This is a label");
+        assertEquals(" <rdfs:label>This is a label</rdfs:label>\n", testOutput.toString());
+    }
+
+    @Test
+    public void writeLiteral2() throws Exception {
+        RDFField f = new RDFField("rdfs:label", "", "");
+        classToTest.writeProperty(f, "This is a label");
+        assertEquals(" <rdfs:label>This is a label</rdfs:label>\n", testOutput.toString());
+    }
+
+    @Test
+    public void writeReference1() throws Exception {
+        RDFField f = new RDFField("foaf:page", "->", "");
+        classToTest.writeProperty(f, "http://mypage.org/index.html");
+        assertEquals(" <foaf:page rdf:resource=\"http://mypage.org/index.html\"/>\n", testOutput.toString());
+    }
+
+    @Test
+    public void writeReference2() throws Exception {
+        RDFField f = new RDFField("foaf:page", "->http://mypage.org/index.html", "");
+        classToTest.writeProperty(f, "");
+        assertEquals(" <foaf:page rdf:resource=\"http://mypage.org/index.html/\"/>\n", testOutput.toString());
+    }
+
+    @Test
+    public void writeReference3() throws Exception {
+        RDFField f = new RDFField("hasSpecies", "->http://eunis.eea.europa.eu/species", "");
+        classToTest.writeProperty(f, "1366");
+        //System.out.println(testOutput.toString());
+        assertEquals(" <hasSpecies rdf:resource=\"http://eunis.eea.europa.eu/species/1366\"/>\n", testOutput.toString());
+    }
+
+    @Test
+    public void writeReference4() throws Exception {
+        RDFField f = new RDFField("hasSpecies", "->species", "");
+        classToTest.writeProperty(f, "1366");
+        //System.out.println(testOutput.toString());
+        assertEquals(" <hasSpecies rdf:resource=\"#species/1366\"/>\n", testOutput.toString());
+    }
+
+    @Test
+    public void writeInt() throws Exception {
+        RDFField f = new RDFField("hasNumber", "xsd:int", "");
+        classToTest.writeProperty(f, "1366");
+        //System.out.println(testOutput.toString());
+        assertEquals(" <hasNumber rdf:datatype=\"http://www.w3.org/2001/XMLSchema#int\">1366</hasNumber>\n", testOutput.toString());
+    }
+
+    @Test
+    public void writeOwnType() throws Exception {
+        RDFField f = new RDFField("hasDistance", "http://buzz#lightyear", "");
+        classToTest.writeProperty(f, "20");
+        assertEquals(" <hasDistance rdf:datatype=\"http://buzz#lightyear\">20</hasDistance>\n", testOutput.toString());
+    }
+
+    @Test
+    public void writeLitWithLang() throws Exception {
+        RDFField f = new RDFField("hello", "", "de");
+        classToTest.writeProperty(f, "Welt");
+        //System.out.println(testOutput.toString());
+        assertEquals(" <hello xml:lang=\"de\">Welt</hello>\n", testOutput.toString());
+    }
+
+    @Test
+    public void writeIntWithLang() throws Exception {
+        RDFField f = new RDFField("hello", "xsd:int", "de");
+        classToTest.writeProperty(f, "20");
+        assertEquals(" <hello rdf:datatype=\"http://www.w3.org/2001/XMLSchema#int\">20</hello>\n", testOutput.toString());
     }
 
 }

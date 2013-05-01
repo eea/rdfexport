@@ -36,6 +36,12 @@ class RDFField {
         datatype = "";
         langcode = "";
     }
+
+    RDFField(String n, String dt, String l) {
+        name = n;
+        datatype = dt;
+        langcode = l;
+    }
 }
 
 /**
@@ -251,7 +257,7 @@ public class GenerateRDF {
      * @throws IOException
      *             - if the output is not open.
      */
-    private void writeProperty(RDFField property, Object value) throws IOException {
+    void writeProperty(RDFField property, Object value) throws IOException {
         String typelangAttr = "";
 
         if (value == null) {
