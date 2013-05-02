@@ -2,7 +2,6 @@ package eionet.rdfexport;
 
 import static junit.framework.Assert.assertEquals;
 import org.junit.Test;
-import org.junit.Before;
 
 public class StringHelperTest {
 

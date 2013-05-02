@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+ xmlns="http://voc">
+
+<Person rdf:about="#person/1">
+ <NAME>Bob</NAME>
+ <LAST_NAME>Doe</LAST_NAME>
+ <AGE>18</AGE>
+</Person>
+<Person rdf:about="#person/2">
+ <NAME>Alice</NAME>
+ <LAST_NAME>Foo</LAST_NAME>
+ <AGE>23</AGE>
+</Person>
+<Person rdf:about="#person/3">
+ <NAME>Charlie</NAME>
+ <LAST_NAME>Brown</LAST_NAME>
+ <AGE>42</AGE>
+</Person>
