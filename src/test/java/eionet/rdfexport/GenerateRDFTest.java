@@ -24,8 +24,11 @@ public class GenerateRDFTest {
     public void setUp() throws Exception {
         testOutput = new ByteArrayOutputStream();
         Properties props = new Properties();
-        props.setProperty("tables", "coubiogeoreg events");
+        props.setProperty("tables", "coubiogeoreg     events  ");
         props.setProperty("vocabulary", "http://voc");
+        props.setProperty("xmlns.rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+        props.setProperty("datatype.int", "xsd:integer");
+        props.setProperty("objectproperty.org", "orgs");
         classToTest = new GenerateRDF(testOutput, null, props);
     }
 
@@ -113,6 +116,14 @@ public class GenerateRDFTest {
         assertEquals(expected, actual);
     }
 
+    @Test
+    public void testGetAllTables() throws Exception {
+        String[] t = classToTest.getAllTables();
+        assertEquals("coubiogeoreg", t[0]);
+        assertEquals("events", t[1]);
+    }
+
+
     private boolean callSwitch(Object id, Object currentId) {
         return (currentId != null && !currentId.equals(id));
     }
@@ -124,6 +135,30 @@ public class GenerateRDFTest {
         assertEquals(false, callSwitch((Object) "x", (Object) "x"));
         assertEquals(true, callSwitch((Object) "A", (Object) "x"));
         assertEquals(false, callSwitch((Object) "id", null));
+    }
+
+    @Test
+    public void writeFooter() throws Exception {
+        classToTest.writeRdfFooter();
+        assertEquals("</rdf:RDF>\n", testOutput.toString());
+    }
+
+    @Test
+    public void testDocumentInformation() throws Exception {
+        classToTest.exportDocumentInformation();
+        assertEquals("", testOutput.toString());
+    }
+
+    // Test writeProperty()
+
+    @Test
+    public void writeNull() throws Exception {
+        RDFField f = new RDFField();
+        f.name = "rdfs:label";
+        f.datatype = "";
+        f.langcode = "";
+        classToTest.writeProperty(f, null);
+        assertEquals("", testOutput.toString());
     }
 
     @Test
