@@ -35,6 +35,8 @@ public class DatabaseTest {
 
     private GenerateRDF classToTest;
     private ByteArrayOutputStream testOutput;
+    private Properties props;
+    private Connection dbConn;
 
     @BeforeClass
     public static void createSchema() throws Exception {
@@ -48,14 +50,21 @@ public class DatabaseTest {
         cleanlyInsert(dataSet);
 
         testOutput = new ByteArrayOutputStream();
-        Properties props = new Properties();
+        props = new Properties();
         props.setProperty("tables", "person events");
         props.setProperty("vocabulary", "http://voc");
-        props.setProperty("datatype.number", "xsd:integer");
+        props.setProperty("datatype.integer", "xsd:integer");
         props.setProperty("datatype.decimal", "xsd:decimal");
-        props.setProperty("person.query", "SELECT ID, NAME, LAST_NAME, AGE FROM person");
-        Connection c = dataSource().getConnection();
-        classToTest = new GenerateRDF(testOutput, c, props);
+        props.setProperty("datatype.timestamp","xsd:dateTime");
+        props.setProperty("objectproperty.INORG", "orgs");
+        props.setProperty("person.query", "SELECT ID, NAME, LAST_NAME, BORN, ORG AS INORG FROM person");
+        props.setProperty("notations.attributetable3","SELECT 'NE' AS id"
+         + ",'rdf:type','http://ontology/Notation','->',NULL "
+         + ",'rdfs:label','Not estimated','','' "
+         + ",'skos:notation','NE','','' "
+         + ",'skos:prefLabel','Not estimated','','' ");
+
+        dbConn = dataSource().getConnection();
     }
 
     private IDataSet readDataSet() throws Exception {
@@ -85,11 +94,30 @@ public class DatabaseTest {
 
     @Test
     public void simplePersonExport() throws Exception {
+        classToTest = new GenerateRDF(testOutput, dbConn, props);
         classToTest.exportTable("person");
         String actual = testOutput.toString();
         //System.out.println(actual);
-        String expected = loadFile("person.rdf");
+        String expected = loadFile("rdf-person.xml");
         assertEquals(expected, actual);
     }
 
+    @Test
+    public void basePersonExport() throws Exception {
+        props.setProperty("baseurl", "http://base/url/");
+        classToTest = new GenerateRDF(testOutput, dbConn, props);
+        classToTest.exportTable("person");
+        String actual = testOutput.toString();
+        String expected = loadFile("rdf-person-base.xml");
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void simpleAttrExport() throws Exception {
+        classToTest = new GenerateRDF(testOutput, dbConn, props);
+        classToTest.exportTable("notations");
+        String actual = testOutput.toString();
+        String expected = loadFile("rdf-notations.xml");
+        assertEquals(expected, actual);
+    }
 }

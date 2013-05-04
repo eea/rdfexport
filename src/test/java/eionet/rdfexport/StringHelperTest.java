@@ -1,5 +1,6 @@
 package eionet.rdfexport;
 
+import java.io.UnsupportedEncodingException;
 import static junit.framework.Assert.assertEquals;
 import org.junit.Test;
 
@@ -42,6 +43,14 @@ public class StringHelperTest {
 
     /* ENCODE URI */
     @Test
+    public void testEncodeURIComponent() {
+        String testString = ";/?:@&=+$,aA-_.!~*'()[]<>#%\"{}\n\t ";
+        String expected = "%3B%2F%3F%3A%40%26%3D%2B%24%2CaA-_.!~*'()%5B%5D%3C%3E%23%25%22%7B%7D%0A%09%20";
+        String actual = StringHelper.encodeURIComponent(testString, "UTF-8");
+        assertEquals(expected, actual);
+    }
+
+    @Test
     public void encodeURI() {
         String input = "http://site/sp ace";
         String expct = "http%3A%2F%2Fsite%2Fsp%20ace";
@@ -60,5 +69,12 @@ public class StringHelperTest {
         String input = "(char)quote'~excl!!";
         String expct = "(char)quote'~excl!!";
         assertEquals(expct, StringHelper.encodeURIComponent(input, "UTF-8"));
+    }
+
+    @Test//(expected=UnsupportedEncodingException.class)
+    public void unsupportedCharset() {
+        String input = "x";
+        String expct = "x";
+        assertEquals(expct, StringHelper.encodeURIComponent(input, "ENIGMA"));
     }
 }

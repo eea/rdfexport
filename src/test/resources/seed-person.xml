@@ -1,5 +1,5 @@
 <dataset>
-  <PERSON NAME="Bob" LAST_NAME="Doe" AGE="18"/>
-  <PERSON NAME="Alice" LAST_NAME="Foo" AGE="23"/>
-  <PERSON NAME="Charlie" LAST_NAME="Brown" AGE="42"/>
+  <PERSON ID="1" NAME="Bob" LAST_NAME="Doe" BORN="1984-03-18 20:55:31" ORG="spectre"/>
+  <PERSON ID="2" NAME="Alice" LAST_NAME="Foo" BORN="1980-11-02" ORG="yakuza"/>
+  <PERSON ID="3" NAME="Charlie" LAST_NAME="Brown" BORN="1970-04-30" ORG="mafia +"/>
 </dataset>

@@ -85,35 +85,42 @@ public class GenerateRDFTest {
     @Test
     public void testInjectWhere() throws Exception {
         // Test injection of identifier
-        callInjectWhere("SELECT X AS id, * FROM Y", "819", "X", "SELECT X AS id, * FROM Y WHERE X='819'");
-        callInjectWhere("SELECT X AS id, * FROM Y HAVING id='819'", "819", "X",
+        callInjectWhere("SELECT X AS id, * FROM Y",
+                "819", "X",
+                "SELECT X AS id, * FROM Y WHERE X='819'");
+        callInjectWhere("SELECT X AS id, * FROM Y HAVING id='819'",
+                "819", "X",
                 "SELECT X AS id, * FROM Y WHERE X='819' HAVING id='819'");
-        callInjectWhere("SELECT X AS id, * FROM Y ORDER BY postcode", "819", "X",
+        callInjectWhere("SELECT X AS id, * FROM Y ORDER BY postcode",
+                "819", "X",
                 "SELECT X AS id, * FROM Y WHERE X='819' ORDER BY postcode");
-        callInjectWhere("SELECT X AS id, * FROM Y HAVING id='819' ORDER BY postcode", "819", "X",
+        callInjectWhere("SELECT X AS id, * FROM Y HAVING id='819' ORDER BY postcode",
+                "819", "X",
                 "SELECT X AS id, * FROM Y WHERE X='819' HAVING id='819' ORDER BY postcode");
+        // Test injection of identifier when WHERE exists already
+        callInjectWhere("SELECT X AS id, * FROM Y WHERE YEAR=2000",
+                "819", "X",
+                "SELECT X AS id, * FROM Y WHERE X='819' AND YEAR=2000");
         // Test injection of identifier with LIMIT
-        callInjectWhere("SELECT X AS id, * FROM Y ORDER BY postcode LIMIT 10 OFFSET 2", "819", "X",
+        callInjectWhere("SELECT X AS id, * FROM Y ORDER BY postcode LIMIT 10 OFFSET 2",
+                "819", "X",
                 "SELECT X AS id, * FROM Y WHERE X='819' ORDER BY postcode LIMIT 10 OFFSET 2");
-        callInjectWhere("SELECT X AS id, * FROM Y HAVING id='819' ORDER BY postcode LIMIT 10 OFFSET 2", "819", "X",
+        callInjectWhere("SELECT X AS id, * FROM Y HAVING id='819' ORDER BY postcode LIMIT 10 OFFSET 2",
+                "819", "X",
                 "SELECT X AS id, * FROM Y WHERE X='819' HAVING id='819' ORDER BY postcode LIMIT 10 OFFSET 2");
-        callInjectWhere("SELECT X AS id, * FROM Y LIMIT 10 OFFSET 2", "819", "X",
+        callInjectWhere("SELECT X AS id, * FROM Y LIMIT 10 OFFSET 2",
+                "819", "X",
                 "SELECT X AS id, * FROM Y WHERE X='819' LIMIT 10 OFFSET 2");
         // Test injection of identifier with HAVING
-        callInjectWhere("SELECT X AS id, count(*) FROM Y GROUP BY id HAVING Z=1", "819", "X",
+        callInjectWhere("SELECT X AS id, count(*) FROM Y GROUP BY id HAVING Z=1",
+                "819", "X",
                 "SELECT X AS id, count(*) FROM Y WHERE X='819' GROUP BY id HAVING Z=1");
-        callInjectWhere("SELECT X AS id, count(*) FROM Y GROUP BY id HAVING id='819' AND Z=1", "819", "X",
+        callInjectWhere("SELECT X AS id, count(*) FROM Y GROUP BY id HAVING id='819' AND Z=1",
+                "819", "X",
                 "SELECT X AS id, count(*) FROM Y WHERE X='819' GROUP BY id HAVING id='819' AND Z=1");
-        callInjectWhere("SELECT X AS id, count(*) FROM Y GROUP BY id HAVING Z=1 ORDER BY ID", "819", "X",
+        callInjectWhere("SELECT X AS id, count(*) FROM Y GROUP BY id HAVING Z=1 ORDER BY ID",
+                "819", "X",
                 "SELECT X AS id, count(*) FROM Y WHERE X='819' GROUP BY id HAVING Z=1 ORDER BY ID");
-    }
-
-    @Test
-    public void testEncodeURIComponent() {
-        String testString = ";/?:@&=+$,aA-_.!~*'()[]<>#%\"{}\n\t ";
-        String expected = "%3B%2F%3F%3A%40%26%3D%2B%24%2CaA-_.!~*'()%5B%5D%3C%3E%23%25%22%7B%7D%0A%09%20";
-        String actual = StringHelper.encodeURIComponent(testString, "UTF-8");
-        assertEquals(expected, actual);
     }
 
     @Test
@@ -151,6 +158,9 @@ public class GenerateRDFTest {
 
     // Test writeProperty()
 
+    /**
+     * A null value shall not create output.
+     */
     @Test
     public void writeNull() throws Exception {
         RDFField f = new RDFField();
@@ -178,6 +188,9 @@ public class GenerateRDFTest {
         assertEquals(" <rdfs:label>This is a label</rdfs:label>\n", testOutput.toString());
     }
 
+    /**
+     * Write a reference where the URL to link to is fully in the value. It is then assumed it is already URI-encoded.
+     */
     @Test
     public void writeReference1() throws Exception {
         RDFField f = new RDFField("foaf:page", "->", "");
@@ -192,12 +205,15 @@ public class GenerateRDFTest {
         assertEquals(" <foaf:page rdf:resource=\"http://mypage.org/index.html/\"/>\n", testOutput.toString());
     }
 
+    /**
+     * Write a reference where the value is relative. It is assumed the value is not already URI-encoded.
+     */
     @Test
     public void writeReference3() throws Exception {
         RDFField f = new RDFField("hasSpecies", "->http://eunis.eea.europa.eu/species", "");
-        classToTest.writeProperty(f, "1366");
+        classToTest.writeProperty(f, "canis lupus/linnaeus");
         //System.out.println(testOutput.toString());
-        assertEquals(" <hasSpecies rdf:resource=\"http://eunis.eea.europa.eu/species/1366\"/>\n", testOutput.toString());
+        assertEquals(" <hasSpecies rdf:resource=\"http://eunis.eea.europa.eu/species/canis%20lupus%2Flinnaeus\"/>\n", testOutput.toString());
     }
 
     @Test
