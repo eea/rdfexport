@@ -175,7 +175,7 @@ public class GenerateRDF {
             if (property.datatype.length() == 2) {
                 // Handle the case where the value contains the pointer.
                 output(" rdf:resource=\"");
-                output(StringHelper.escapeXml(value.toString()));
+                output(StringEncoder.encodeToXml(StringEncoder.encodeToIRI(value.toString())));
                 output("\"/>\n");
             } else {
                 // Handle the case of ->countries or ->http://...
@@ -186,9 +186,9 @@ public class GenerateRDF {
                 if (baseurl == null && refSegment.indexOf(":") == -1) {
                     output("#");
                 }
-                output(refSegment);
+                output(StringEncoder.encodeToIRI(refSegment));
                 output("/");
-                output(StringHelper.escapeXml(StringHelper.encodeURIComponent(value.toString(), "UTF-8")));
+                output(StringEncoder.encodeToXml(StringEncoder.encodeToIRI(value.toString())));
                 output("\"/>\n");
             }
             return;
@@ -426,10 +426,10 @@ public class GenerateRDF {
         }
 
         if (value instanceof byte[]) {
-            return StringHelper.escapeXml(new String((byte[]) value));
+            return StringEncoder.encodeToXml(new String((byte[]) value));
         }
 
-        return StringHelper.escapeXml(value.toString());
+        return StringEncoder.encodeToXml(value.toString());
 
     }
 
@@ -560,7 +560,7 @@ public class GenerateRDF {
                         output(segment);
                         if (id != null) {
                             output("/");
-                            output(StringHelper.escapeXml(StringHelper.encodeURIComponent(id.toString(), "UTF-8")));
+                            output(StringEncoder.encodeToXml(StringEncoder.encodeToIRI(id.toString())));
                         }
                         output("\">\n");
                         currentId = id;
@@ -663,7 +663,7 @@ public class GenerateRDF {
                         output(segment);
                         if (id != null) {
                             output("/");
-                            output(StringHelper.escapeXml(StringHelper.encodeURIComponent(id.toString(), "UTF-8")));
+                            output(StringEncoder.encodeToXml(StringEncoder.encodeToIRI(id.toString())));
                         }
                         output("\">\n");
                         currentId = id;

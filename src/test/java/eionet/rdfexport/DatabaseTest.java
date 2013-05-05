@@ -120,4 +120,22 @@ public class DatabaseTest {
         String expected = loadFile("rdf-notations.xml");
         assertEquals(expected, actual);
     }
+
+    @Test
+    public void prtrPollutant() throws Exception {
+        props.setProperty("pollutant.vocabulary", "http://prtr/");
+        props.setProperty("pollutant.class", "prtr:Pollutant");
+        props.setProperty("pollutant.query", "SELECT 'ICHLOROETHANE-1,2 (DCE)' AS ID, 'ICHLOROETHANE-1,2 (DCE)' AS CODE");
+        classToTest = new GenerateRDF(testOutput, dbConn, props);
+        classToTest.exportTable("pollutant");
+        String actual = testOutput.toString();
+        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
+            + " xmlns=\"http://prtr/\">\n"
+            + "\n"
+            + "<prtr:Pollutant rdf:about=\"#pollutant/ICHLOROETHANE-1,2%20(DCE)\">\n"
+            + " <CODE>ICHLOROETHANE-1,2 (DCE)</CODE>\n"
+            + "</prtr:Pollutant>\n";
+        assertEquals(expected, actual);
+    }
 }

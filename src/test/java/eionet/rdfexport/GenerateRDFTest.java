@@ -198,6 +198,29 @@ public class GenerateRDFTest {
         assertEquals(" <foaf:page rdf:resource=\"http://mypage.org/index.html\"/>\n", testOutput.toString());
     }
 
+    /**
+     * Write a reference to a complex foaf:page. Typical usage scenario.
+     */
+    @Test
+    public void writeReferenceComplex() throws Exception {
+        RDFField f = new RDFField("foaf:page", "->", "");
+        classToTest.writeProperty(f, "http://mypage.org/green spider/index.html#here");
+        assertEquals(" <foaf:page rdf:resource=\"http://mypage.org/green%20spider/index.html#here\"/>\n", testOutput.toString());
+    }
+
+    /**
+     * Write a reference to a foaf:page with a Query String. Typical usage scenario.
+     */
+    @Test
+    public void writeReferenceQS() throws Exception {
+        RDFField f = new RDFField("foaf:page", "->", "");
+        classToTest.writeProperty(f, "http://mypage.org/greenspider/page.php?type=species&id=9288#x");
+        assertEquals(" <foaf:page rdf:resource=\"http://mypage.org/greenspider/page.php?type=species&amp;id=9288#x\"/>\n", testOutput.toString());
+    }
+
+    /**
+     * Write a reference to a simple foaf:page. Typical usage scenario.
+     */
     @Test
     public void writeReference2() throws Exception {
         RDFField f = new RDFField("foaf:page", "->http://mypage.org/index.html", "");
@@ -213,7 +236,18 @@ public class GenerateRDFTest {
         RDFField f = new RDFField("hasSpecies", "->http://eunis.eea.europa.eu/species", "");
         classToTest.writeProperty(f, "canis lupus/linnaeus");
         //System.out.println(testOutput.toString());
-        assertEquals(" <hasSpecies rdf:resource=\"http://eunis.eea.europa.eu/species/canis%20lupus%2Flinnaeus\"/>\n", testOutput.toString());
+        assertEquals(" <hasSpecies rdf:resource=\"http://eunis.eea.europa.eu/species/canis%20lupus/linnaeus\"/>\n", testOutput.toString());
+    }
+
+    /**
+     * Write a reference where the value is relative. It is assumed the value is not already URI-encoded.
+     */
+    @Test
+    public void writeReferencePrtr() throws Exception {
+        RDFField f = new RDFField("prtr:Pollutant", "->http://prtr.ec.europa.eu/pollutant", "");
+        classToTest.writeProperty(f, "ICHLOROETHANE-1,2 (DCE)");
+        //System.out.println(testOutput.toString());
+        assertEquals(" <prtr:Pollutant rdf:resource=\"http://prtr.ec.europa.eu/pollutant/ICHLOROETHANE-1,2%20(DCE)\"/>\n", testOutput.toString());
     }
 
     @Test
