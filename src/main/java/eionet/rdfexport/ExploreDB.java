@@ -443,14 +443,23 @@ public class ExploreDB {
 
             // Set of tables that should be skipped. Will be populated by user input below.
             HashSet<String> skipTables = new HashSet<String>();
-            // This is a reserved table in MS-Access database templates generated from http://dd.eionet.europa.eu, lets skip.
-            skipTables.add("VALIDATION_METADATA_DO_NOT_MODIFY");
-            skipTables.add("MSysAccessObjects".toUpperCase());
-            skipTables.add("MSysAccessXML".toUpperCase());
-            skipTables.add("MSysACEs".toUpperCase());
-            skipTables.add("MSysObjects".toUpperCase());
-            skipTables.add("MSysQueries".toUpperCase());
-            skipTables.add("MSysRelationships".toUpperCase());
+            String skipTablesProperty = props.getProperty("explore.skiptables");
+            if (skipTablesProperty != null && !skipTablesProperty.isEmpty()) {
+                String[] skipTablesList = skipTablesProperty.split("\\s+");
+                for (String t : skipTablesList) {
+                    skipTables.add(t.toUpperCase());
+                }
+            } else {
+                // This is a reserved table in MS-Access database templates generated from http://dd.eionet.europa.eu, lets skip.
+                // TODO: Phase out
+                skipTables.add("VALIDATION_METADATA_DO_NOT_MODIFY");
+                skipTables.add("MSysAccessObjects".toUpperCase());
+                skipTables.add("MSysAccessXML".toUpperCase());
+                skipTables.add("MSysACEs".toUpperCase());
+                skipTables.add("MSysObjects".toUpperCase());
+                skipTables.add("MSysQueries".toUpperCase());
+                skipTables.add("MSysRelationships".toUpperCase());
+            }
 
             while (rs.next()) {
 

@@ -59,10 +59,19 @@ public class DatabaseTest {
         props.setProperty("objectproperty.INORG", "orgs");
         props.setProperty("person.query", "SELECT ID, NAME, LAST_NAME, BORN, ORG AS INORG FROM person");
         props.setProperty("notations.attributetable3","SELECT 'NE' AS id"
-         + ",'rdf:type','http://ontology/Notation','->',NULL "
-         + ",'rdfs:label','Not estimated','','' "
-         + ",'skos:notation','NE','','' "
-         + ",'skos:prefLabel','Not estimated','','' ");
+            + ",'rdf:type','http://ontology/Notation','->',NULL "
+            + ",'rdfs:label','Not estimated','','' "
+            + ",'skos:notation','NE','','' "
+            + ",'skos:prefLabel','Not estimated','','' ");
+        props.setProperty("explore.skiptables",
+              "CATALOGS COLLATIONS COLUMNS COLUMN_PRIVILEGES CONSTANTS CONSTRAINTS" // H2
+            + " CROSS_REFERENCES DOMAINS FUNCTION_ALIASES FUNCTION_COLUMNS HELP "
+            + " INDEXES IN_DOUBT LOCKS RIGHTS ROLES SCHEMATA SEQUENCES SESSIONS "
+            + " SESSION_STATE SETTINGS TABLES TABLE_PRIVILEGES TABLE_TYPES TRIGGERS "
+            + " TYPE_INFO USERS VIEWS"
+            + " VALIDATION_METADATA_DO_NOT_MODIFY" // DataDict reserved table
+            + " MSYSACCESSOBJECTS MSYSACCESSXML MSYSACES MSYSOBJECTS MSYSQUERIES MSYSRELATIONSHIPS");
+
 
         dbConn = dataSource().getConnection();
     }
@@ -138,4 +147,16 @@ public class DatabaseTest {
             + "</prtr:Pollutant>\n";
         assertEquals(expected, actual);
     }
+
+    /*
+     * Test ExploreDB class
+     */
+    @Test
+    public void instatiationOfExploreDB() throws Exception {
+        ExploreDB edb = new ExploreDB(dbConn, props, false);
+        edb.discoverTables(true);
+        String tables = props.getProperty("tables");
+        assertEquals("PERSON ", tables);
+    }
+
 }
