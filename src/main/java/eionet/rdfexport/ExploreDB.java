@@ -21,7 +21,7 @@ package eionet.rdfexport;
  *  Søren Roug, EEA
  *  Jaanus Heinlaid, TripleDev
  *
- * $Id: ExportMDB.java 12552 2012-08-28 10:03:28Z roug $
+ * $Id$
  */
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -60,7 +60,7 @@ class FkColumns {
 }
 
 /**
- * A class withholding information about a table found in the database.
+ * A class holding information about a table found in the database.
  */
 class TableSpec {
 
@@ -232,7 +232,7 @@ class TableSpec {
             query.append(", ").append(colEscapeStart).append(col).append(colEscapeEnd);
             query.append(" AS '");
             query.append(label);
-            if (addDataTypes) {
+            if (addDataTypes && !label.contains("->")) {
                 if (type.equals("xsd:string")) {
                     // notation for an empty language code
                     query.append("@'");
@@ -399,6 +399,7 @@ public class ExploreDB {
      *            if true, prompt user for each discovered table and foreign key
      *
      * @throws SQLException
+     *            - if a database access error occurs
      */
     public ExploreDB(Connection dbCon, Properties properties, boolean interActiveMode) throws SQLException {
 
@@ -406,8 +407,7 @@ public class ExploreDB {
         props = properties;
         this.interActiveMode = interActiveMode;
 
-        String jdbcUrl = con.getMetaData().getURL();
-        jdbcSubProtocol = jdbcUrl.substring(5, jdbcUrl.indexOf(':', 5));
+        jdbcSubProtocol = getDBProductName(con);
 
         namespaces = new HashMap<String, String>();
         namespaces.put("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
@@ -428,6 +428,22 @@ public class ExploreDB {
     }
 
     /**
+     * Get the database product name in lower case.
+     *
+     * @param dbCon
+     *            - the database connection to explore
+     * @returns the sub-protocol (currently)
+     * @throws SQLException
+     *            - if a database access error occurs
+     */
+    static String getDBProductName(Connection dbCon) throws SQLException {
+        String jdbcUrl = dbCon.getMetaData().getURL();
+        return jdbcUrl.substring(5, jdbcUrl.indexOf(':', 5)).toLowerCase();
+        // Could also have used:
+        // return dbCon.getMetaData().getDatabaseProductName().toLowerCase()
+    }
+
+    /**
      * Discover all tables in the database and create SELECT statements for the properties file.
      *
      * @param addDataTypes
@@ -441,9 +457,9 @@ public class ExploreDB {
             DatabaseMetaData dbMetadata = con.getMetaData();
             rs = dbMetadata.getColumns(null, null, "%", "%");
 
-            // Set of tables that should be skipped. Will be populated by user input below.
+            // Set of tables that should be skipped. Will be amended by user input below.
             HashSet<String> skipTables = new HashSet<String>();
-            String skipTablesProperty = props.getProperty("explore.skiptables");
+            String skipTablesProperty = props.getProperty("sqldialect." + jdbcSubProtocol + ".skiptables");
             if (skipTablesProperty != null && !skipTablesProperty.isEmpty()) {
                 String[] skipTablesList = skipTablesProperty.split("\\s+");
                 for (String t : skipTablesList) {

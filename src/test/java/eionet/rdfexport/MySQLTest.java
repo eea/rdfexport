@@ -6,32 +6,27 @@ import static junit.framework.Assert.assertNull;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
 import java.util.Properties;
-
-import javax.sql.DataSource;
-
 import org.apache.commons.io.IOUtils;
 import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
 import org.dbunit.IDatabaseTester;
 import org.dbunit.JdbcDatabaseTester;
 import org.dbunit.operation.DatabaseOperation;
-import org.h2.jdbcx.JdbcDataSource;
-import org.h2.tools.RunScript;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-//import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
 
-public class DatabaseTest {
+public class MySQLTest {
 
-    //final Logger logger = LoggerFactory.getLogger(DatabaseTest.class);
 
-    private static final String JDBC_DRIVER = org.h2.Driver.class.getName();
-    private static final String JDBC_URL = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1";
-    private static final String USER = "sa";
-    private static final String PASSWORD = "";
+    private static final String JDBC_DRIVER = com.mysql.jdbc.Driver.class.getName();
+    private static final String JDBC_URL = "jdbc:mysql:mxj://localhost:3336/RDFTest?createDatabaseIfNotExist=true&server.initialize-user=true";
+    private static final String USER = "testuser";
+    private static final String PASSWORD = "testpassword";
     private static final String UTF8 = null;
 
     private GenerateRDF classToTest;
@@ -39,18 +34,31 @@ public class DatabaseTest {
     private Properties props;
     private Connection dbConn;
 
+    private void createSchema() throws Exception {
+        Statement statement = dbConn.createStatement();
+        // MySQL table names are case-sensitive on Linux
+        statement.executeUpdate("drop table if exists PERSON");
+        statement.executeUpdate("create table PERSON ("
+            + "ID integer primary key,"
+            + "NAME varchar(100),"
+            + "LAST_NAME varchar(100),"
+            + "BORN DATETIME,"
+            + "ORG varchar(30))");
+        statement.close();
+    }
+
     @BeforeClass
-    public static void createSchema() throws Exception {
-        String schemaPath = DatabaseTest.class.getClassLoader().getResource("schema.sql").getFile();
-        RunScript.execute(JDBC_URL, USER, PASSWORD, schemaPath, UTF8, false);
+    public static void loadDriver() throws Exception {
+        //Apparently that JDBC_DRIVER trick above loads the driver also
+        //Class.forName("com.mysql.jdbc.Driver");
     }
 
     @Before
     public void importDataSet() throws Exception {
+        dbConn = DriverManager.getConnection(JDBC_URL, USER, PASSWORD);
+        createSchema();
         IDataSet dataSet = readDataSet();
         cleanlyInsert(dataSet);
-
-        dbConn = dataSource().getConnection();
 
         testOutput = new ByteArrayOutputStream();
         props = new Properties();
@@ -59,30 +67,26 @@ public class DatabaseTest {
         props.setProperty("datatype.integer", "xsd:integer");
         props.setProperty("datatype.decimal", "xsd:decimal");
         props.setProperty("datatype.timestamp", "xsd:dateTime");
-        props.setProperty("notations.attributetable3", "SELECT 'NE' AS id"
-            + ",'rdf:type','http://ontology/Notation','->',NULL "
-            + ",'rdfs:label','Not estimated','','' "
-            + ",'skos:notation','NE','','' "
-            + ",'skos:prefLabel','Not estimated','','' ");
+        props.setProperty("datatype.datetime", "xsd:dateTime");
 
-        assertEquals("H2 database expected", "h2", ExploreDB.getDBProductName(dbConn));
-        props.setProperty("sqldialect.h2.skiptables",
-              "CATALOGS COLLATIONS COLUMNS COLUMN_PRIVILEGES CONSTANTS CONSTRAINTS" // H2
-            + " CROSS_REFERENCES DOMAINS FUNCTION_ALIASES FUNCTION_COLUMNS HELP "
-            + " INDEXES IN_DOUBT LOCKS RIGHTS ROLES SCHEMATA SEQUENCES SESSIONS "
-            + " SESSION_STATE SETTINGS TABLES TABLE_PRIVILEGES TABLE_TYPES TRIGGERS "
-            + " TYPE_INFO USERS VIEWS");
+        assertEquals("MySQL database expected", "mysql", ExploreDB.getDBProductName(dbConn));
         props.setProperty("sqldialect.access.skiptables",
              "VALIDATION_METADATA_DO_NOT_MODIFY" // DataDict reserved table
             + " MSYSACCESSOBJECTS MSYSACCESSXML MSYSACES MSYSOBJECTS MSYSQUERIES MSYSRELATIONSHIPS");
-        props.setProperty("sqldialect.h2.column.before", "'");
-        props.setProperty("sqldialect.h2.column.after", "'");
+        props.setProperty("sqldialect.mysql.column.before", "'");
+        props.setProperty("sqldialect.mysql.column.after", "'");
         props.setProperty("sqldialect.access.column.before", "[");
         props.setProperty("sqldialect.access.column.after", "]");
     }
 
+    @After
+    public void closeDBConn() throws Exception {
+        dbConn.close();
+        dbConn = null;
+    }
+
     private IDataSet readDataSet() throws Exception {
-        InputStream is = DatabaseTest.class.getClassLoader().getResourceAsStream("seed-person.xml");
+        InputStream is = MySQLTest.class.getClassLoader().getResourceAsStream("seed-person.xml");
         return new FlatXmlDataSetBuilder().build(is);
     }
 
@@ -93,22 +97,14 @@ public class DatabaseTest {
         databaseTester.onSetup();
     }
 
-    private DataSource dataSource() {
-        JdbcDataSource dataSource = new JdbcDataSource();
-        dataSource.setURL(JDBC_URL);
-        dataSource.setUser(USER);
-        dataSource.setPassword(PASSWORD);
-        return dataSource;
-    }
-
     private String loadFile(String fileName) throws Exception {
-        InputStream is = DatabaseTest.class.getClassLoader().getResourceAsStream(fileName);
+        InputStream is = MySQLTest.class.getClassLoader().getResourceAsStream(fileName);
         return IOUtils.toString(is, "UTF-8");
     }
 
     @Test
     public void simplePersonExport() throws Exception {
-        props.setProperty("person.query", "SELECT ID, NAME, LAST_NAME, BORN, ORG AS INORG FROM person");
+        props.setProperty("person.query", "SELECT ID, NAME, LAST_NAME, BORN, ORG AS INORG FROM PERSON");
         props.setProperty("objectproperty.INORG", "orgs");
         classToTest = new GenerateRDF(testOutput, dbConn, props);
         classToTest.exportTable("person");
@@ -120,7 +116,7 @@ public class DatabaseTest {
 
     @Test
     public void basePersonExport() throws Exception {
-        props.setProperty("person.query", "SELECT ID, NAME, LAST_NAME, BORN, ORG AS INORG FROM person");
+        props.setProperty("person.query", "SELECT ID, NAME, LAST_NAME, BORN, ORG AS INORG FROM PERSON");
         props.setProperty("objectproperty.INORG", "orgs");
         props.setProperty("baseurl", "http://base/url/");
         classToTest = new GenerateRDF(testOutput, dbConn, props);
@@ -132,6 +128,11 @@ public class DatabaseTest {
 
     @Test
     public void simpleAttrExport() throws Exception {
+        props.setProperty("notations.attributetable3", "SELECT 'NE' AS id"
+            + ",'rdf:type','http://ontology/Notation','->',NULL "
+            + ",'rdfs:label','Not estimated','','' "
+            + ",'skos:notation','NE','','' "
+            + ",'skos:prefLabel','Not estimated','','' ");
         classToTest = new GenerateRDF(testOutput, dbConn, props);
         classToTest.exportTable("notations");
         String actual = testOutput.toString();
@@ -165,7 +166,7 @@ public class DatabaseTest {
         ExploreDB edb = new ExploreDB(dbConn, props, false);
         edb.discoverTables(false);
         assertEquals("discovered tables", "PERSON ", props.getProperty("tables"));
-        assertEquals("SELECT '' || id AS id, '' || id AS 'rdfs:label', `id` AS 'id->PERSON', `name` AS 'name', `last_name` AS 'last_name', `born` AS 'born', `org` AS 'org' FROM PERSON", props.getProperty("PERSON.query"));
+        assertEquals("SELECT concat('', id) AS id, concat('', id) AS 'rdfs:label', `id` AS 'id->PERSON', `name` AS 'name', `last_name` AS 'last_name', `born` AS 'born', `org` AS 'org' FROM PERSON", props.getProperty("PERSON.query"));
         assertNull(props.getProperty("person.query"));
     }
 
@@ -177,7 +178,7 @@ public class DatabaseTest {
         ExploreDB edb = new ExploreDB(dbConn, props, false);
         edb.discoverTables(true);
         assertEquals("discovered tables", "PERSON ", props.getProperty("tables"));
-        assertEquals("SELECT '' || id AS id, '' || id AS 'rdfs:label', `id` AS 'id->PERSON', `name` AS 'name@', `last_name` AS 'last_name@', `born` AS 'born^^xsd:dateTime', `org` AS 'org@' FROM PERSON", props.getProperty("PERSON.query"));
+        assertEquals("SELECT concat('', id) AS id, concat('', id) AS 'rdfs:label', `id` AS 'id->PERSON', `name` AS 'name@', `last_name` AS 'last_name@', `born` AS 'born^^xsd:dateTime', `org` AS 'org@' FROM PERSON", props.getProperty("PERSON.query"));
         assertNull(props.getProperty("person.query"));
     }
 }
