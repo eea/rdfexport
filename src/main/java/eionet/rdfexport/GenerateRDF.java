@@ -604,8 +604,8 @@ public class GenerateRDF {
                 }
             }
         } finally {
-            close(rs);
-            close(stmt);
+            closeIgnoringExceptions(rs);
+            closeIgnoringExceptions(stmt);
         }
     }
 
