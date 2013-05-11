@@ -2,6 +2,7 @@ package eionet.rdfexport;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -84,7 +85,7 @@ public class GenerateRDF {
     /** Hashtable of loaded properties. */
     private Properties props;
     /** The output stream to send output to. */
-    private OutputStream outputStream;
+    private OutputStreamWriter outputStream;
     /** Date format. */
     private SimpleDateFormat dateFormat;
     /** Date-time format. */
@@ -105,7 +106,28 @@ public class GenerateRDF {
      *             - if the SQL database is not available
      */
     public GenerateRDF(OutputStream writer, Connection dbCon, Properties properties) throws IOException, SQLException {
+        this(new OutputStreamWriter(writer, "UTF-8"), dbCon, properties);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param writer
+     *            - The output stream to send output to
+     * @param dbCon
+     *            - The database connection
+     * @param properties
+     *            - The properties
+     * @throws IOException
+     *             - if the properties file is missing
+     * @throws SQLException
+     *             - if the SQL database is not available
+     */
+    public GenerateRDF(OutputStreamWriter writer, Connection dbCon, Properties properties) throws IOException, SQLException {
         outputStream = writer;
+        if (!"UTF8".equals(outputStream.getEncoding())) {
+            throw new RuntimeException("Only UTF-8 is supported!");
+        }
         props = properties;
 
         String tablesProperty = props.getProperty("tables");
@@ -149,8 +171,13 @@ public class GenerateRDF {
      *             - if the output is not open.
      */
     private void output(String v) throws IOException {
-        outputStream.write(v.getBytes());
+        outputStream.write(v);
     }
+
+//  public void close() throws IOException {
+//      outputStream.flush();
+//      outputStream.close();
+//  }
 
     /**
      * Write a property. If the property.datatype is "->" then it is a resource reference.
@@ -406,6 +433,7 @@ public class GenerateRDF {
      */
     public void writeRdfFooter() throws IOException {
         output("</rdf:RDF>\n");
+        outputStream.flush();
     }
 
     /**
@@ -471,7 +499,9 @@ public class GenerateRDF {
     }
 
     /**
-     * Generate the RDF header element.
+     * Generate the RDF header element. You can in principle get the encoding
+     * from the output stream, but it returns it as a string that is not
+     * understandable by XML parsers.
      *
      * @throws IOException
      *             - if the output is not open.
@@ -480,6 +510,7 @@ public class GenerateRDF {
         if (rdfHeaderWritten) {
             throw new RuntimeException("Can't write header twice!");
         }
+        //output("<?xml version=\"1.0\" encoding=\"" + outputStream.getEncoding() + "\"?>\n");
         output("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         output("<rdf:RDF");
         for (Object key : namespaces.keySet()) {

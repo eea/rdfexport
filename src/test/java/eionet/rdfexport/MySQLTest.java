@@ -4,7 +4,9 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNull;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
@@ -22,15 +24,18 @@ import org.junit.Test;
 
 public class MySQLTest {
 
-
     private static final String JDBC_DRIVER = com.mysql.jdbc.Driver.class.getName();
-    private static final String JDBC_URL = "jdbc:mysql:mxj://localhost:3336/RDFTest?createDatabaseIfNotExist=true&server.initialize-user=true";
+    private static final String JDBC_URL = "jdbc:mysql:mxj://localhost:3336/RDFTest"
+        + "?createDatabaseIfNotExist=true"
+        + "&server.initialize-user=true"
+        + "&useUnicode=true"
+        + "&characterEncoding=UTF-8";
     private static final String USER = "testuser";
     private static final String PASSWORD = "testpassword";
-    private static final String UTF8 = null;
 
     private GenerateRDF classToTest;
     private ByteArrayOutputStream testOutput;
+    private OutputStreamWriter testWriter;
     private Properties props;
     private Connection dbConn;
 
@@ -43,7 +48,7 @@ public class MySQLTest {
             + "NAME varchar(100),"
             + "LAST_NAME varchar(100),"
             + "BORN DATETIME,"
-            + "ORG varchar(30))");
+            + "ORG varchar(30)) default charset utf8");
         statement.close();
     }
 
@@ -61,6 +66,7 @@ public class MySQLTest {
         cleanlyInsert(dataSet);
 
         testOutput = new ByteArrayOutputStream();
+        testWriter = new OutputStreamWriter(testOutput, "UTF-8");
         props = new Properties();
         props.setProperty("tables", "person events");
         props.setProperty("vocabulary", "http://voc");
@@ -80,7 +86,9 @@ public class MySQLTest {
     }
 
     @After
-    public void closeDBConn() throws Exception {
+    public void closeAll() throws Exception {
+        testWriter.close();
+        testOutput.close();
         dbConn.close();
         dbConn = null;
     }
@@ -106,8 +114,9 @@ public class MySQLTest {
     public void simplePersonExport() throws Exception {
         props.setProperty("person.query", "SELECT ID, NAME, LAST_NAME, BORN, ORG AS INORG FROM PERSON");
         props.setProperty("objectproperty.INORG", "orgs");
-        classToTest = new GenerateRDF(testOutput, dbConn, props);
+        classToTest = new GenerateRDF(testWriter, dbConn, props);
         classToTest.exportTable("person");
+        classToTest.writeRdfFooter();
         String actual = testOutput.toString();
         //System.out.println(actual);
         String expected = loadFile("rdf-person.xml");
@@ -119,8 +128,9 @@ public class MySQLTest {
         props.setProperty("person.query", "SELECT ID, NAME, LAST_NAME, BORN, ORG AS INORG FROM PERSON");
         props.setProperty("objectproperty.INORG", "orgs");
         props.setProperty("baseurl", "http://base/url/");
-        classToTest = new GenerateRDF(testOutput, dbConn, props);
+        classToTest = new GenerateRDF(testWriter, dbConn, props);
         classToTest.exportTable("person");
+        classToTest.writeRdfFooter();
         String actual = testOutput.toString();
         String expected = loadFile("rdf-person-base.xml");
         assertEquals(expected, actual);
@@ -133,8 +143,9 @@ public class MySQLTest {
             + ",'rdfs:label','Not estimated','','' "
             + ",'skos:notation','NE','','' "
             + ",'skos:prefLabel','Not estimated','','' ");
-        classToTest = new GenerateRDF(testOutput, dbConn, props);
+        classToTest = new GenerateRDF(testWriter, dbConn, props);
         classToTest.exportTable("notations");
+        classToTest.writeRdfFooter();
         String actual = testOutput.toString();
         String expected = loadFile("rdf-notations.xml");
         assertEquals(expected, actual);
@@ -145,8 +156,9 @@ public class MySQLTest {
         props.setProperty("pollutant.vocabulary", "http://prtr/");
         props.setProperty("pollutant.class", "prtr:Pollutant");
         props.setProperty("pollutant.query", "SELECT 'ICHLOROETHANE-1,2 (DCE)' AS ID, 'ICHLOROETHANE-1,2 (DCE)' AS CODE");
-        classToTest = new GenerateRDF(testOutput, dbConn, props);
+        classToTest = new GenerateRDF(testWriter, dbConn, props);
         classToTest.exportTable("pollutant");
+        classToTest.writeRdfFooter();
         String actual = testOutput.toString();
         String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
             + "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
@@ -154,7 +166,8 @@ public class MySQLTest {
             + "\n"
             + "<prtr:Pollutant rdf:about=\"#pollutant/ICHLOROETHANE-1,2%20(DCE)\">\n"
             + " <CODE>ICHLOROETHANE-1,2 (DCE)</CODE>\n"
-            + "</prtr:Pollutant>\n";
+            + "</prtr:Pollutant>\n"
+            + "</rdf:RDF>\n";
         assertEquals(expected, actual);
     }
 
@@ -181,4 +194,25 @@ public class MySQLTest {
         assertEquals("SELECT concat('', id) AS id, concat('', id) AS 'rdfs:label', `id` AS 'id->PERSON', `name` AS 'name@', `last_name` AS 'last_name@', `born` AS 'born^^xsd:dateTime', `org` AS 'org@' FROM PERSON", props.getProperty("PERSON.query"));
         assertNull(props.getProperty("person.query"));
     }
+
+    /*
+     * Test Execute class
+     */
+    /**
+     * Test simple query. This can only by done with a disk-stored database, as the Execute class
+     * opens a new connection to the database.
+     */
+    @Test
+    public void executeSimple() throws Exception {
+        String resourcefile = MySQLTest.class.getClassLoader().getResource("exportsimple.properties").getFile();
+        File temp = File.createTempFile("outsimple", ".rdf");
+        String outfile = temp.toString();
+        String[] args = {"-f", resourcefile, "-o", outfile};
+        Execute.main(args);
+        String expected = loadFile("rdf-person.xml");
+        String actual = IOUtils.toString(temp.toURI(), "UTF-8");
+        temp.delete();
+        assertEquals(expected, actual);
+    }
+
 }

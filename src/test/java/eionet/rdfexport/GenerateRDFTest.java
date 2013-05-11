@@ -2,11 +2,11 @@ package eionet.rdfexport;
 
 import static junit.framework.Assert.assertEquals;
 
-import java.util.Properties;
-
-import org.junit.Test;
-import org.junit.Before;
 import java.io.ByteArrayOutputStream;
+import java.io.OutputStreamWriter;
+import java.util.Properties;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Test the module.
@@ -19,17 +19,19 @@ public class GenerateRDFTest {
 
     private GenerateRDF classToTest;
     private ByteArrayOutputStream testOutput;
+    private OutputStreamWriter testWriter;
 
     @Before
     public void setUp() throws Exception {
         testOutput = new ByteArrayOutputStream();
+        testWriter = new OutputStreamWriter(testOutput, "UTF-8");
         Properties props = new Properties();
         props.setProperty("tables", "coubiogeoreg     events  ");
         props.setProperty("vocabulary", "http://voc");
         props.setProperty("xmlns.rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
         props.setProperty("datatype.int", "xsd:integer");
         props.setProperty("objectproperty.org", "orgs");
-        classToTest = new GenerateRDF(testOutput, null, props);
+        classToTest = new GenerateRDF(testWriter, null, props);
     }
 
     private void callParseName(String testString, String testDatatype, String expectedName, String expectedDatatype,
@@ -147,12 +149,14 @@ public class GenerateRDFTest {
     @Test
     public void writeFooter() throws Exception {
         classToTest.writeRdfFooter();
+        testWriter.close();
         assertEquals("</rdf:RDF>\n", testOutput.toString());
     }
 
     @Test
     public void testDocumentInformation() throws Exception {
         classToTest.exportDocumentInformation();
+        testWriter.close();
         assertEquals("", testOutput.toString());
     }
 
@@ -168,6 +172,7 @@ public class GenerateRDFTest {
         f.datatype = "";
         f.langcode = "";
         classToTest.writeProperty(f, null);
+        testWriter.close();
         assertEquals("", testOutput.toString());
     }
 
@@ -178,6 +183,7 @@ public class GenerateRDFTest {
         f.datatype = "";
         f.langcode = "";
         classToTest.writeProperty(f, "This is a label");
+        testWriter.close();
         assertEquals(" <rdfs:label>This is a label</rdfs:label>\n", testOutput.toString());
     }
 
@@ -185,6 +191,7 @@ public class GenerateRDFTest {
     public void writeLiteral2() throws Exception {
         RDFField f = new RDFField("rdfs:label", "", "");
         classToTest.writeProperty(f, "This is a label");
+        testWriter.close();
         assertEquals(" <rdfs:label>This is a label</rdfs:label>\n", testOutput.toString());
     }
 
@@ -195,6 +202,7 @@ public class GenerateRDFTest {
     public void writeReference1() throws Exception {
         RDFField f = new RDFField("foaf:page", "->", "");
         classToTest.writeProperty(f, "http://mypage.org/index.html");
+        testWriter.close();
         assertEquals(" <foaf:page rdf:resource=\"http://mypage.org/index.html\"/>\n", testOutput.toString());
     }
 
@@ -205,6 +213,7 @@ public class GenerateRDFTest {
     public void writeReferenceComplex() throws Exception {
         RDFField f = new RDFField("foaf:page", "->", "");
         classToTest.writeProperty(f, "http://mypage.org/green spider/index.html#here");
+        testWriter.close();
         assertEquals(" <foaf:page rdf:resource=\"http://mypage.org/green%20spider/index.html#here\"/>\n", testOutput.toString());
     }
 
@@ -215,6 +224,7 @@ public class GenerateRDFTest {
     public void writeReferenceQS() throws Exception {
         RDFField f = new RDFField("foaf:page", "->", "");
         classToTest.writeProperty(f, "http://mypage.org/greenspider/page.php?type=species&id=9288#x");
+        testWriter.close();
         assertEquals(" <foaf:page rdf:resource=\"http://mypage.org/greenspider/page.php?type=species&amp;id=9288#x\"/>\n", testOutput.toString());
     }
 
@@ -225,6 +235,7 @@ public class GenerateRDFTest {
     public void writeReference2() throws Exception {
         RDFField f = new RDFField("foaf:page", "->http://mypage.org/index.html", "");
         classToTest.writeProperty(f, "");
+        testWriter.close();
         assertEquals(" <foaf:page rdf:resource=\"http://mypage.org/index.html/\"/>\n", testOutput.toString());
     }
 
@@ -236,6 +247,7 @@ public class GenerateRDFTest {
         RDFField f = new RDFField("hasSpecies", "->http://eunis.eea.europa.eu/species", "");
         classToTest.writeProperty(f, "canis lupus/linnaeus");
         //System.out.println(testOutput.toString());
+        testWriter.close();
         assertEquals(" <hasSpecies rdf:resource=\"http://eunis.eea.europa.eu/species/canis%20lupus/linnaeus\"/>\n", testOutput.toString());
     }
 
@@ -247,6 +259,7 @@ public class GenerateRDFTest {
         RDFField f = new RDFField("prtr:Pollutant", "->http://prtr.ec.europa.eu/pollutant", "");
         classToTest.writeProperty(f, "ICHLOROETHANE-1,2 (DCE)");
         //System.out.println(testOutput.toString());
+        testWriter.close();
         assertEquals(" <prtr:Pollutant rdf:resource=\"http://prtr.ec.europa.eu/pollutant/ICHLOROETHANE-1,2%20(DCE)\"/>\n", testOutput.toString());
     }
 
@@ -255,6 +268,7 @@ public class GenerateRDFTest {
         RDFField f = new RDFField("hasSpecies", "->species", "");
         classToTest.writeProperty(f, "1366");
         //System.out.println(testOutput.toString());
+        testWriter.close();
         assertEquals(" <hasSpecies rdf:resource=\"#species/1366\"/>\n", testOutput.toString());
     }
 
@@ -263,6 +277,7 @@ public class GenerateRDFTest {
         RDFField f = new RDFField("hasNumber", "xsd:int", "");
         classToTest.writeProperty(f, "1366");
         //System.out.println(testOutput.toString());
+        testWriter.close();
         assertEquals(" <hasNumber rdf:datatype=\"http://www.w3.org/2001/XMLSchema#int\">1366</hasNumber>\n", testOutput.toString());
     }
 
@@ -270,6 +285,7 @@ public class GenerateRDFTest {
     public void writeOwnType() throws Exception {
         RDFField f = new RDFField("hasDistance", "http://buzz#lightyear", "");
         classToTest.writeProperty(f, "20");
+        testWriter.close();
         assertEquals(" <hasDistance rdf:datatype=\"http://buzz#lightyear\">20</hasDistance>\n", testOutput.toString());
     }
 
@@ -278,6 +294,7 @@ public class GenerateRDFTest {
         RDFField f = new RDFField("hello", "", "de");
         classToTest.writeProperty(f, "Welt");
         //System.out.println(testOutput.toString());
+        testWriter.close();
         assertEquals(" <hello xml:lang=\"de\">Welt</hello>\n", testOutput.toString());
     }
 
@@ -285,6 +302,7 @@ public class GenerateRDFTest {
     public void writeIntWithLang() throws Exception {
         RDFField f = new RDFField("hello", "xsd:int", "de");
         classToTest.writeProperty(f, "20");
+        testWriter.close();
         assertEquals(" <hello rdf:datatype=\"http://www.w3.org/2001/XMLSchema#int\">20</hello>\n", testOutput.toString());
     }
 

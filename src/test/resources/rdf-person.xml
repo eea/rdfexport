@@ -3,8 +3,8 @@
  xmlns="http://voc">
 
 <Person rdf:about="#person/1">
- <NAME>Bob</NAME>
- <LAST_NAME>Doe</LAST_NAME>
+ <NAME>Ηλέκτρα</NAME>
+ <LAST_NAME>el Greco</LAST_NAME>
  <BORN rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">1984-03-18T08:55:31</BORN>
  <INORG rdf:resource="#orgs/spectre"/>
 </Person>
@@ -20,3 +20,4 @@
  <BORN rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">1970-04-30T12:00:00</BORN>
  <INORG rdf:resource="#orgs/mafia%20%2B"/>
 </Person>
+</rdf:RDF>
