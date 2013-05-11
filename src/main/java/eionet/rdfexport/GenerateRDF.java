@@ -174,11 +174,6 @@ public class GenerateRDF {
         outputStream.write(v);
     }
 
-//  public void close() throws IOException {
-//      outputStream.flush();
-//      outputStream.close();
-//  }
-
     /**
      * Write a property. If the property.datatype is "->" then it is a resource reference.
      *
@@ -618,7 +613,7 @@ public class GenerateRDF {
      * Close resultset.
      * @param rs - result set
      */
-    private static void close(ResultSet rs) {
+    private static void closeIgnoringExceptions(ResultSet rs) {
         if (rs != null) {
             try {
                 rs.close();
@@ -632,7 +627,7 @@ public class GenerateRDF {
      * Close statement.
      * @param stmt - statement
      */
-    private static void close(Statement stmt) {
+    private static void closeIgnoringExceptions(Statement stmt) {
         if (stmt != null) {
             try {
                 stmt.close();
@@ -727,8 +722,8 @@ public class GenerateRDF {
                 }
             }
         } finally {
-            GenerateRDF.close(rs);
-            GenerateRDF.close(stmt);
+            GenerateRDF.closeIgnoringExceptions(rs);
+            GenerateRDF.closeIgnoringExceptions(stmt);
         }
     }
 

@@ -38,6 +38,7 @@ public interface RDFExportService {
      * @param identifier
      *            - primary key of the record we want or null for all records.
      * @throws Exception
+     *            - on failure
      */
     void exportTable(String table, String identifier) throws Exception;
 
@@ -45,6 +46,7 @@ public interface RDFExportService {
      * Exports all tables defined in the properties as RDF.
      *
      * @throws Exception
+     *            - on failure
      */
     void exportAllTables() throws Exception;
 }

@@ -68,8 +68,6 @@ public final class StringEncoder {
      *
      * @param s
      *            The string to %-escape.
-     * @param enc
-     *            The encoding scheme to use.
      * @return The escaped string.
      */
     public static String encodeURIComponent(String s) {

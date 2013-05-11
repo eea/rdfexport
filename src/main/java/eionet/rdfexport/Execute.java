@@ -104,7 +104,7 @@ public class Execute {
      * @param args - command line arguments.
      * @throws IOException - if anything goes wrong with reading the properties and/or writing the output
      */
-    private Execute(String args[]) throws IOException {
+    private Execute(String[] args) throws IOException {
 
         // First, parse the command line arguments.
         parseArguments(args);
@@ -163,6 +163,7 @@ public class Execute {
      * Parses the given command line arguments, and sets the corresponding fields of this object.
      *
      * @param args
+     *         - the arguments
      */
     private void parseArguments(String[] args) {
 
@@ -227,7 +228,9 @@ public class Execute {
      * properties and command line arguments have been processed, and corresponding fields set in the object.
      *
      * @throws SQLException
+     *             - if the SQL database is not available
      * @throws IOException
+     *             - if the properties file is missing
      */
     private void run() throws SQLException, IOException {
 
@@ -279,7 +282,9 @@ public class Execute {
      *
      * @param properties
      * @param filePath
+     *         - The file path to load the properties from
      * @throws IOException
+     *             - if the properties file is missing
      */
     private static void loadProperties(Properties properties, String filePath) throws IOException {
 
@@ -299,7 +304,9 @@ public class Execute {
      * Utility method that returns a connection on the database given on the command line or in the properties file.
      *
      * @return
+     *             - the connection
      * @throws SQLException
+     *             - if the SQL database is not available
      */
     private Connection getConnection() throws SQLException {
 
@@ -399,7 +406,9 @@ public class Execute {
      *
      * @param args
      * @throws SQLException
+     *             - if the SQL database is not available
      * @throws IOException
+     *             - if the properties file is missing
      */
     public static void main(String[] args) throws SQLException, IOException {
 

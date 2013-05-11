@@ -44,7 +44,7 @@ import java.util.Properties;
  */
 class FkColumns {
 
-    /** The map's keys are foreign-key columns, values are their corresponding primary key columns */
+    /** The map's keys are foreign-key columns, values are their corresponding primary key columns. */
     Map<String, String> fkToPkColumns = new HashMap<String, String>();
     /** The order in which the foreign-key columns have been set. */
     Map<Integer, String> positions = new HashMap<Integer, String>();

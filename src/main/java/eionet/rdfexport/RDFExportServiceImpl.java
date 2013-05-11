@@ -43,8 +43,11 @@ public class RDFExportServiceImpl implements RDFExportService {
      * Class constructor.
      *
      * @param outputStream
+     *            - The output stream to send output to
      * @param connection
+     *            - The database connection
      * @param properties
+     *            - The properties
      */
     public RDFExportServiceImpl(OutputStream outputStream, Connection connection, Properties properties) {
         this.outputStream = outputStream;
