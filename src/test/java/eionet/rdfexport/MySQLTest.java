@@ -32,6 +32,7 @@ public class MySQLTest {
         + "&characterEncoding=UTF-8";
     private static final String USER = "testuser";
     private static final String PASSWORD = "testpassword";
+    private static final String UTF8_ENCODING = "UTF-8";
 
     private GenerateRDF classToTest;
     private ByteArrayOutputStream testOutput;
@@ -117,7 +118,7 @@ public class MySQLTest {
         classToTest = new GenerateRDF(testWriter, dbConn, props);
         classToTest.exportTable("person");
         classToTest.writeRdfFooter();
-        String actual = testOutput.toString();
+        String actual = testOutput.toString(UTF8_ENCODING);
         //System.out.println(actual);
         String expected = loadFile("rdf-person.xml");
         assertEquals(expected, actual);
@@ -131,7 +132,7 @@ public class MySQLTest {
         classToTest = new GenerateRDF(testWriter, dbConn, props);
         classToTest.exportTable("person");
         classToTest.writeRdfFooter();
-        String actual = testOutput.toString();
+        String actual = testOutput.toString(UTF8_ENCODING);
         String expected = loadFile("rdf-person-base.xml");
         assertEquals(expected, actual);
     }
@@ -146,7 +147,7 @@ public class MySQLTest {
         classToTest = new GenerateRDF(testWriter, dbConn, props);
         classToTest.exportTable("notations");
         classToTest.writeRdfFooter();
-        String actual = testOutput.toString();
+        String actual = testOutput.toString(UTF8_ENCODING);
         String expected = loadFile("rdf-notations.xml");
         assertEquals(expected, actual);
     }
@@ -159,7 +160,7 @@ public class MySQLTest {
         classToTest = new GenerateRDF(testWriter, dbConn, props);
         classToTest.exportTable("pollutant");
         classToTest.writeRdfFooter();
-        String actual = testOutput.toString();
+        String actual = testOutput.toString(UTF8_ENCODING);
         String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
             + "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
             + " xmlns=\"http://prtr/\">\n"
@@ -172,26 +173,34 @@ public class MySQLTest {
     }
 
     /*
-     * Test ExploreDB class
+     * Test ExploreDB class.
+     * MySQL on windows changes the table names to lower case, where as Linux is case-sensitive.
      */
     @Test
     public void explorePersonTable() throws Exception {
         ExploreDB edb = new ExploreDB(dbConn, props, false);
         edb.discoverTables(false);
         assertEquals("discovered tables", "PERSON ", props.getProperty("tables"));
-        assertEquals("SELECT concat('', id) AS id, concat('', id) AS 'rdfs:label', `id` AS 'id->PERSON', `name` AS 'name', `last_name` AS 'last_name', `born` AS 'born', `org` AS 'org' FROM PERSON", props.getProperty("PERSON.query"));
+        String expected = "SELECT concat('', id) AS id, concat('', id) AS 'rdfs:label',"
+            + " `id` AS 'id->PERSON', `name` AS 'name', `last_name` AS 'last_name',"
+            + " `born` AS 'born', `org` AS 'org' FROM PERSON";
+        assertEquals(expected.toLowerCase(), props.getProperty("PERSON.query").toLowerCase());
         assertNull(props.getProperty("person.query"));
     }
 
     /*
-     * Test ExploreDB class
+     * Test ExploreDB class.
+     * MySQL on windows changes the table names to lower case, where as Linux is case-sensitive.
      */
     @Test
     public void explorePersonTableWithTypes() throws Exception {
         ExploreDB edb = new ExploreDB(dbConn, props, false);
         edb.discoverTables(true);
         assertEquals("discovered tables", "PERSON ", props.getProperty("tables"));
-        assertEquals("SELECT concat('', id) AS id, concat('', id) AS 'rdfs:label', `id` AS 'id->PERSON', `name` AS 'name@', `last_name` AS 'last_name@', `born` AS 'born^^xsd:dateTime', `org` AS 'org@' FROM PERSON", props.getProperty("PERSON.query"));
+        String expected = "SELECT concat('', id) AS id, concat('', id) AS 'rdfs:label',"
+            + " `id` AS 'id->PERSON', `name` AS 'name@', `last_name` AS 'last_name@',"
+            + " `born` AS 'born^^xsd:dateTime', `org` AS 'org@' FROM PERSON";
+        assertEquals(expected.toLowerCase(), props.getProperty("PERSON.query").toLowerCase());
         assertNull(props.getProperty("person.query"));
     }
 

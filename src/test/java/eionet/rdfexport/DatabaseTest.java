@@ -28,6 +28,7 @@ public class DatabaseTest {
     private static final String JDBC_URL = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1";
     private static final String USER = "sa";
     private static final String PASSWORD = "";
+    private static final String UTF8_ENCODING = "UTF-8";
 
     private GenerateRDF classToTest;
     private ByteArrayOutputStream testOutput;
@@ -54,7 +55,7 @@ public class DatabaseTest {
         cleanlyInsert(dataSet);
 
         testOutput = new ByteArrayOutputStream();
-        testWriter = new OutputStreamWriter(testOutput, "UTF-8");
+        testWriter = new OutputStreamWriter(testOutput, UTF8_ENCODING);
         props = new Properties();
         props.setProperty("tables", "person events");
         props.setProperty("vocabulary", "http://voc");
@@ -100,7 +101,7 @@ public class DatabaseTest {
 
     private String loadFile(String fileName) throws Exception {
         InputStream is = DatabaseTest.class.getClassLoader().getResourceAsStream(fileName);
-        return IOUtils.toString(is, "UTF-8");
+        return IOUtils.toString(is, UTF8_ENCODING);
     }
 
     @Test
@@ -110,7 +111,7 @@ public class DatabaseTest {
         classToTest = new GenerateRDF(testWriter, dbConn, props);
         classToTest.exportTable("person");
         classToTest.writeRdfFooter();
-        String actual = testOutput.toString();
+        String actual = testOutput.toString(UTF8_ENCODING);
         //System.out.println(actual);
         String expected = loadFile("rdf-person.xml");
         assertEquals(expected, actual);
@@ -124,7 +125,7 @@ public class DatabaseTest {
         classToTest = new GenerateRDF(testWriter, dbConn, props);
         classToTest.exportTable("person");
         classToTest.writeRdfFooter();
-        String actual = testOutput.toString();
+        String actual = testOutput.toString(UTF8_ENCODING);
         String expected = loadFile("rdf-person-base.xml");
         assertEquals(expected, actual);
     }
@@ -139,7 +140,7 @@ public class DatabaseTest {
         classToTest = new GenerateRDF(testWriter, dbConn, props);
         classToTest.exportTable("notations");
         classToTest.writeRdfFooter();
-        String actual = testOutput.toString();
+        String actual = testOutput.toString(UTF8_ENCODING);
         String expected = loadFile("rdf-notations.xml");
         assertEquals(expected, actual);
     }
@@ -152,7 +153,7 @@ public class DatabaseTest {
         classToTest = new GenerateRDF(testWriter, dbConn, props);
         classToTest.exportTable("pollutant");
         classToTest.writeRdfFooter();
-        String actual = testOutput.toString();
+        String actual = testOutput.toString(UTF8_ENCODING);
         String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
             + "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
             + " xmlns=\"http://prtr/\">\n"
@@ -172,7 +173,7 @@ public class DatabaseTest {
         classToTest = new GenerateRDF(testWriter, dbConn, props);
         classToTest.exportTable("greek");
         classToTest.writeRdfFooter();
-        String actual = testOutput.toString();
+        String actual = testOutput.toString(UTF8_ENCODING);
         String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
             + "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
             + " xmlns=\"http://prtr/\">\n"
@@ -197,7 +198,7 @@ public class DatabaseTest {
         classToTest = new GenerateRDF(testWriter, dbConn, props);
         classToTest.exportTable("greek");
         classToTest.writeRdfFooter();
-        String actual = testOutput.toString();
+        String actual = testOutput.toString(UTF8_ENCODING);
         String expected = "<?xml version=\"1.0\" encoding=\"ISO8859_7\"?>\n"
             + "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
             + " xmlns=\"http://prtr/\">\n"
