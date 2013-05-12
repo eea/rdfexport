@@ -180,7 +180,7 @@ public class MySQLTest {
     public void explorePersonTable() throws Exception {
         ExploreDB edb = new ExploreDB(dbConn, props, false);
         edb.discoverTables(false);
-        assertEquals("discovered tables", "PERSON ", props.getProperty("tables"));
+        assertEquals("discovered tables", "person ", props.getProperty("tables").toLowerCase());
         String expected = "SELECT concat('', id) AS id, concat('', id) AS 'rdfs:label',"
             + " `id` AS 'id->PERSON', `name` AS 'name', `last_name` AS 'last_name',"
             + " `born` AS 'born', `org` AS 'org' FROM PERSON";
@@ -196,7 +196,7 @@ public class MySQLTest {
     public void explorePersonTableWithTypes() throws Exception {
         ExploreDB edb = new ExploreDB(dbConn, props, false);
         edb.discoverTables(true);
-        assertEquals("discovered tables", "PERSON ", props.getProperty("tables"));
+        assertEquals("discovered tables", "person ", props.getProperty("tables").toLowerCase());
         String expected = "SELECT concat('', id) AS id, concat('', id) AS 'rdfs:label',"
             + " `id` AS 'id->PERSON', `name` AS 'name@', `last_name` AS 'last_name@',"
             + " `born` AS 'born^^xsd:dateTime', `org` AS 'org@' FROM PERSON";
