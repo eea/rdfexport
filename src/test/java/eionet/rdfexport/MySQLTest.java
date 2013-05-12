@@ -113,7 +113,7 @@ public class MySQLTest {
 
     @Test
     public void simplePersonExport() throws Exception {
-        props.setProperty("person.query", "SELECT ID, NAME, LAST_NAME, BORN, ORG AS INORG FROM PERSON");
+        props.setProperty("person.query", "SELECT ID, NAME, LAST_NAME, BORN, ORG AS INORG FROM PERSON ORDER BY ID");
         props.setProperty("objectproperty.INORG", "orgs");
         classToTest = new GenerateRDF(testWriter, dbConn, props);
         classToTest.exportTable("person");
@@ -126,7 +126,7 @@ public class MySQLTest {
 
     @Test
     public void basePersonExport() throws Exception {
-        props.setProperty("person.query", "SELECT ID, NAME, LAST_NAME, BORN, ORG AS INORG FROM PERSON");
+        props.setProperty("person.query", "SELECT ID, NAME, LAST_NAME, BORN, ORG AS INORG FROM PERSON ORDER BY ID");
         props.setProperty("objectproperty.INORG", "orgs");
         props.setProperty("baseurl", "http://base/url/");
         classToTest = new GenerateRDF(testWriter, dbConn, props);

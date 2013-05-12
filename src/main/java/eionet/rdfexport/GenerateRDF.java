@@ -3,6 +3,7 @@ package eionet.rdfexport;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -63,6 +64,8 @@ public class GenerateRDF {
     private static final String DATE_FORMAT = "yyyy-MM-dd";
     /** Format of xsd:dateTime value. */
     private static final String DATE_TIME_FORMAT = "yyyy-MM-dd'T'hh:mm:ss";
+    /** The only encoding we support. */
+    private static final String UTF8_ENCODING = "UTF-8";
 
     /** Base of XML file. */
     private String baseurl;
@@ -160,74 +163,6 @@ public class GenerateRDF {
 
         dateFormat = new SimpleDateFormat(DATE_FORMAT);
         dateTimeFormat = new SimpleDateFormat(DATE_TIME_FORMAT);
-    }
-
-    /**
-     * Called from the other methods to do the output.
-     *
-     * @param v
-     *            - value to print.
-     * @throws IOException
-     *             - if the output is not open.
-     */
-    private void output(String v) throws IOException {
-        outputStream.write(v);
-    }
-
-    /**
-     * Write a property. If the property.datatype is "->" then it is a resource reference.
-     *
-     * @param property
-     *            triple consisting of name, datatype and langcode
-     * @param value
-     *            from database.
-     * @throws IOException
-     *             - if the output is not open.
-     */
-    void writeProperty(RDFField property, Object value) throws IOException {
-        String typelangAttr = "";
-
-        if (value == null) {
-            return;
-        }
-        output(" <");
-        output(property.name);
-        if (property.datatype.startsWith("->")) {
-            // Handle pointers
-            if (property.datatype.length() == 2) {
-                // Handle the case where the value contains the pointer.
-                output(" rdf:resource=\"");
-                output(StringEncoder.encodeToXml(StringEncoder.encodeToIRI(value.toString())));
-                output("\"/>\n");
-            } else {
-                // Handle the case of ->countries or ->http://...
-                // If the ref-segment contains a colon then it can't be a fragment
-                // http://www.w3.org/TR/REC-xml-names/#NT-NCName
-                String refSegment = property.datatype.substring(2);
-                output(" rdf:resource=\"");
-                if (baseurl == null && refSegment.indexOf(":") == -1) {
-                    output("#");
-                }
-                output(StringEncoder.encodeToIRI(refSegment));
-                output("/");
-                output(StringEncoder.encodeToXml(StringEncoder.encodeToIRI(value.toString())));
-                output("\"/>\n");
-            }
-            return;
-        } else if (!"".equals(property.datatype)) {
-            if (property.datatype.startsWith("xsd:")) {
-                property.datatype = "http://www.w3.org/2001/XMLSchema#" + property.datatype.substring(4);
-            }
-            typelangAttr = " rdf:datatype=\"" + property.datatype + '"';
-        } else if (!"".equals(property.langcode)) {
-            typelangAttr = " xml:lang=\"" + property.langcode + '"';
-        }
-        output(typelangAttr);
-        output(">");
-        output(getFormattedValue(value));
-        output("</");
-        output(property.name);
-        output(">\n");
     }
 
     /**
@@ -404,19 +339,23 @@ public class GenerateRDF {
      *             if there is a database problem.
      */
     public void exportDocumentInformation() throws IOException, SQLException {
-        TreeSet<String> sortedProps = new TreeSet<String>(props.stringPropertyNames());
-        String rdfClass = null;
-        String query = null;
-        for (String prop : sortedProps) {
-            if (prop.trim().equalsIgnoreCase("class")) {
-                rdfClass = props.getProperty(prop);
+        String rdfClass = props.getProperty("class", "rdf:Description");
+
+        String queryTable = props.getProperty("query");
+        if (queryTable != null) {
+            if (!rdfHeaderWritten) {
+                rdfHeader();
             }
-            if (prop.trim().equalsIgnoreCase("query")) {
-                query = props.getProperty(prop);
-            }
+            runQuery("", queryTable, rdfClass);
+            rdfClass = "rdf:Description"; // Any further declaration must be anonymous
         }
-        if (query != null && query.length() > 0 && rdfClass != null && rdfClass.length() > 0) {
-            runQuery("", query, rdfClass);
+        String attributesTable = props.getProperty("attributetable");
+        if (attributesTable != null) {
+            if (!rdfHeaderWritten) {
+                rdfHeader();
+            }
+            runAttributes("", attributesTable, rdfClass);
+            rdfClass = "rdf:Description"; // Any further declaration must be anonymous
         }
     }
 
@@ -427,6 +366,9 @@ public class GenerateRDF {
      *             - if the output is not open.
      */
     public void writeRdfFooter() throws IOException {
+        if (!rdfHeaderWritten) {
+            rdfHeader();
+        }
         output("</rdf:RDF>\n");
         outputStream.flush();
     }
@@ -436,20 +378,22 @@ public class GenerateRDF {
      *
      * @param value - value to format
      * @return the formatted string
+     * @throws UnsupportedEncodingException
+     *             - if UTF-8 is not supported by the platform
      */
-    private String getFormattedValue(Object value) {
+    private String getFormattedValue(Object value) throws UnsupportedEncodingException {
         if (value instanceof java.sql.Date) {
-            java.sql.Date sqlDate = (java.sql.Date) value;
+            Date sqlDate = (java.sql.Date) value;
             return dateFormat.format(new Date(sqlDate.getTime()));
         }
 
         if (value instanceof java.sql.Timestamp) {
-            java.sql.Timestamp sqlDate = (Timestamp) value;
+            Timestamp sqlDate = (Timestamp) value;
             return dateTimeFormat.format(new Date(sqlDate.getTime()));
         }
 
         if (value instanceof byte[]) {
-            return StringEncoder.encodeToXml(new String((byte[]) value));
+            return StringEncoder.encodeToXml(new String((byte[]) value, UTF8_ENCODING));
         }
 
         return StringEncoder.encodeToXml(value.toString());
@@ -547,10 +491,10 @@ public class GenerateRDF {
 
         ResultSet rs = null;
         Statement stmt = null;
-
         Object currentId = "/..";
         Integer currentRow = 0;
         Boolean firstTime = true;
+
         try {
             stmt = con.createStatement();
             if (stmt.execute(sql)) {
@@ -573,22 +517,9 @@ public class GenerateRDF {
 
                     if (currentId != null && !currentId.equals(id)) {
                         if (!firstTime) {
-                            output("</");
-                            output(rdfClass);
-                            output(">\n");
+                            writeEndResource(rdfClass);
                         }
-                        output("<");
-                        output(rdfClass);
-                        output(" rdf:about=\"");
-                        if (baseurl == null) {
-                            output("#");
-                        }
-                        output(segment);
-                        if (id != null) {
-                            output("/");
-                            output(StringEncoder.encodeToXml(StringEncoder.encodeToIRI(id.toString())));
-                        }
-                        output("\">\n");
+                        writeStartResource(rdfClass, baseurl, segment, id);
                         currentId = id;
                         firstTime = false;
                     }
@@ -598,14 +529,93 @@ public class GenerateRDF {
                     }
                 }
                 if (!firstTime) {
-                    output("</");
-                    output(rdfClass);
-                    output(">\n");
+                    writeEndResource(rdfClass);
                 }
             }
         } finally {
             closeIgnoringExceptions(rs);
             closeIgnoringExceptions(stmt);
+        }
+    }
+
+    /**
+     * Query attributes table. The result must have one + X * four columns. 1. id, 2. attribute name, 3. value, 4. datatype, 5.
+     * languagecode, 6. attribute name, 7. value, 8. datatype, 9. languagecode, etc. If id is null, then the attributes are assigned
+     * to the namespace of the table.
+     *
+     * @param segment
+     *            - the namespace of the table
+     * @param sql
+     *            - the query
+     * @param rdfClass
+     *            - the class to assign or rdf:Description
+     * @throws SQLException
+     *             - if the SQL database is not available
+     * @throws IOException
+     *             - if the output is not open.
+     */
+    private void runAttributes(String segment, String sql, String rdfClass) throws SQLException, IOException {
+
+        ResultSet rs = null;
+        Statement stmt = null;
+        Object currentId = "/..";
+        Integer currentRow = 0;
+        Boolean firstTime = true;
+
+        try {
+            stmt = con.createStatement();
+
+            if (stmt.execute(sql)) {
+                rs = stmt.getResultSet();
+
+                ResultSetMetaData rsmd = rs.getMetaData();
+                int numcols = rsmd.getColumnCount();
+
+                while (rs.next()) {
+
+                    currentRow += 1;
+
+                    RDFField property = new RDFField();
+                    Object id = rs.getObject(1);
+                    if (id != null && id.equals("@")) {
+                        id = currentRow;
+                    }
+
+                    if (currentId != null && !currentId.equals(id)) {
+                        if (!firstTime) {
+                            writeEndResource(rdfClass);
+                        }
+                        writeStartResource(rdfClass, baseurl, segment, id);
+                        currentId = id;
+                        firstTime = false;
+                    }
+
+                    for (int b = 2; b < numcols; b += 4) {
+                        property.name = rs.getObject(b + 0).toString();
+                        if (rs.getObject(b + 2) == null) {
+                            if (objectProperties.containsKey(property.name)) {
+                                property.datatype = objectProperties.get(property.name);
+                            } else {
+                                property.datatype = "";
+                            }
+                        } else {
+                            property.datatype = rs.getObject(b + 2).toString();
+                        }
+                        if (rs.getObject(b + 3) != null) {
+                            property.langcode = rs.getObject(b + 3).toString();
+                        } else {
+                            property.langcode = "";
+                        }
+                        writeProperty(property, rs.getObject(b + 1));
+                    }
+                }
+                if (!firstTime) {
+                    writeEndResource(rdfClass);
+                }
+            }
+        } finally {
+            GenerateRDF.closeIgnoringExceptions(rs);
+            GenerateRDF.closeIgnoringExceptions(stmt);
         }
     }
 
@@ -638,93 +648,100 @@ public class GenerateRDF {
     }
 
     /**
-     * Query attributes table. The result must have one + X * four columns. 1. id, 2. attribute name, 3. value, 4. datatype, 5.
-     * languagecode, 6. attribute name, 7. value, 8. datatype, 9. languagecode, etc. If id is null, then the attributes are assigned
-     * to the namespace of the table.
-     *
+     * Write the start of a resource - the line with rdf:about.
+     * @param rdfClass
+     *            - the class to assign
+     * @param baseurl
+     *            - the URL of the dataset
      * @param segment
      *            - the namespace of the table
-     * @param sql
-     *            - the query
-     * @param rdfClass
-     *            - the class to assign or rdf:Description
-     * @throws SQLException
-     *             - if the SQL database is not available
+     * @param id
+     *            - the unqualified identifier of the resource
      * @throws IOException
      *             - if the output is not open.
      */
-    private void runAttributes(String segment, String sql, String rdfClass) throws SQLException, IOException {
-
-        ResultSet rs = null;
-        Statement stmt = null;
-        Object currentId = "/..";
-        Boolean firstTime = true;
-        try {
-            stmt = con.createStatement();
-
-            if (stmt.execute(sql)) {
-                rs = stmt.getResultSet();
-
-                ResultSetMetaData rsmd = rs.getMetaData();
-                int numcols = rsmd.getColumnCount();
-
-                while (rs.next()) {
-                    RDFField property = new RDFField();
-                    if (rs.getObject(1) == null) {
-                        continue;
-                    }
-                    Object id = rs.getObject(1);
-                    if (currentId != null && !currentId.equals(id)) {
-                        if (!firstTime) {
-                            output("</");
-                            output(rdfClass);
-                            output(">\n");
-                        }
-                        output("<");
-                        output(rdfClass);
-                        output(" rdf:about=\"");
-                        if (baseurl == null) {
-                            output("#");
-                        }
-                        output(segment);
-                        if (id != null) {
-                            output("/");
-                            output(StringEncoder.encodeToXml(StringEncoder.encodeToIRI(id.toString())));
-                        }
-                        output("\">\n");
-                        currentId = id;
-                        firstTime = false;
-                    }
-
-                    for (int b = 2; b < numcols; b += 4) {
-                        property.name = rs.getObject(b + 0).toString();
-                        if (rs.getObject(b + 2) == null) {
-                            if (objectProperties.containsKey(property.name)) {
-                                property.datatype = objectProperties.get(property.name);
-                            } else {
-                                property.datatype = "";
-                            }
-                        } else {
-                            property.datatype = rs.getObject(b + 2).toString();
-                        }
-                        if (rs.getObject(b + 3) != null) {
-                            property.langcode = rs.getObject(b + 3).toString();
-                        } else {
-                            property.langcode = "";
-                        }
-                        writeProperty(property, rs.getObject(b + 1));
-                    }
-                }
-                if (!firstTime) {
-                    output("</");
-                    output(rdfClass);
-                    output(">\n");
-                }
-            }
-        } finally {
-            GenerateRDF.closeIgnoringExceptions(rs);
-            GenerateRDF.closeIgnoringExceptions(stmt);
+    private void writeStartResource(String rdfClass, String baseurl, String segment, Object id) throws IOException {
+        output("<");
+        output(rdfClass);
+        output(" rdf:about=\"");
+        if (baseurl == null) {
+            output("#");
         }
+        output(segment);
+        if (id != null) {
+            output("/");
+            output(StringEncoder.encodeToXml(StringEncoder.encodeToIRI(id.toString())));
+        }
+        output("\">\n");
+    }
+
+    /**
+     * Write the end of a resource.
+     * @param rdfClass
+     *            - the class to assign
+     * @throws IOException
+     *             - if the output is not open.
+     */
+    private void writeEndResource(String rdfClass) throws IOException {
+        output("</");
+        output(rdfClass);
+        output(">\n");
+    }
+
+    /**
+     * Write a property. If the property.datatype is "->" then it is a resource reference.
+     *
+     * @param property
+     *            triple consisting of name, datatype and langcode
+     * @param value
+     *            from database.
+     * @throws IOException
+     *             - if the output is not open.
+     */
+    void writeProperty(RDFField property, Object value) throws IOException {
+        String typelangAttr = "";
+
+        if (value == null) {
+            return;
+        }
+        output(" <");
+        output(property.name);
+        if (property.datatype.startsWith("->")) {
+            // Handle pointers
+            if (property.datatype.length() == 2) {
+                // Handle the case where the value contains the pointer.
+                output(" rdf:resource=\"");
+                output(StringEncoder.encodeToXml(StringEncoder.encodeToIRI(value.toString())));
+                output("\"/>\n");
+            } else {
+                // Handle the case of ->countries or ->http://...
+                // If the ref-segment contains a colon then it can't be a fragment
+                // http://www.w3.org/TR/REC-xml-names/#NT-NCName
+                String refSegment = property.datatype.substring(2);
+                output(" rdf:resource=\"");
+                if (baseurl == null && refSegment.indexOf(":") == -1) {
+                    output("#");
+                }
+                output(StringEncoder.encodeToIRI(refSegment));
+                output("/");
+                output(StringEncoder.encodeToXml(StringEncoder.encodeToIRI(value.toString())));
+                output("\"/>\n");
+            }
+            return;
+        } else if (!"".equals(property.datatype)) {
+            if (property.datatype.startsWith("xsd:")) {
+                property.datatype = "http://www.w3.org/2001/XMLSchema#" + property.datatype.substring(4);
+            }
+            typelangAttr = " rdf:datatype=\"" + property.datatype + '"';
+        } else if (!"".equals(property.langcode)) {
+            typelangAttr = " xml:lang=\"" + property.langcode + '"';
+        }
+        output(typelangAttr);
+        output(">");
+        output(getFormattedValue(value));
+        output("</");
+        output(property.name);
+        output(">\n");
     }
 
     /**
@@ -795,6 +812,18 @@ public class GenerateRDF {
         result.datatype = datatype;
         result.langcode = language;
         return result;
+    }
+
+    /**
+     * Called from the other methods to do the output.
+     *
+     * @param v
+     *            - value to print.
+     * @throws IOException
+     *             - if the output is not open.
+     */
+    private void output(String v) throws IOException {
+        outputStream.write(v);
     }
 }
 // vim: set expandtab sw=4 :

@@ -150,7 +150,12 @@ public class GenerateRDFTest {
     public void writeFooter() throws Exception {
         classToTest.writeRdfFooter();
         testWriter.close();
-        assertEquals("</rdf:RDF>\n", testOutput.toString());
+        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
+            + " xmlns=\"http://voc\">\n"
+            + "\n"
+            + "</rdf:RDF>\n";
+        assertEquals(expected, testOutput.toString());
     }
 
     @Test

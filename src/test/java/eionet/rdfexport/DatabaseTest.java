@@ -106,7 +106,7 @@ public class DatabaseTest {
 
     @Test
     public void simplePersonExport() throws Exception {
-        props.setProperty("person.query", "SELECT ID, NAME, LAST_NAME, BORN, ORG AS INORG FROM PERSON");
+        props.setProperty("person.query", "SELECT ID, NAME, LAST_NAME, BORN, ORG AS INORG FROM PERSON ORDER BY ID");
         props.setProperty("objectproperty.INORG", "orgs");
         classToTest = new GenerateRDF(testWriter, dbConn, props);
         classToTest.exportTable("person");
@@ -119,7 +119,7 @@ public class DatabaseTest {
 
     @Test
     public void basePersonExport() throws Exception {
-        props.setProperty("person.query", "SELECT ID, NAME, LAST_NAME, BORN, ORG AS INORG FROM PERSON");
+        props.setProperty("person.query", "SELECT ID, NAME, LAST_NAME, BORN, ORG AS INORG FROM PERSON ORDER BY ID");
         props.setProperty("objectproperty.INORG", "orgs");
         props.setProperty("baseurl", "http://base/url/");
         classToTest = new GenerateRDF(testWriter, dbConn, props);
@@ -131,7 +131,92 @@ public class DatabaseTest {
     }
 
     @Test
-    public void simpleAttrExport() throws Exception {
+    public void personAtQuery() throws Exception {
+        props.setProperty("person.query", "SELECT '@' AS ID, NAME, LAST_NAME, BORN, ORG FROM PERSON ORDER BY BORN");
+        classToTest = new GenerateRDF(testWriter, dbConn, props);
+        classToTest.exportTable("person");
+        classToTest.writeRdfFooter();
+        String actual = testOutput.toString(UTF8_ENCODING);
+        String expected = loadFile("rdf-person-atsign.xml");
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void fullDocumentInformation() throws Exception {
+        props.setProperty("baseurl", "http://base/url/");
+        props.setProperty("class", "bibo:Document");
+        props.setProperty("query", "SELECT NULL AS ID, 'Ηλέκτρα' AS \"dcterms:creator@\", 'http://license.eu' AS \"cc:licence->\"");
+        classToTest = new GenerateRDF(testWriter, dbConn, props);
+        classToTest.exportDocumentInformation();
+        classToTest.writeRdfFooter();
+        String actual = testOutput.toString(UTF8_ENCODING);
+        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
+            + " xmlns=\"http://voc\" xml:base=\"http://base/url/\">\n"
+            + "\n"
+            + "<bibo:Document rdf:about=\"\">\n"
+            + " <dcterms:creator>Ηλέκτρα</dcterms:creator>\n"
+            + " <cc:licence rdf:resource=\"http://license.eu\"/>\n"
+            + "</bibo:Document>\n"
+            + "</rdf:RDF>\n";
+        assertEquals(expected, actual);
+    }
+
+    /*
+     * If the 'class' property is spelled 'CLASS' then it has no effect.
+     */
+    @Test
+    public void documentInformationWithCLASS() throws Exception {
+        props.setProperty("baseurl", "http://base/url/");
+        props.setProperty("CLASS", "bibo:Document");
+        props.setProperty("query", "SELECT NULL AS ID, 'Ηλέκτρα' AS \"dcterms:creator@\", 'http://license.eu' AS \"cc:licence->\"");
+        classToTest = new GenerateRDF(testWriter, dbConn, props);
+        classToTest.exportDocumentInformation();
+        classToTest.writeRdfFooter();
+        String actual = testOutput.toString(UTF8_ENCODING);
+        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
+            + " xmlns=\"http://voc\" xml:base=\"http://base/url/\">\n"
+            + "\n"
+            + "<rdf:Description rdf:about=\"\">\n"
+            + " <dcterms:creator>Ηλέκτρα</dcterms:creator>\n"
+            + " <cc:licence rdf:resource=\"http://license.eu\"/>\n"
+            + "</rdf:Description>\n"
+            + "</rdf:RDF>\n";
+        assertEquals(expected, actual);
+    }
+
+    /*
+     * It is possible to use attribute instead of 'query'
+     */
+    @Test
+    public void documentInformationWithAttribute() throws Exception {
+        props.setProperty("baseurl", "http://base/url/");
+        props.setProperty("query", "SELECT NULL AS ID, 'http://license.eu' AS \"cc:licence->\"");
+        props.setProperty("attributetable", "SELECT NULL AS ID"
+            + ",'dcterms:creator',NAME, '', ''"
+            + "FROM PERSON ORDER BY ID");
+        classToTest = new GenerateRDF(testWriter, dbConn, props);
+        classToTest.exportDocumentInformation();
+        classToTest.writeRdfFooter();
+        String actual = testOutput.toString(UTF8_ENCODING);
+        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
+            + " xmlns=\"http://voc\" xml:base=\"http://base/url/\">\n"
+            + "\n"
+            + "<rdf:Description rdf:about=\"\">\n"
+            + " <cc:licence rdf:resource=\"http://license.eu\"/>\n"
+            + "</rdf:Description>\n"
+            + "<rdf:Description rdf:about=\"\">\n"
+            + " <dcterms:creator>Ηλέκτρα</dcterms:creator>\n"
+            + " <dcterms:creator>Alice</dcterms:creator>\n"
+            + " <dcterms:creator>Charlie</dcterms:creator>\n"
+            + "</rdf:Description>\n"
+            + "</rdf:RDF>\n";
+        assertEquals(expected, actual);
+    }
+    @Test
+    public void simpleAttr() throws Exception {
         props.setProperty("notations.attributetable3", "SELECT 'NE' AS id"
             + ",'rdf:type','http://ontology/Notation','->',NULL "
             + ",'rdfs:label','Not estimated','','' "
@@ -142,6 +227,36 @@ public class DatabaseTest {
         classToTest.writeRdfFooter();
         String actual = testOutput.toString(UTF8_ENCODING);
         String expected = loadFile("rdf-notations.xml");
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void simpleAttrWithAt() throws Exception {
+        props.setProperty("orgs.attributetable1", "SELECT DISTINCT '@' AS id"
+            + ",'rdf:type','http://ontology/Org','->',NULL "
+            + ",'skos:notation',ORG,'','' FROM PERSON ORDER BY ORG");
+        classToTest = new GenerateRDF(testWriter, dbConn, props);
+        classToTest.exportTable("orgs");
+        classToTest.writeRdfFooter();
+        String actual = testOutput.toString(UTF8_ENCODING);
+        //System.out.println(actual);
+        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
+            + " xmlns=\"http://voc\">\n"
+            + "\n"
+            + "<Orgs rdf:about=\"#orgs/1\">\n"
+            + " <rdf:type rdf:resource=\"http://ontology/Org\"/>\n"
+            + " <skos:notation>mafia +</skos:notation>\n"
+            + "</Orgs>\n"
+            + "<Orgs rdf:about=\"#orgs/2\">\n"
+            + " <rdf:type rdf:resource=\"http://ontology/Org\"/>\n"
+            + " <skos:notation>spectre</skos:notation>\n"
+            + "</Orgs>\n"
+            + "<Orgs rdf:about=\"#orgs/3\">\n"
+            + " <rdf:type rdf:resource=\"http://ontology/Org\"/>\n"
+            + " <skos:notation>yakuza</skos:notation>\n"
+            + "</Orgs>\n"
+            + "</rdf:RDF>\n";
         assertEquals(expected, actual);
     }
 

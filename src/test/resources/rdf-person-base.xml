@@ -2,19 +2,19 @@
 <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
  xmlns="http://voc" xml:base="http://base/url/">
 
-<Person rdf:about="person/1">
+<Person rdf:about="person/182208">
  <NAME>Ηλέκτρα</NAME>
  <LAST_NAME>el Greco</LAST_NAME>
  <BORN rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">1984-03-18T08:55:31</BORN>
  <INORG rdf:resource="orgs/spectre"/>
 </Person>
-<Person rdf:about="person/2">
+<Person rdf:about="person/533922">
  <NAME>Alice</NAME>
  <LAST_NAME>Foo</LAST_NAME>
  <BORN rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">1980-11-02T12:00:00</BORN>
  <INORG rdf:resource="orgs/yakuza"/>
 </Person>
-<Person rdf:about="person/3">
+<Person rdf:about="person/882911">
  <NAME>Charlie</NAME>
  <LAST_NAME>Brown</LAST_NAME>
  <BORN rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">1970-04-30T12:00:00</BORN>
