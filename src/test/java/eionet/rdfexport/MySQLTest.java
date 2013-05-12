@@ -180,12 +180,13 @@ public class MySQLTest {
     public void explorePersonTable() throws Exception {
         ExploreDB edb = new ExploreDB(dbConn, props, false);
         edb.discoverTables(false);
-        assertEquals("discovered tables", "person ", props.getProperty("tables").toLowerCase());
+        String foundTable = props.getProperty("tables").trim();
+        assertEquals("discovered tables", "person", foundTable.toLowerCase());
         String expected = "SELECT concat('', id) AS id, concat('', id) AS 'rdfs:label',"
             + " `id` AS 'id->PERSON', `name` AS 'name', `last_name` AS 'last_name',"
             + " `born` AS 'born', `org` AS 'org' FROM PERSON";
-        assertEquals(expected.toLowerCase(), props.getProperty("PERSON.query").toLowerCase());
-        assertNull(props.getProperty("person.query"));
+        String actual = props.getProperty(foundTable + ".query");
+        assertEquals(expected.toLowerCase(), actual.toLowerCase());
     }
 
     /*
@@ -196,12 +197,13 @@ public class MySQLTest {
     public void explorePersonTableWithTypes() throws Exception {
         ExploreDB edb = new ExploreDB(dbConn, props, false);
         edb.discoverTables(true);
-        assertEquals("discovered tables", "person ", props.getProperty("tables").toLowerCase());
+        String foundTable = props.getProperty("tables").trim();
+        assertEquals("discovered tables", "person", foundTable.toLowerCase());
         String expected = "SELECT concat('', id) AS id, concat('', id) AS 'rdfs:label',"
             + " `id` AS 'id->PERSON', `name` AS 'name@', `last_name` AS 'last_name@',"
             + " `born` AS 'born^^xsd:dateTime', `org` AS 'org@' FROM PERSON";
-        assertEquals(expected.toLowerCase(), props.getProperty("PERSON.query").toLowerCase());
-        assertNull(props.getProperty("person.query"));
+        String actual = props.getProperty(foundTable + ".query");
+        assertEquals(expected.toLowerCase(), actual.toLowerCase());
     }
 
     /*
