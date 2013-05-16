@@ -52,7 +52,7 @@ class FkColumns {
     /**
      * Returns the number of fkColumn-pkColumn pairs in this object.
      *
-     * @return
+     * @return the size
      */
     int getSize() {
         return fkToPkColumns.size();
@@ -85,6 +85,11 @@ class TableSpec {
 
     /**
      * Constructor.
+     *
+     * @param tableName
+     *         - Name of table
+     * @param datatypeMap
+     *         - The datatype mappings
      */
     TableSpec(String tableName, HashMap<Integer, String> datatypeMap) {
         this.tableName = tableName;
@@ -148,8 +153,8 @@ class TableSpec {
      * have simple key, it is not listed here. The map's keys are table names, and the values are the names of single columns that
      * constitute the particular table's primary key.
      *
-     * @param tablesPkColumns
-     * @return
+     * @param tablesPkColumns map representing simple primary keys of all tables in this database
+     * @return map of foreign keys
      */
     private Map<String, String> getSimpleForeignKeysToTables(Map<String, String> tablesPkColumns) {
 
@@ -182,6 +187,8 @@ class TableSpec {
      *            - simple primary keys of all tables (key = table, value = table's primary key column).
      * @param interActiveMode
      *            - if true, user will be prompted for each discovered table and foreign key
+     * @param addDataTypes
+     *            - if true, the table labels in the SQL query will have data types, like customer_id^^xsd:int
      * @return the SQL query
      */
     public String createQuery(String jdbcSubProtocol, Map<String, String> tablesPkColumns, boolean interActiveMode,
@@ -214,7 +221,7 @@ class TableSpec {
             String pkTable = simpleForeignKeys.get(col);
             if (pkTable != null) {
                 boolean exportAsReference =
-                        (!interActiveMode) ? true : ExploreDB.readUserInputBoolean(tableName + "." + col + " is a FK to "
+                        !interActiveMode ? true : ExploreDB.readUserInputBoolean(tableName + "." + col + " is a FK to "
                                 + pkTable + ". Export as reference?");
                 if (exportAsReference) {
                     label += "->" + pkTable;
@@ -224,7 +231,7 @@ class TableSpec {
                 pkTable = getFirstMatchingKey(tablesPkColumns, col);
                 if (pkTable != null && !pkTable.equals(tableName)) {
                     boolean exportAsReference =
-                            (!interActiveMode) ? true : ExploreDB.readUserInputBoolean(tableName + "." + col
+                            !interActiveMode ? true : ExploreDB.readUserInputBoolean(tableName + "." + col
                                     + " has the same name as PK in " + pkTable + ". Export as reference?");
                     if (exportAsReference) {
                         label += "->" + pkTable;
@@ -256,7 +263,7 @@ class TableSpec {
      * Returns an XML Schema data type for the given SQL type (as in java.sql.Types).
      *
      * @param sqlType The given SQL type.
-     * @return
+     * @return the XSD type for RDF.
      */
     private String getXsdDataType(int sqlType) {
         String r = datatypeMap.get(Integer.valueOf(sqlType));
@@ -477,7 +484,7 @@ public class ExploreDB {
                     if (tableSpec == null) {
 
                         boolean exportThisTable =
-                                (!interActiveMode) ? true : readUserInputBoolean("Export table " + tableName + "?");
+                                !interActiveMode ? true : readUserInputBoolean("Export table " + tableName + "?");
                         if (!exportThisTable) {
                             skipTables.add(tableName.toUpperCase());
                             continue;

@@ -1,13 +1,10 @@
 package eionet.rdfexport;
 
-//import java.io.UnsupportedEncodingException;
-//import java.net.URLEncoder;
-
 /**
  * Class to help escape strings for XML and URI components.
  *
- * @see http://www.java2s.com/Tutorial/Java/0120__Development/EscapeHTML.htm
- * @see http://www.ietf.org/rfc/rfc3986.txt
+ * @see <a href="http://www.java2s.com/Tutorial/Java/0120__Development/EscapeHTML.htm">Escape HTML</a>
+ * @see <a href="http://www.ietf.org/rfc/rfc3986.txt">Uniform Resource Identifier (URI): Generic Syntax</a>
  */
 public final class StringEncoder {
     /**
