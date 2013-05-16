@@ -25,7 +25,7 @@ import org.junit.Test;
 public class DatabaseTest {
 
     private static final String JDBC_DRIVER = org.h2.Driver.class.getName();
-    private static final String JDBC_URL = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1";
+    private static final String JDBC_URL = "jdbc:h2:mem:test";
     private static final String USER = "sa";
     private static final String PASSWORD = "";
     private static final String UTF8_ENCODING = "UTF-8";
@@ -333,7 +333,7 @@ public class DatabaseTest {
         ExploreDB edb = new ExploreDB(dbConn, props, false);
         edb.discoverTables(false);
         assertEquals("discovered tables", "PERSON ", props.getProperty("tables"));
-        assertEquals("SELECT '' || id AS id, '' || id AS 'rdfs:label', `id` AS 'id->PERSON', `name` AS 'name', `last_name` AS 'last_name', `born` AS 'born', `org` AS 'org' FROM PERSON", props.getProperty("PERSON.query"));
+        assertEquals("SELECT '' || id AS id, '' || id AS 'rdfs:label', `id` AS 'id', `name` AS 'name', `last_name` AS 'last_name', `born` AS 'born', `org` AS 'org' FROM PERSON", props.getProperty("PERSON.query"));
         assertNull(props.getProperty("person.query"));
     }
 
@@ -342,8 +342,20 @@ public class DatabaseTest {
         ExploreDB edb = new ExploreDB(dbConn, props, false);
         edb.discoverTables(true);
         assertEquals("discovered tables", "PERSON ", props.getProperty("tables"));
-        assertEquals("SELECT '' || id AS id, '' || id AS 'rdfs:label', `id` AS 'id->PERSON', `name` AS 'name@', `last_name` AS 'last_name@', `born` AS 'born^^xsd:dateTime', `org` AS 'org@' FROM PERSON", props.getProperty("PERSON.query"));
+        assertEquals("SELECT '' || id AS id, '' || id AS 'rdfs:label', `id` AS 'id^^xsd:integer', `name` AS 'name@', `last_name` AS 'last_name@', `born` AS 'born^^xsd:dateTime', `org` AS 'org@' FROM PERSON", props.getProperty("PERSON.query"));
         assertNull(props.getProperty("person.query"));
     }
 
+    /*
+     * Force a timestamp to be exported as xsd:integer via the properties file.
+     */
+    @Test
+    public void explorePersonTableWithBadTypes() throws Exception {
+        props.setProperty("datatype.timestamp", "xsd:integer");
+        ExploreDB edb = new ExploreDB(dbConn, props, false);
+        edb.discoverTables(true);
+        assertEquals("discovered tables", "PERSON ", props.getProperty("tables"));
+        assertEquals("SELECT '' || id AS id, '' || id AS 'rdfs:label', `id` AS 'id^^xsd:integer', `name` AS 'name@', `last_name` AS 'last_name@', `born` AS 'born^^xsd:integer', `org` AS 'org@' FROM PERSON", props.getProperty("PERSON.query"));
+        assertNull(props.getProperty("person.query"));
+    }
 }

@@ -64,6 +64,9 @@ class FkColumns {
  */
 class TableSpec {
 
+    /** The datatype mappings. */
+    private HashMap<Integer, String> datatypeMap;
+
     /** Name of table. */
     String tableName;
 
@@ -83,8 +86,9 @@ class TableSpec {
     /**
      * Constructor.
      */
-    TableSpec(String tableName) {
+    TableSpec(String tableName, HashMap<Integer, String> datatypeMap) {
         this.tableName = tableName;
+        this.datatypeMap = datatypeMap;
     }
 
     /**
@@ -178,7 +182,7 @@ class TableSpec {
      *            - simple primary keys of all tables (key = table, value = table's primary key column).
      * @param interActiveMode
      *            - if true, user will be prompted for each discovered table and foreign key
-     * @return
+     * @return the SQL query
      */
     public String createQuery(String jdbcSubProtocol, Map<String, String> tablesPkColumns, boolean interActiveMode,
             boolean addDataTypes) {
@@ -210,19 +214,19 @@ class TableSpec {
             String pkTable = simpleForeignKeys.get(col);
             if (pkTable != null) {
                 boolean exportAsReference =
-                        interActiveMode == false ? true : ExploreDB.readUserInputBoolean(tableName + "." + col + " is a FK to "
+                        (!interActiveMode) ? true : ExploreDB.readUserInputBoolean(tableName + "." + col + " is a FK to "
                                 + pkTable + ". Export as reference?");
-                if (exportAsReference == true) {
+                if (exportAsReference) {
                     label += "->" + pkTable;
                     fkReferences.add(col + "->" + pkTable);
                 }
             } else {
                 pkTable = getFirstMatchingKey(tablesPkColumns, col);
-                if (pkTable != null) {
+                if (pkTable != null && !pkTable.equals(tableName)) {
                     boolean exportAsReference =
-                            interActiveMode == false ? true : ExploreDB.readUserInputBoolean(tableName + "." + col
+                            (!interActiveMode) ? true : ExploreDB.readUserInputBoolean(tableName + "." + col
                                     + " has the same name as PK in " + pkTable + ". Export as reference?");
-                    if (exportAsReference == true) {
+                    if (exportAsReference) {
                         label += "->" + pkTable;
                         fkReferences.add(col + "->" + pkTable);
                     }
@@ -255,44 +259,8 @@ class TableSpec {
      * @return
      */
     private String getXsdDataType(int sqlType) {
-        switch (sqlType) {
-            case Types.BIGINT:
-                return "xsd:long";
-            case Types.BINARY:
-                return "xsd:base64Binary";
-            case Types.BIT:
-                return "xsd:short";
-            case Types.BLOB:
-                return "xsd:base64Binary";
-            case Types.BOOLEAN:
-                return "xsd:boolean";
-            case Types.DATE:
-                return "xsd:date";
-            case Types.DECIMAL:
-                return "xsd:decimal";
-            case Types.DOUBLE:
-                return "xsd:double";
-            case Types.FLOAT:
-                return "xsd:float";
-            case Types.INTEGER:
-                return "xsd:int";
-            case Types.LONGVARBINARY:
-                return "xsd:base64Binary";
-            case Types.NUMERIC:
-                return "xsd:decimal";
-            case Types.REAL:
-                return "xsd:float";
-            case Types.SMALLINT:
-                return "xsd:short";
-            case Types.TIMESTAMP:
-                return "xsd:dateTime";
-            case Types.TINYINT:
-                return "xsd:short";
-            case Types.VARBINARY:
-                return "xsd:base64Binary";
-            default:
-                return "xsd:string";
-        }
+        String r = datatypeMap.get(Integer.valueOf(sqlType));
+        return (r == null) ? "xsd:string" : r;
     }
 
     /**
@@ -377,7 +345,7 @@ public class ExploreDB {
     /** The properties that are object properties. They point to another object. */
     private HashMap<String, String> objectProperties;
     /** The datatype mappings. */
-    private HashMap<String, String> datatypeMap;
+    private HashMap<Integer, String> datatypeMap;
     /** All the tables in the database. */
     private HashMap<String, TableSpec> tables;
     /** Hashtable of loaded properties. */
@@ -387,6 +355,28 @@ public class ExploreDB {
     /** If true, user will be prompted for each discovered table and foreign key. */
     private boolean interActiveMode = false;
 
+    /** Known java types. */
+    private static HashMap<String, Integer> knownTypes = new HashMap<String, Integer>();
+    static {
+        knownTypes.put("decimal", Types.DECIMAL);
+        knownTypes.put("bigint", Types.BIGINT);
+        knownTypes.put("binary", Types.BINARY);
+        knownTypes.put("bit", Types.BIT);
+        knownTypes.put("blob", Types.BLOB);
+        knownTypes.put("boolean", Types.BOOLEAN);
+        knownTypes.put("date", Types.DATE);
+        knownTypes.put("decimal", Types.DECIMAL);
+        knownTypes.put("double", Types.DOUBLE);
+        knownTypes.put("float", Types.FLOAT);
+        knownTypes.put("integer", Types.INTEGER);
+        knownTypes.put("longvarbinary", Types.LONGVARBINARY);
+        knownTypes.put("numeric", Types.NUMERIC);
+        knownTypes.put("real", Types.REAL);
+        knownTypes.put("smallint", Types.SMALLINT);
+        knownTypes.put("timestamp", Types.TIMESTAMP);
+        knownTypes.put("tinyint", Types.TINYINT);
+        knownTypes.put("varbinary", Types.VARBINARY);
+    }
     /**
      *
      * Class constructor.
@@ -413,7 +403,7 @@ public class ExploreDB {
         namespaces.put("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
 
         objectProperties = new HashMap<String, String>();
-        datatypeMap = new HashMap<String, String>();
+        datatypeMap = new HashMap<Integer, String>();
         tables = new HashMap<String, TableSpec>();
 
         // Get the objectproperties from the properties file.
@@ -422,7 +412,8 @@ public class ExploreDB {
                 String value = props.getProperty(key);
                 addObjectProperty(key.substring(15), "->".concat(value));
             } else if (key.startsWith("datatype.")) {
-                datatypeMap.put(key.substring(9), props.getProperty(key));
+                Integer type = knownTypes.get(key.substring(9));
+                datatypeMap.put(type, props.getProperty(key));
             }
         }
     }
@@ -486,13 +477,13 @@ public class ExploreDB {
                     if (tableSpec == null) {
 
                         boolean exportThisTable =
-                                interActiveMode == false ? true : readUserInputBoolean("Export table " + tableName + "?");
-                        if (exportThisTable == false) {
+                                (!interActiveMode) ? true : readUserInputBoolean("Export table " + tableName + "?");
+                        if (!exportThisTable) {
                             skipTables.add(tableName.toUpperCase());
                             continue;
                         }
 
-                        tableSpec = new TableSpec(tableName);
+                        tableSpec = new TableSpec(tableName, datatypeMap);
                         tables.put(tableName, tableSpec);
                         tablesListBuilder.append(tableName).append(" ");
                     }
@@ -588,9 +579,9 @@ public class ExploreDB {
     }
 
     /**
-     *
-     * @param question
-     * @return
+     * Post a yes/no question to the user and return the answer.
+     * @param question to ask the user
+     * @return the answer in boolean
      */
     protected static boolean readUserInputBoolean(String question) {
 

@@ -183,7 +183,7 @@ public class MySQLTest {
         String foundTable = props.getProperty("tables").trim();
         assertEquals("discovered tables", "person", foundTable.toLowerCase());
         String expected = "SELECT concat('', id) AS id, concat('', id) AS 'rdfs:label',"
-            + " `id` AS 'id->PERSON', `name` AS 'name', `last_name` AS 'last_name',"
+            + " `id` AS 'id', `name` AS 'name', `last_name` AS 'last_name',"
             + " `born` AS 'born', `org` AS 'org' FROM PERSON";
         String actual = props.getProperty(foundTable + ".query");
         assertEquals(expected.toLowerCase(), actual.toLowerCase());
@@ -200,7 +200,7 @@ public class MySQLTest {
         String foundTable = props.getProperty("tables").trim();
         assertEquals("discovered tables", "person", foundTable.toLowerCase());
         String expected = "SELECT concat('', id) AS id, concat('', id) AS 'rdfs:label',"
-            + " `id` AS 'id->PERSON', `name` AS 'name@', `last_name` AS 'last_name@',"
+            + " `id` AS 'id^^xsd:integer', `name` AS 'name@', `last_name` AS 'last_name@',"
             + " `born` AS 'born^^xsd:dateTime', `org` AS 'org@' FROM PERSON";
         String actual = props.getProperty(foundTable + ".query");
         assertEquals(expected.toLowerCase(), actual.toLowerCase());
