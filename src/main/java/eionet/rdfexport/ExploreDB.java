@@ -254,7 +254,7 @@ class TableSpec {
                 query.append("'");
             }
         }
-        query.append(" FROM ").append(tableName);
+        query.append(" FROM ").append(colEscapeStart).append(tableName).append(colEscapeEnd);
 
         return query.toString();
     }
@@ -492,7 +492,8 @@ public class ExploreDB {
 
                         tableSpec = new TableSpec(tableName, datatypeMap);
                         tables.put(tableName, tableSpec);
-                        tablesListBuilder.append(tableName).append(" ");
+                        String segment = StringEncoder.encodeToIRI(tableName.toLowerCase());
+                        tablesListBuilder.append(segment).append(" ");
                     }
                     tableSpec.addColumn(rs.getString(4), rs.getInt(5));
                 }
@@ -531,7 +532,8 @@ public class ExploreDB {
             // that will be later used for RDF generation.
             for (Map.Entry<String, TableSpec> entry : tables.entrySet()) {
                 String query = entry.getValue().createQuery(jdbcSubProtocol, tablesPkColumns, interActiveMode, addDataTypes);
-                props.setProperty(entry.getKey().concat(".query"), query);
+                String segment = StringEncoder.encodeToIRI(entry.getKey().toLowerCase());
+                props.setProperty(segment.concat(".query"), query);
             }
         } finally {
             ExploreDB.close(rs);

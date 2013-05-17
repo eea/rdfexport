@@ -332,18 +332,16 @@ public class DatabaseTest {
     public void explorePersonTable() throws Exception {
         ExploreDB edb = new ExploreDB(dbConn, props, false);
         edb.discoverTables(false);
-        assertEquals("discovered tables", "PERSON ", props.getProperty("tables"));
-        assertEquals("SELECT '' || id AS id, '' || id AS 'rdfs:label', `id` AS 'id', `name` AS 'name', `last_name` AS 'last_name', `born` AS 'born', `org` AS 'org' FROM PERSON", props.getProperty("PERSON.query"));
-        assertNull(props.getProperty("person.query"));
+        assertEquals("discovered tables", "person ", props.getProperty("tables"));
+        assertEquals("SELECT '' || id AS id, '' || id AS 'rdfs:label', `id` AS 'id', `name` AS 'name', `last_name` AS 'last_name', `born` AS 'born', `org` AS 'org' FROM `PERSON`", props.getProperty("person.query"));
     }
 
     @Test
     public void explorePersonTableWithTypes() throws Exception {
         ExploreDB edb = new ExploreDB(dbConn, props, false);
         edb.discoverTables(true);
-        assertEquals("discovered tables", "PERSON ", props.getProperty("tables"));
-        assertEquals("SELECT '' || id AS id, '' || id AS 'rdfs:label', `id` AS 'id^^xsd:integer', `name` AS 'name@', `last_name` AS 'last_name@', `born` AS 'born^^xsd:dateTime', `org` AS 'org@' FROM PERSON", props.getProperty("PERSON.query"));
-        assertNull(props.getProperty("person.query"));
+        assertEquals("discovered tables", "person ", props.getProperty("tables"));
+        assertEquals("SELECT '' || id AS id, '' || id AS 'rdfs:label', `id` AS 'id^^xsd:integer', `name` AS 'name@', `last_name` AS 'last_name@', `born` AS 'born^^xsd:dateTime', `org` AS 'org@' FROM `PERSON`", props.getProperty("person.query"));
     }
 
     /*
@@ -354,8 +352,7 @@ public class DatabaseTest {
         props.setProperty("datatype.timestamp", "xsd:integer");
         ExploreDB edb = new ExploreDB(dbConn, props, false);
         edb.discoverTables(true);
-        assertEquals("discovered tables", "PERSON ", props.getProperty("tables"));
-        assertEquals("SELECT '' || id AS id, '' || id AS 'rdfs:label', `id` AS 'id^^xsd:integer', `name` AS 'name@', `last_name` AS 'last_name@', `born` AS 'born^^xsd:integer', `org` AS 'org@' FROM PERSON", props.getProperty("PERSON.query"));
-        assertNull(props.getProperty("person.query"));
+        assertEquals("discovered tables", "person ", props.getProperty("tables"));
+        assertEquals("SELECT '' || id AS id, '' || id AS 'rdfs:label', `id` AS 'id^^xsd:integer', `name` AS 'name@', `last_name` AS 'last_name@', `born` AS 'born^^xsd:integer', `org` AS 'org@' FROM `PERSON`", props.getProperty("person.query"));
     }
 }

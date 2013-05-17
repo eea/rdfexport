@@ -57,7 +57,7 @@ public class ExploreDBTest {
             + "TOTAL decimal(6,2),"
             + "foreign key (BILLING) references CUSTOMER(CUSTOMER_ID),"
             + "foreign key (DELIVERY) references CUSTOMER)");
-        statement.executeUpdate("create table if not exists INVOICEITEM ("
+        statement.executeUpdate("create table if not exists \"INVOICE ITEM\" ("
             + "INVOICE_ID int,"
             + "LINE_ID int,"
             + "DESCRIPTION varchar(100),"
@@ -131,13 +131,13 @@ public class ExploreDBTest {
     public void exploreInvoice() throws Exception {
         ExploreDB edb = new ExploreDB(dbConn, props, false);
         edb.discoverTables(false);
-        assertEquals("discovered tables", "CUSTOMER INVOICE INVOICEITEM ORGANISATION ", props.getProperty("tables"));
+        assertEquals("discovered tables", "customer invoice invoice%20item organisation ", props.getProperty("tables"));
 
         String expected = "SELECT '' || customer_id AS id, '' || customer_id AS 'rdfs:label',"
            + " `customer_id` AS 'customer_id',"
            + " `name` AS 'name', `last_name` AS 'last_name',"
-           + " `org_id` AS 'org_id->ORGANISATION', `created` AS 'created' FROM CUSTOMER";
-        assertEquals(expected, props.getProperty("CUSTOMER.query"));
+           + " `org_id` AS 'org_id->ORGANISATION', `created` AS 'created' FROM `CUSTOMER`";
+        assertEquals(expected, props.getProperty("customer.query"));
     }
 
     /*
@@ -148,13 +148,13 @@ public class ExploreDBTest {
         props.setProperty("datatype.date", "xsd:integer");
         ExploreDB edb = new ExploreDB(dbConn, props, false);
         edb.discoverTables(true);
-        assertEquals("discovered tables", "CUSTOMER INVOICE INVOICEITEM ORGANISATION ", props.getProperty("tables"));
+        assertEquals("discovered tables", "customer invoice invoice%20item organisation ", props.getProperty("tables"));
 
         String expected = "SELECT '' || customer_id AS id, '' || customer_id AS 'rdfs:label',"
            + " `customer_id` AS 'customer_id^^xsd:integer',"
            + " `name` AS 'name@', `last_name` AS 'last_name@',"
-           + " `org_id` AS 'org_id->ORGANISATION', `created` AS 'created^^xsd:integer' FROM CUSTOMER";
-        assertEquals(expected, props.getProperty("CUSTOMER.query"));
+           + " `org_id` AS 'org_id->ORGANISATION', `created` AS 'created^^xsd:integer' FROM `CUSTOMER`";
+        assertEquals(expected, props.getProperty("customer.query"));
     }
 
     @Test
@@ -163,21 +163,21 @@ public class ExploreDBTest {
         ExploreDB edb = new ExploreDB(dbConn, props, false);
 
         edb.discoverTables(true);
-        assertEquals("discovered tables", "CUSTOMER INVOICE INVOICEITEM ORGANISATION ", props.getProperty("tables"));
+        assertEquals("discovered tables", "customer invoice invoice%20item organisation ", props.getProperty("tables"));
 
         expected = "SELECT '' || customer_id AS id, '' || customer_id AS 'rdfs:label',"
            + " `customer_id` AS 'customer_id^^xsd:integer',"
            + " `name` AS 'name@', `last_name` AS 'last_name@',"
-           + " `org_id` AS 'org_id->ORGANISATION', `created` AS 'created^^xsd:date' FROM CUSTOMER";
-        assertEquals(expected, props.getProperty("CUSTOMER.query"));
+           + " `org_id` AS 'org_id->ORGANISATION', `created` AS 'created^^xsd:date' FROM `CUSTOMER`";
+        assertEquals(expected, props.getProperty("customer.query"));
 
         expected = "SELECT '' || invoice_id AS id, "
          + "'' || invoice_id AS 'rdfs:label', "
          + "`invoice_id` AS 'invoice_id^^xsd:integer', "
          + "`billing` AS 'billing->CUSTOMER', "
          + "`delivery` AS 'delivery->CUSTOMER', "
-         + "`total` AS 'total^^xsd:decimal' FROM INVOICE";
-        assertEquals(expected, props.getProperty("INVOICE.query"));
+         + "`total` AS 'total^^xsd:decimal' FROM `INVOICE`";
+        assertEquals(expected, props.getProperty("invoice.query"));
 
         expected = "SELECT '' || invoice_id || line_id AS id, "
          + "'' || invoice_id || line_id AS 'rdfs:label', "
@@ -185,8 +185,8 @@ public class ExploreDBTest {
          + "`line_id` AS 'line_id^^xsd:integer', "
          + "`description` AS 'description@', "
          + "`amount` AS 'amount^^xsd:integer', "
-         + "`price` AS 'price^^xsd:decimal' FROM INVOICEITEM";
-        assertEquals(expected, props.getProperty("INVOICEITEM.query"));
+         + "`price` AS 'price^^xsd:decimal' FROM `INVOICE ITEM`";
+        assertEquals(expected, props.getProperty("invoice%20item.query"));
     }
 
 }
