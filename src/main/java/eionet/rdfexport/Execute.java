@@ -9,7 +9,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * The Original Code is Content Registry 3
+ * The Original Code is RDFExport 1.0
  *
  * The Initial Owner of the Original Code is European Environment
  * Agency. Portions created by TripleDev or Zero Technologies are Copyright
@@ -49,7 +49,7 @@ public class Execute {
     protected static final Scanner USER_INPUT = new Scanner(System.in);
 
     /** List of unrecognized command line arguments. They will be interpreted as names of tables to export. */
-    private ArrayList<String> unusedArguments = new ArrayList<String>();
+    private String[] unusedArguments = new String[0];
 
     /** Path to the input export properties file. */
     private String inputPropsFilePath = null;
@@ -70,6 +70,9 @@ public class Execute {
      * rdfexport -f rdfexport.properties
      */
     private String templatePropsFilePath = null;
+
+    /** Driver class given on command line. */
+    private String jdbcDriver;
 
     /** If true, the tables and primary/foreign keys shall be auto-discovered, disregarding the ones given in properties file. */
     private boolean selfExplore = false;
@@ -167,60 +170,29 @@ public class Execute {
      */
     private void parseArguments(String[] args) {
 
-        for (int i = 0; i < args.length; i++) {
-
-            if (args[i].equals("-x") || args[i].equals("-xa")) {
-                selfExplore = true;
-                if (args[i].equals("-xa")) {
-                    interActiveMode = true;
-                }
-            } else if (args[i].equals("-z")) {
-                zipOutput = true;
-            } else if (args[i].startsWith("-p")) {
-                if (args[i].length() > 2) {
-                    outputPropsFilePath = args[i].substring(2);
-                } else {
-                    outputPropsFilePath = args[++i];
-                }
-            } else if (args[i].startsWith("-b")) {
-                if (args[i].length() > 2) {
-                    baseUri = args[i].substring(2);
-                } else {
-                    baseUri = args[++i];
-                }
-            } else if (args[i].startsWith("-T")) {
-                if (args[i].length() > 2) {
-                    templatePropsFilePath = args[i].substring(2);
-                } else {
-                    templatePropsFilePath = args[++i];
-                }
-            } else if (args[i].startsWith("-m")) {
-                if (args[i].length() > 2) {
-                    mdbFilePath = args[i].substring(2);
-                } else {
-                    mdbFilePath = args[++i];
-                }
-            } else if (args[i].startsWith("-o")) {
-                if (args[i].length() > 2) {
-                    rdfOutputFilePath = args[i].substring(2);
-                } else {
-                    rdfOutputFilePath = args[++i];
-                }
-                if ("-".equals(rdfOutputFilePath)) {
-                    rdfOutputFilePath = null; // Linux convention
-                }
-            } else if (args[i].equals("-f")) {
-                inputPropsFilePath = args[++i];
-            } else if (args[i].startsWith("-f")) {
-                inputPropsFilePath = args[i].substring(2);
-            } else if (args[i].equals("-i")) {
-                rowId = args[++i];
-            } else if (args[i].startsWith("-i")) {
-                rowId = args[i].substring(2);
-            } else {
-                unusedArguments.add(args[i]);
+        OptionParser op = new OptionParser(args, "xazp:b:T:m:o:f:D:i:");
+        if ("".equals(op.getArgument("x"))) {
+            selfExplore = true;
+            if ("".equals(op.getArgument("a"))) {
+                interActiveMode = true;
             }
         }
+        if ("".equals(op.getArgument("z"))) {
+            zipOutput = true;
+        }
+        outputPropsFilePath = op.getArgument("p");
+        baseUri = op.getArgument("b");
+        templatePropsFilePath = op.getArgument("T");
+        mdbFilePath = op.getArgument("m");
+        rdfOutputFilePath = op.getArgument("o");
+        if ("-".equals(rdfOutputFilePath)) {
+            rdfOutputFilePath = null; // Linux convention
+        }
+        inputPropsFilePath = op.getArgument("f");
+        jdbcDriver = op.getArgument("D");
+        rowId = op.getArgument("i");
+
+        unusedArguments = op.getUnusedArguments();
     }
 
     /**
@@ -259,7 +231,7 @@ public class Execute {
 
             GenerateRDF exporter = new GenerateRDF(outputStream, conn, props);
 
-            List<String> tablesToExport = unusedArguments.isEmpty() ? Arrays.asList(exporter.getAllTables()) : unusedArguments;
+            String[] tablesToExport = (unusedArguments.length == 0) ? exporter.getAllTables() : unusedArguments;
 
             for (String table : tablesToExport) {
                 exporter.exportTable(table, rowId);
@@ -322,6 +294,9 @@ public class Execute {
             props.setProperty("db.database", dbUrl);
         }
 
+        if (jdbcDriver != null) {
+            props.setProperty("db.driver", jdbcDriver);
+        }
         String driver = props.getProperty("db.driver");
         String dbUrl = props.getProperty("db.database");
         String userName = props.getProperty("db.user");
@@ -425,8 +400,7 @@ public class Execute {
      * Prints usage text to console.
      */
     private static void printUsage() {
-        System.out.println("This class accepts the following command line arguments:");
-        System.out.println(" (note that unrecognized arguments will be treated as names of tables to export)");
+        System.out.println("Usage: This command accepts the following command line arguments:");
         System.out.println();
         System.out.println(" -f input_properties_file    Path of the input properties file containing everything needed"
                 + " for RDF generation. That includes the database's JDBC url, JDBC driver class name,"
@@ -438,18 +412,21 @@ public class Execute {
                 + " the output_properties_file is generated"
                 + " that can then be used as an input_properties_file for multiple reuse.");
 
+        System.out.println(" -D jdbc_driver_class        For MySQL use com.mysql.jdbc.Driver.");
+
         System.out.println(" -p output_properties_file   Generated from template_properties_file and auto-discovered info."
                 + " If -T and -p have been specified, then -f is ignored and no RDF output generated."
-                + " Instead, the output_properties_file will be genared and the program exits.");
+                + " Instead, the output_properties_file will be generated and the program exits.");
 
         System.out.println(" -z                          The RDF output file will be zipped. if this argument present.");
 
-        System.out.println(" -m                          Path of the MS Access file to exort."
+        System.out.println(" -m                          Path of the MS Access file to query from."
                 + " Overrides the one given in input_properties_file or template_properties_file.");
         System.out.println(" -x                          Tables/keys of the database will be auto-discovered.");
         System.out.println(" -xa                         Tables/keys will be auto-discovered, user prompted for confirmation.");
         System.out.println(" -b base_uri                 Base URI which overrides the one in the"
                 + " input_properties_file or template_properties_file.");
         System.out.println(" -i rowId                    Only records with this primary key value will be exported.");
+        System.out.println("Unrecognized arguments will be treated as names of tables to export");
     }
 }

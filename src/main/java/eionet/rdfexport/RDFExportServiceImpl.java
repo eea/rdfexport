@@ -1,9 +1,3 @@
-package eionet.rdfexport;
-
-import java.io.OutputStream;
-import java.sql.Connection;
-import java.util.Properties;
-
 /*
  * The contents of this file are subject to the Mozilla Public
  * License Version 1.1 (the "License"); you may not use this file
@@ -15,7 +9,7 @@ import java.util.Properties;
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * The Original Code is Content Registry 3
+ * The Original Code is RDFExport 1.0
  *
  * The Initial Owner of the Original Code is European Environment
  * Agency. Portions created by TripleDev or Zero Technologies are Copyright
@@ -24,6 +18,12 @@ import java.util.Properties;
  * Contributor(s):
  *        Juhan Voolaid
  */
+package eionet.rdfexport;
+
+import java.io.OutputStream;
+import java.sql.Connection;
+import java.util.Properties;
+
 
 /**
  * Service implementation of the main functionality.
@@ -55,9 +55,6 @@ public class RDFExportServiceImpl implements RDFExportService {
         this.properties = properties;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void exportTable(String table, String identifier) throws Exception {
         GenerateRDF generateRDF = new GenerateRDF(outputStream, connection, properties);
@@ -66,9 +63,6 @@ public class RDFExportServiceImpl implements RDFExportService {
         generateRDF.writeRdfFooter();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void exportAllTables() throws Exception {
         GenerateRDF generateRDF = new GenerateRDF(outputStream, connection, properties);

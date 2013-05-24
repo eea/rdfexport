@@ -1,5 +1,3 @@
-package eionet.rdfexport;
-
 /*
  * The contents of this file are subject to the Mozilla Public
  * License Version 1.1 (the "License"); you may not use this file
@@ -23,6 +21,8 @@ package eionet.rdfexport;
  *
  * $Id$
  */
+package eionet.rdfexport;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
