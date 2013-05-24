@@ -292,8 +292,8 @@ class TableSpec {
      * represented by the given JDBC sub-protocol.
      *
      * @param columns
-     * @param jdbcSubProtocol
-     * @return
+     * @param jdbcSubProtocol - a token like "mysql", "access" etc.
+     * @return Proper SQL syntax of concatenated columns
      */
     private String concatColumns(List<String> columns, String jdbcSubProtocol) {
 

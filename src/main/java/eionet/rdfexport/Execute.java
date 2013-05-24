@@ -30,9 +30,6 @@ import java.io.OutputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Properties;
 import java.util.Scanner;
 import java.util.zip.GZIPOutputStream;
@@ -40,7 +37,7 @@ import java.util.zip.GZIPOutputStream;
 /**
  * RDF export main class. Executed from command line.
  */
-public class Execute {
+public final class Execute {
 
     /** Default file path of the RDF export properties file. */
     private static final String DEFAULT_INPUT_PROPS_FILE_PATH = "rdfexport.properties";
@@ -211,7 +208,7 @@ public class Execute {
         try {
             conn = getConnection();
 
-            if (selfExplore == true) {
+            if (selfExplore) {
                 ExploreDB dbExplorer = new ExploreDB(conn, props, interActiveMode);
                 dbExplorer.discoverTables(true);
             }
@@ -225,7 +222,7 @@ public class Execute {
                 outputStream = new FileOutputStream(rdfOutputFilePath);
             }
 
-            if (zipOutput == true) {
+            if (zipOutput) {
                 outputStream = new GZIPOutputStream(outputStream);
             }
 
@@ -253,6 +250,7 @@ public class Execute {
      * Utility method that populates the given properties from the given file path.
      *
      * @param properties
+     *         - The properties object
      * @param filePath
      *         - The file path to load the properties from
      * @throws IOException
@@ -320,9 +318,11 @@ public class Execute {
     /**
      * Writes the given properties into the given file path.
      *
+     * @param outputFilePath
+     *         - The pathname to write the properties to
      * @param properties
-     * @param rdfOutputFilePath
-     * @throws IOException
+     *         - The properties object
+     * @throws IOException if the file can't be written
      */
     private static void outputProperties(String outputFilePath, Properties properties) throws IOException {
 
@@ -338,7 +338,9 @@ public class Execute {
     }
 
     /**
-     * @param inputStream
+     * Close input stream.
+     *
+     * @param inputStream - file
      */
     private static void close(InputStream inputStream) {
         if (inputStream != null) {
@@ -351,7 +353,9 @@ public class Execute {
     }
 
     /**
-     * @param outputStream
+     * Close output stream.
+     *
+     * @param outputStream - file
      */
     private static void close(OutputStream outputStream) {
         if (outputStream != null) {
@@ -364,8 +368,9 @@ public class Execute {
     }
 
     /**
+     * Close database connection.
      *
-     * @param conn
+     * @param conn - database connection
      */
     private static void close(Connection conn) {
         if (conn != null) {
@@ -378,8 +383,9 @@ public class Execute {
     }
 
     /**
+     * Main method.
      *
-     * @param args
+     * @param args - the command line arguments provided by the operating system.
      * @throws SQLException
      *             - if the SQL database is not available
      * @throws IOException

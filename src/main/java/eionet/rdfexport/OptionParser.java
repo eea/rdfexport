@@ -23,8 +23,17 @@ package eionet.rdfexport;
 import java.util.HashMap;
 import java.util.ArrayList;
 
+/**
+ * Parsing command line arguments passed to programs.
+ * To use OptionParser, create an OptionParser object with a argv array passed
+ * to the constructor and an option string. This is a string containing
+ * the legitimate option characters.  If such a character is followed by
+ * a colon, the option requires an argument.
+ * TODO: Raise an exception of it encounters an unknown option
+ */
 public class OptionParser {
 
+    /** A map of the options that require an argument. */
     private HashMap<String, Boolean> argExpectations;
 
     /** The parsed options. */
@@ -44,11 +53,15 @@ public class OptionParser {
     public OptionParser(String[] args, String optString) {
 
         parsedOptions = new HashMap<String, String>();
-        createArgTable(optString);
-        parseAguments(args);
+        createArgMap(optString);
+        parseArguments(args);
     }
 
-    private void createArgTable(String optString) {
+    /**
+     * Fill the map of a options that require an argument.
+     * @param optString - The option string
+     */
+    private void createArgMap(String optString) {
         argExpectations = new HashMap<String, Boolean>();
 
         for (int i = 0; i < optString.length(); i++) {
@@ -61,7 +74,9 @@ public class OptionParser {
     }
 
     /**
-     * Determine if the option requires a value. 
+     * Determine if the option requires a value.
+     *
+     * @param option - name of option to look up
      * @return true if it needs a value and false if not or the option is unknown.
      */
     private boolean optionNeedsValue(String option) {
@@ -70,6 +85,8 @@ public class OptionParser {
 
     /**
      * Determine if the option is known.
+     *
+     * @param arg - value to check if it an option
      * @return true if it is known.
      */
     private boolean isKnownOption(String arg) {
@@ -84,7 +101,7 @@ public class OptionParser {
      * @param args
      *            - The arguments from the command line
      */
-    private void parseAguments(String[] args) {
+    private void parseArguments(String[] args) {
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
             if (isKnownOption(arg)) {
@@ -111,12 +128,27 @@ public class OptionParser {
      * parsing, then return null. If the option didn't need an argument, then
      * return the empty string.
      *
+     * @param option - name of option to look up
      * @return argument for the option.
      */
     public String getArgument(String option) {
         return parsedOptions.get(option);
     }
 
+    /**
+     * Returns true if the argument was seen.
+     *
+     * @param option - name of option to look up
+     * @return true/false
+     */
+    public boolean getBooleanArgument(String option) {
+        return parsedOptions.get(option) != null;
+    }
+
+    /**
+     * Return the arguments that weren't considered options or values for options.
+     * @return arguments are array of string
+     */
     public String[] getUnusedArguments() {
         return unusedArguments.toArray(new String[unusedArguments.size()]);
     }
