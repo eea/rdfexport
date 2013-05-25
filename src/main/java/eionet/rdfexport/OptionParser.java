@@ -29,7 +29,6 @@ import java.util.ArrayList;
  * to the constructor and an option string. This is a string containing
  * the legitimate option characters.  If such a character is followed by
  * a colon, the option requires an argument.
- * TODO: Raise an exception of it encounters an unknown option
  */
 public class OptionParser {
 
@@ -51,7 +50,6 @@ public class OptionParser {
      *            - The list of options
      */
     public OptionParser(String[] args, String optString) {
-
         parsedOptions = new HashMap<String, String>();
         createArgMap(optString);
         parseArguments(args);
@@ -89,14 +87,22 @@ public class OptionParser {
      * @param arg - value to check if it an option
      * @return true if it is known.
      */
-    private boolean isKnownOption(String arg) {
-        return arg.startsWith("-") && arg.length() > 1
-                && argExpectations.get(arg.substring(1, 2)) != null;
+    private boolean isOption(String arg) {
+        return arg.startsWith("-") && arg.length() > 1;
+    }
+
+    /**
+     * Determine if the option is known.
+     *
+     * @param option - value to check if it an option
+     * @return true if it is known.
+     */
+    private boolean isKnownOption(String option) {
+        return argExpectations.get(option) != null;
     }
 
     /**
      * Parse the arguments.
-     * TODO: Doesn't check the following flags in a cluster to see if they are known options.
      *
      * @param args
      *            - The arguments from the command line
@@ -104,21 +110,45 @@ public class OptionParser {
     private void parseArguments(String[] args) {
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
-            if (isKnownOption(arg)) {
+            if (isOption(arg)) {
                 String option = String.valueOf(arg.charAt(1));
-                if (optionNeedsValue(option)) {
-                    if (arg.length() > 2) {
-                        parsedOptions.put(option, arg.substring(2));
+                if (isKnownOption(option)) {
+                    if (optionNeedsValue(option)) {
+                        if (arg.length() > 2) {
+                            parsedOptions.put(option, arg.substring(2));
+                        } else {
+                            parsedOptions.put(option, args[++i]);
+                        }
                     } else {
-                        parsedOptions.put(option, args[++i]);
+                        parseOptionCluster(arg);
                     }
                 } else {
-                    for (int clusterInx = 1; clusterInx < arg.length(); clusterInx++) {
-                        parsedOptions.put(String.valueOf(arg.charAt(clusterInx)), "");
-                    }
+                    throw new IllegalArgumentException("Unknown option: " + option);
                 }
             } else {
                 unusedArguments.add(arg);
+            }
+        }
+    }
+
+    /**
+     * Loop through a cluster of option flags and put them in the map.
+     * A cluster looks like <code>-tzv</code>, where each of "t", "z" and "v"
+     * must take no arguments.
+     *
+     * @param arg - value containing a cluster
+     */
+    private void parseOptionCluster(String arg) {
+        for (int clusterInx = 1; clusterInx < arg.length(); clusterInx++) {
+            String option = String.valueOf(arg.charAt(clusterInx));
+            if (isKnownOption(option)) {
+                if (!optionNeedsValue(option)) {
+                    parsedOptions.put(option, "");
+                } else {
+                    throw new IllegalArgumentException("Unknown option: " + option);
+                }
+            } else {
+                throw new IllegalArgumentException("Option requires argument: " + option);
             }
         }
     }
@@ -131,17 +161,17 @@ public class OptionParser {
      * @param option - name of option to look up
      * @return argument for the option.
      */
-    public String getArgument(String option) {
+    public String getOptionArgument(String option) {
         return parsedOptions.get(option);
     }
 
     /**
-     * Returns true if the argument was seen.
+     * Returns true if the option was seen.
      *
      * @param option - name of option to look up
      * @return true/false
      */
-    public boolean getBooleanArgument(String option) {
+    public boolean getOptionFlag(String option) {
         return parsedOptions.get(option) != null;
     }
 

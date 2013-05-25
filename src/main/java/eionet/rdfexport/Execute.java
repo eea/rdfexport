@@ -71,6 +71,12 @@ public final class Execute {
     /** Driver class given on command line. */
     private String jdbcDriver;
 
+    /** Database user name given on command line. */
+    private String userName;
+
+    /** Database password given on command line. */
+    private String password;
+
     /** If true, the tables and primary/foreign keys shall be auto-discovered, disregarding the ones given in properties file. */
     private boolean selfExplore = false;
 
@@ -167,27 +173,25 @@ public final class Execute {
      */
     private void parseArguments(String[] args) {
 
-        OptionParser op = new OptionParser(args, "xazp:b:T:m:o:f:D:i:");
-        if ("".equals(op.getArgument("x"))) {
-            selfExplore = true;
-            if ("".equals(op.getArgument("a"))) {
-                interActiveMode = true;
-            }
+        OptionParser op = new OptionParser(args, "xazp:b:i:m:o:f:D:U:P:T:");
+        selfExplore = op.getOptionFlag("x");
+        if (selfExplore) {
+            interActiveMode = op.getOptionFlag("a");
         }
-        if ("".equals(op.getArgument("z"))) {
-            zipOutput = true;
-        }
-        outputPropsFilePath = op.getArgument("p");
-        baseUri = op.getArgument("b");
-        templatePropsFilePath = op.getArgument("T");
-        mdbFilePath = op.getArgument("m");
-        rdfOutputFilePath = op.getArgument("o");
+        zipOutput = op.getOptionFlag("z");
+        outputPropsFilePath = op.getOptionArgument("p");
+        baseUri = op.getOptionArgument("b");
+        templatePropsFilePath = op.getOptionArgument("T");
+        mdbFilePath = op.getOptionArgument("m");
+        rdfOutputFilePath = op.getOptionArgument("o");
         if ("-".equals(rdfOutputFilePath)) {
             rdfOutputFilePath = null; // Linux convention
         }
-        inputPropsFilePath = op.getArgument("f");
-        jdbcDriver = op.getArgument("D");
-        rowId = op.getArgument("i");
+        inputPropsFilePath = op.getOptionArgument("f");
+        rowId = op.getOptionArgument("i");
+        jdbcDriver = op.getOptionArgument("D");
+        userName = op.getOptionArgument("U");
+        password = op.getOptionArgument("P");
 
         unusedArguments = op.getUnusedArguments();
     }
@@ -291,14 +295,23 @@ public final class Execute {
             String dbUrl = "jdbc:access:/" + mdbFile;
             props.setProperty("db.database", dbUrl);
         }
+        String dbUrl = props.getProperty("db.database");
 
         if (jdbcDriver != null) {
             props.setProperty("db.driver", jdbcDriver);
         }
         String driver = props.getProperty("db.driver");
-        String dbUrl = props.getProperty("db.database");
-        String userName = props.getProperty("db.user");
-        String password = props.getProperty("db.password");
+
+        if (userName != null) {
+            props.setProperty("db.user", userName);
+        } else {
+            userName = props.getProperty("db.user");
+        }
+        if (password != null) {
+            props.setProperty("db.password", password);
+        } else {
+            password = props.getProperty("db.password");
+        }
 
         if (driver == null || driver.isEmpty()) {
             throw new IllegalArgumentException("The database driver property must not be empty!");
@@ -419,6 +432,8 @@ public final class Execute {
                 + " that can then be used as an input_properties_file for multiple reuse.");
 
         System.out.println(" -D jdbc_driver_class        For MySQL use com.mysql.jdbc.Driver.");
+        System.out.println(" -U database_user            The user to log into the database.");
+        System.out.println(" -P password                 The password for the database.");
 
         System.out.println(" -p output_properties_file   Generated from template_properties_file and auto-discovered info."
                 + " If -T and -p have been specified, then -f is ignored and no RDF output generated."

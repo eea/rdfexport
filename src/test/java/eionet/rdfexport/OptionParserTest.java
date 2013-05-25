@@ -2,26 +2,28 @@ package eionet.rdfexport;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.assertFalse;
 import org.junit.Test;
 
 public class OptionParserTest {
 
     @Test
-    public void plainArguments() {
+    public void plainArguments() throws IllegalArgumentException {
         String[] args = {"-f", "argument1", "-o", "argumentO"};
         OptionParser op = new OptionParser(args, "o:f:");
-        String optionO = op.getArgument("o");
+        String optionO = op.getOptionArgument("o");
         assertEquals("argumentO", optionO);
-        assertNull(op.getArgument("x"));
+        assertNull(op.getOptionArgument("x"));
     }
 
     @Test
-    public void unusedArguments1() {
+    public void unusedArguments1() throws IllegalArgumentException {
         String[] args = {"-x", "file1", "file2"};
         OptionParser op = new OptionParser(args, "xyz");
-        assertEquals("", op.getArgument("x"));
-        assertNull(op.getArgument("y"));
-        assertNull(op.getArgument("z"));
+        assertEquals("", op.getOptionArgument("x"));
+        assertNull(op.getOptionArgument("y"));
+        assertNull(op.getOptionArgument("z"));
 
         String[] unused = op.getUnusedArguments();
         assertEquals("file1", unused[0]);
@@ -30,25 +32,37 @@ public class OptionParserTest {
     }
 
     @Test
-    public void unknownPlainOption() {
+    public void unsetPlainOption() throws IllegalArgumentException {
+        String[] args = {"-f", "-o", "argumentO"};
+        OptionParser op = new OptionParser(args, "o:fu");
+        assertFalse(op.getOptionFlag("u"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void unknownPlainOption() throws IllegalArgumentException {
+        // "u" is not on the list of options.
         String[] args = {"-f", "-u", "-o", "argumentO"};
         OptionParser op = new OptionParser(args, "o:f");
-        assertEquals("argumentO", op.getArgument("o"));
-        // "u" is not on the list of options.
-        assertNull(op.getArgument("u"));
     }
 
     @Test
-    public void clusteredFlags() {
+    public void clusteredFlags() throws IllegalArgumentException {
         String[] args = {"-xa", "-f", "F"};
         OptionParser op = new OptionParser(args, "f:ax");
-        assertEquals("", op.getArgument("a"));
-        assertEquals("", op.getArgument("x"));
-        assertEquals("F", op.getArgument("f"));
+        assertTrue(op.getOptionFlag("a"));
+        assertEquals("", op.getOptionArgument("x"));
+        assertEquals("F", op.getOptionArgument("f"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void clusteredOptionWithArgument() throws IllegalArgumentException {
+        // "f" requires an argument so it is not allowed in the cluster
+        String[] args = {"-xaf", "F", "Unused argument"};
+        OptionParser op = new OptionParser(args, "f:ax");
     }
 
     @Test
-    public void noArgumentsGiven() {
+    public void noArgumentsGiven() throws IllegalArgumentException {
         String[] args = {};
         OptionParser op = new OptionParser(args, "f:ax");
         String[] unused = op.getUnusedArguments();
