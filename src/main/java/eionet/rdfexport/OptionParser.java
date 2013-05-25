@@ -33,10 +33,10 @@ import java.util.ArrayList;
 public class OptionParser {
 
     /** A map of the options that require an argument. */
-    private HashMap<String, Boolean> argExpectations;
+    private HashMap<Character, Boolean> argExpectations;
 
     /** The parsed options. */
-    private HashMap<String, String> parsedOptions;
+    private HashMap<Character, String> parsedOptions;
 
     /** List of unrecognized command line arguments. */
     private ArrayList<String> unusedArguments = new ArrayList<String>();
@@ -50,7 +50,7 @@ public class OptionParser {
      *            - The list of options
      */
     public OptionParser(String[] args, String optString) {
-        parsedOptions = new HashMap<String, String>();
+        parsedOptions = new HashMap<Character, String>();
         createArgMap(optString);
         parseArguments(args);
     }
@@ -60,13 +60,13 @@ public class OptionParser {
      * @param optString - The option string
      */
     private void createArgMap(String optString) {
-        argExpectations = new HashMap<String, Boolean>();
+        argExpectations = new HashMap<Character, Boolean>();
 
         for (int i = 0; i < optString.length(); i++) {
             if (i + 1 < optString.length() && optString.charAt(i + 1) == ':') {
-               argExpectations.put(String.valueOf(optString.charAt(i)), true);
+               argExpectations.put(optString.charAt(i), true);
             } else {
-               argExpectations.put(String.valueOf(optString.charAt(i)), false);
+               argExpectations.put(optString.charAt(i), false);
             }
         }
     }
@@ -77,7 +77,7 @@ public class OptionParser {
      * @param option - name of option to look up
      * @return true if it needs a value and false if not or the option is unknown.
      */
-    private boolean optionNeedsValue(String option) {
+    private boolean optionNeedsValue(char option) {
         return argExpectations.get(option);
     }
 
@@ -97,7 +97,7 @@ public class OptionParser {
      * @param option - value to check if it an option
      * @return true if it is known.
      */
-    private boolean isKnownOption(String option) {
+    private boolean isKnownOption(char option) {
         return argExpectations.get(option) != null;
     }
 
@@ -111,7 +111,7 @@ public class OptionParser {
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
             if (isOption(arg)) {
-                String option = String.valueOf(arg.charAt(1));
+                char option = arg.charAt(1);
                 if (isKnownOption(option)) {
                     if (optionNeedsValue(option)) {
                         if (arg.length() > 2) {
@@ -140,7 +140,7 @@ public class OptionParser {
      */
     private void parseOptionCluster(String arg) {
         for (int clusterInx = 1; clusterInx < arg.length(); clusterInx++) {
-            String option = String.valueOf(arg.charAt(clusterInx));
+            char option = arg.charAt(clusterInx);
             if (isKnownOption(option)) {
                 if (!optionNeedsValue(option)) {
                     parsedOptions.put(option, "");
@@ -162,7 +162,7 @@ public class OptionParser {
      * @return argument for the option.
      */
     public String getOptionArgument(String option) {
-        return parsedOptions.get(option);
+        return parsedOptions.get(option.charAt(0));
     }
 
     /**
@@ -172,7 +172,7 @@ public class OptionParser {
      * @return true/false
      */
     public boolean getOptionFlag(String option) {
-        return parsedOptions.get(option) != null;
+        return parsedOptions.get(option.charAt(0)) != null;
     }
 
     /**
