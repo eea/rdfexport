@@ -36,8 +36,6 @@ public final class Datatypes {
     private static final String DATE_FORMAT = "yyyy-MM-dd";
     /** Format of xsd:dateTime value. */
     private static final String DATE_TIME_FORMAT = "yyyy-MM-dd'T'hh:mm:ss";
-    /** The only encoding we support. */
-    private static final String UTF8_ENCODING = "UTF-8";
 
     /** Date format. */
     private static SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
@@ -48,7 +46,7 @@ public final class Datatypes {
     /** Known java types. */
     private static HashMap<String, Integer> knownTypes = new HashMap<String, Integer>();
 
-    /** Java types to XSD mapping */
+    /** Java types to XSD mapping. */
     private static HashMap<Integer, String> defaultMapping = new HashMap<Integer, String>();
 
     static {

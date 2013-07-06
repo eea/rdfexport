@@ -40,7 +40,7 @@ public class SortedProperties extends Properties {
     /**
      * Comparator for natural order.
      */
-    private static final Comparator<Object> comparator = new Comparator<Object>() {
+    private static final Comparator<Object> COMPARATOR = new Comparator<Object>() {
         @Override
         public int compare(Object o1, Object o2) {
             return ((String) o1).compareTo((String) o2);
@@ -53,7 +53,7 @@ public class SortedProperties extends Properties {
     @Override
     public synchronized Enumeration<Object> keys() {
         Vector<Object> keyList = new Vector<Object>(super.keySet());
-        Collections.sort(keyList, comparator);
+        Collections.sort(keyList, COMPARATOR);
         return keyList.elements();
     }
 }

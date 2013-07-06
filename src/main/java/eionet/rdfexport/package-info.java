@@ -1,4 +1,3 @@
-package eionet.rdfexport;
 /**
 Export RDF from a database. Queries are stored in a properties file.
 There are two types of queries. A plain select and an attributes
@@ -56,7 +55,7 @@ For the attributes table the result must have one + X * four columns: 1. id, 2. 
 languagecode, 6. attribute name, 7. value, 8. datatype, 9. languagecode, etc.
 
 Some of the columns of the queries will contain references to other
-objects rather than literal values. The following configuration 
+objects rather than literal values. The following configuration
 specifies which columns are references to other objects
 It can also be specified directly in the query.
 The right hand side can be a pseudo-table name or a full URL.
@@ -102,3 +101,4 @@ notations.attributetable2 = SELECT 'NA' AS id \
  ,'skos:prefLabel','Not applicable','',''
 </pre>
  */
+package eionet.rdfexport;
