@@ -69,4 +69,25 @@ public class OptionParserTest {
         assertEquals("No unused arguments", 0, unused.length);
     }
 
+    /**
+     * The OptionParser only looks at the first letter in the getOptionArgument value.
+     * I.e. if you query "file", then option "f" is looked up.
+     * The user should not do this on production systems.
+     */
+    @Test
+    public void getLongOption() throws IllegalArgumentException {
+        String[] args = {"-f", "argument1", "-o", "argumentO"};
+        OptionParser op = new OptionParser(args, "o:f:");
+        String optionO = op.getOptionArgument("file");
+        assertEquals("argument1", optionO);
+    }
+
+    @Test
+    public void getOptionByChar() throws IllegalArgumentException {
+        String[] args = {"-f", "-o", "argumentO"};
+        OptionParser op = new OptionParser(args, "o:f");
+        String optionO = op.getOptionArgument('o');
+        assertEquals("argumentO", optionO);
+        assertTrue(op.getOptionFlag('f'));
+    }
 }

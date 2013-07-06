@@ -24,16 +24,12 @@ package eionet.rdfexport;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.TreeSet;
@@ -81,13 +77,6 @@ class RDFField {
  */
 public class GenerateRDF {
 
-    /** Format of xsd:date value. */
-    private static final String DATE_FORMAT = "yyyy-MM-dd";
-    /** Format of xsd:dateTime value. */
-    private static final String DATE_TIME_FORMAT = "yyyy-MM-dd'T'hh:mm:ss";
-    /** The only encoding we support. */
-    private static final String UTF8_ENCODING = "UTF-8";
-
     /** Base of XML file. */
     private String baseurl;
     /** Connection to database. */
@@ -103,17 +92,14 @@ public class GenerateRDF {
     /** The properties that are object properties. They point to another object. */
     private HashMap<String, String> objectProperties;
     /** The datatype mappings. */
-    private HashMap<String, String> datatypeMap;
+    //private HashMap<Integer, String> datatypeMap;
     /** All the tables in the properties file. */
     private String[] tables = new String[0];
     /** Hashtable of loaded properties. */
     private Properties props;
     /** The output stream to send output to. */
     private OutputStreamWriter outputStream;
-    /** Date format. */
-    private SimpleDateFormat dateFormat;
-    /** Date-time format. */
-    private SimpleDateFormat dateTimeFormat;
+
 
     /**
      * Constructor.
@@ -168,7 +154,7 @@ public class GenerateRDF {
         namespaces.put("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
 
         objectProperties = new HashMap<String, String>();
-        datatypeMap = new HashMap<String, String>();
+        //datatypeMap = new HashMap<Integer, String>();
         // Get the namespaces from the properties file.
         // Get the objectproperties from the properties file.
         for (String key : props.stringPropertyNames()) {
@@ -178,12 +164,11 @@ public class GenerateRDF {
                 String value = props.getProperty(key);
                 addObjectProperty(key.substring(15), "->".concat(value));
             } else if (key.startsWith("datatype.")) {
-                datatypeMap.put(key.substring(9), props.getProperty(key));
+                Integer type = Datatypes.getSQLType(key.substring(9));
+                Datatypes.setRDFType(type, props.getProperty(key));
             }
         }
 
-        dateFormat = new SimpleDateFormat(DATE_FORMAT);
-        dateTimeFormat = new SimpleDateFormat(DATE_TIME_FORMAT);
     }
 
     /**
@@ -392,33 +377,6 @@ public class GenerateRDF {
         }
         output("</rdf:RDF>\n");
         outputStream.flush();
-    }
-
-    /**
-     * Returns formatted string representation of the value object.
-     *
-     * @param value - value to format
-     * @return the formatted string
-     * @throws UnsupportedEncodingException
-     *             - if UTF-8 is not supported by the platform
-     */
-    private String getFormattedValue(Object value) throws UnsupportedEncodingException {
-        if (value instanceof java.sql.Date) {
-            Date sqlDate = (java.sql.Date) value;
-            return dateFormat.format(new Date(sqlDate.getTime()));
-        }
-
-        if (value instanceof java.sql.Timestamp) {
-            Timestamp sqlDate = (Timestamp) value;
-            return dateTimeFormat.format(new Date(sqlDate.getTime()));
-        }
-
-        if (value instanceof byte[]) {
-            return StringEncoder.encodeToXml(new String((byte[]) value, UTF8_ENCODING));
-        }
-
-        return StringEncoder.encodeToXml(value.toString());
-
     }
 
     /**
@@ -721,7 +679,6 @@ public class GenerateRDF {
      */
     void writeProperty(RDFField property, Object value) throws IOException {
         String typelangAttr = "";
-
         if (value == null) {
             return;
         }
@@ -759,7 +716,7 @@ public class GenerateRDF {
         }
         output(typelangAttr);
         output(">");
-        output(getFormattedValue(value));
+        output(Datatypes.getFormattedValue(value));
         output("</");
         output(property.name);
         output(">\n");
@@ -775,15 +732,16 @@ public class GenerateRDF {
      *             - if the SQL database is not available
      */
     private void queryStruct(ResultSetMetaData rsmd) throws SQLException {
-        String dbDatatype;
+        Integer dbDatatype;
         String rdfDatatype = "";
         int numcols = rsmd.getColumnCount();
 
         this.names = new RDFField[numcols + 1];
 
         for (int i = 1; i <= numcols; i++) {
-            dbDatatype = rsmd.getColumnTypeName(i).toLowerCase();
-            rdfDatatype = datatypeMap.get(dbDatatype);
+            dbDatatype = rsmd.getColumnType(i);
+            //rdfDatatype = datatypeMap.get(dbDatatype);
+            rdfDatatype = Datatypes.getRDFType(dbDatatype);
             if (rdfDatatype == null) {
                 rdfDatatype = "";
             }

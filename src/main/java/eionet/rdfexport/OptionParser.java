@@ -161,8 +161,30 @@ public class OptionParser {
      * @param option - name of option to look up
      * @return argument for the option.
      */
+    public String getOptionArgument(char option) {
+        return parsedOptions.get(option);
+    }
+
+    /**
+     * Return the argument for an option. If the option wasn't seen in the
+     * parsing, then return null. If the option didn't need an argument, then
+     * return the empty string.
+     *
+     * @param option - name of option to look up
+     * @return argument for the option.
+     */
     public String getOptionArgument(String option) {
         return parsedOptions.get(option.charAt(0));
+    }
+
+    /**
+     * Returns true if the option was seen.
+     *
+     * @param option - name of option to look up
+     * @return true/false
+     */
+    public boolean getOptionFlag(char option) {
+        return parsedOptions.get(option) != null;
     }
 
     /**

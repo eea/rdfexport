@@ -80,8 +80,11 @@ public class MySQLTest {
         props.setProperty("sqldialect.access.skiptables",
              "VALIDATION_METADATA_DO_NOT_MODIFY" // DataDict reserved table
             + " MSYSACCESSOBJECTS MSYSACCESSXML MSYSACES MSYSOBJECTS MSYSQUERIES MSYSRELATIONSHIPS");
-        props.setProperty("sqldialect.mysql.column.before", "'");
-        props.setProperty("sqldialect.mysql.column.after", "'");
+        props.setProperty("sqldialect.mysql.column.before", "`");
+        props.setProperty("sqldialect.mysql.column.after", "`");
+        props.setProperty("sqldialect.mysql.alias.before", "'");
+        props.setProperty("sqldialect.mysql.alias.after", "'");
+        props.setProperty("sqldialect.mysql.concat", "concat");
         props.setProperty("sqldialect.access.column.before", "[");
         props.setProperty("sqldialect.access.column.after", "]");
     }
@@ -113,10 +116,12 @@ public class MySQLTest {
 
     @Test
     public void simplePersonExport() throws Exception {
-        props.setProperty("person.query", "SELECT ID, NAME, LAST_NAME, BORN, ORG AS INORG FROM PERSON ORDER BY ID");
-        props.setProperty("objectproperty.INORG", "orgs");
+        props.setProperty("person.query", "SELECT id, name, last_name, born, org as inorg FROM PERSON ORDER BY ID");
+        props.setProperty("query", "SELECT NULL AS ID, 'Ηλέκτρα' AS \"dcterms:creator\"");
+        props.setProperty("objectproperty.inorg", "orgs");
         classToTest = new GenerateRDF(testWriter, dbConn, props);
         classToTest.exportTable("person");
+        classToTest.exportDocumentInformation();
         classToTest.writeRdfFooter();
         String actual = testOutput.toString(UTF8_ENCODING);
         //System.out.println(actual);
@@ -149,6 +154,27 @@ public class MySQLTest {
         classToTest.writeRdfFooter();
         String actual = testOutput.toString(UTF8_ENCODING);
         String expected = loadFile("rdf-notations.xml");
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void concatWithInt() throws Exception {
+        props.setProperty("test.query", "SELECT CONCAT(ORG, ID) AS ID FROM PERSON ORDER BY ID");
+        classToTest = new GenerateRDF(testWriter, dbConn, props);
+        classToTest.exportTable("test");
+        classToTest.writeRdfFooter();
+        String actual = testOutput.toString(UTF8_ENCODING);
+        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
+            + " xmlns=\"http://voc\">\n"
+            + "\n"
+            + "<Test rdf:about=\"#test/mafia%20%2B882911\">\n"
+            + "</Test>\n"
+            + "<Test rdf:about=\"#test/spectre182208\">\n"
+            + "</Test>\n"
+            + "<Test rdf:about=\"#test/yakuza533922\">\n"
+            + "</Test>\n"
+            + "</rdf:RDF>\n";
         assertEquals(expected, actual);
     }
 
@@ -224,6 +250,35 @@ public class MySQLTest {
         String actual = IOUtils.toString(temp.toURI(), "UTF-8");
         temp.delete();
         assertEquals(expected, actual);
+    }
+
+    /**
+     * Test simple query. This can only by done with a disk-stored database, as the Execute class
+     * opens a new connection to the database.
+     */
+    @Test
+    public void executeDiscovery() throws Exception {
+        Properties props = new Properties();
+
+        //String resourcefile = MySQLTest.class.getClassLoader().getResource("exportsimple.properties").getFile();
+        props.load(MySQLTest.class.getClassLoader().getResourceAsStream("exportsimple.properties"));
+        String dbDriver = props.getProperty("db.driver").trim();
+        String dbDatabase = props.getProperty("db.database").trim();
+        String dbUser = props.getProperty("db.user").trim();
+        String dbPassword = props.getProperty("db.password").trim();
+        File temp = File.createTempFile("outsimple", ".properties");
+        String outfile = temp.toString();
+        String[] args = {"-x",
+            "-p", outfile,
+            "-D", dbDriver,
+            "-J", dbDatabase,
+            "-U", dbUser,
+            "-P", dbPassword };
+        Execute.main(args);
+//      String expected = loadFile("rdf-person.xml");
+//      String actual = IOUtils.toString(temp.toURI(), "UTF-8");
+        temp.delete();
+//      assertEquals(expected, actual);
     }
 
 }

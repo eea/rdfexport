@@ -93,8 +93,12 @@ public class ExploreDBTest {
         props.setProperty("sqldialect.access.skiptables",
              "VALIDATION_METADATA_DO_NOT_MODIFY" // DataDict reserved table
             + " MSYSACCESSOBJECTS MSYSACCESSXML MSYSACES MSYSOBJECTS MSYSQUERIES MSYSRELATIONSHIPS");
-        props.setProperty("sqldialect.h2.column.before", "'");
-        props.setProperty("sqldialect.h2.column.after", "'");
+        props.setProperty("sqldialect.h2.column.before", "\"");
+        props.setProperty("sqldialect.h2.column.after", "\"");
+        props.setProperty("sqldialect.h2.alias.before", "\"");
+        props.setProperty("sqldialect.h2.alias.after", "\"");
+        props.setProperty("sqldialect.h2.concat", "and");
+
         props.setProperty("sqldialect.access.column.before", "[");
         props.setProperty("sqldialect.access.column.after", "]");
     }
@@ -133,10 +137,10 @@ public class ExploreDBTest {
         edb.discoverTables(false);
         assertEquals("discovered tables", "customer invoice invoice%20item organisation ", props.getProperty("tables"));
 
-        String expected = "SELECT '' || customer_id AS id, '' || customer_id AS 'rdfs:label',"
-           + " `customer_id` AS 'customer_id',"
-           + " `name` AS 'name', `last_name` AS 'last_name',"
-           + " `org_id` AS 'org_id->ORGANISATION', `created` AS 'created' FROM `CUSTOMER`";
+        String expected = "SELECT '' || customer_id AS id, '' || customer_id AS \"rdfs:label\","
+           + " \"CUSTOMER_ID\" AS \"customer_id\","
+           + " \"NAME\" AS \"name\", \"LAST_NAME\" AS \"last_name\","
+           + " \"ORG_ID\" AS \"org_id->organisation\", \"CREATED\" AS \"created\" FROM \"CUSTOMER\"";
         assertEquals(expected, props.getProperty("customer.query"));
     }
 
@@ -150,10 +154,10 @@ public class ExploreDBTest {
         edb.discoverTables(true);
         assertEquals("discovered tables", "customer invoice invoice%20item organisation ", props.getProperty("tables"));
 
-        String expected = "SELECT '' || customer_id AS id, '' || customer_id AS 'rdfs:label',"
-           + " `customer_id` AS 'customer_id^^xsd:integer',"
-           + " `name` AS 'name@', `last_name` AS 'last_name@',"
-           + " `org_id` AS 'org_id->ORGANISATION', `created` AS 'created^^xsd:integer' FROM `CUSTOMER`";
+        String expected = "SELECT '' || customer_id AS id, '' || customer_id AS \"rdfs:label\","
+           + " \"CUSTOMER_ID\" AS \"customer_id^^xsd:integer\","
+           + " \"NAME\" AS \"name@\", \"LAST_NAME\" AS \"last_name@\","
+           + " \"ORG_ID\" AS \"org_id->organisation\", \"CREATED\" AS \"created^^xsd:integer\" FROM \"CUSTOMER\"";
         assertEquals(expected, props.getProperty("customer.query"));
     }
 
@@ -165,27 +169,27 @@ public class ExploreDBTest {
         edb.discoverTables(true);
         assertEquals("discovered tables", "customer invoice invoice%20item organisation ", props.getProperty("tables"));
 
-        expected = "SELECT '' || customer_id AS id, '' || customer_id AS 'rdfs:label',"
-           + " `customer_id` AS 'customer_id^^xsd:integer',"
-           + " `name` AS 'name@', `last_name` AS 'last_name@',"
-           + " `org_id` AS 'org_id->ORGANISATION', `created` AS 'created^^xsd:date' FROM `CUSTOMER`";
+        expected = "SELECT '' || customer_id AS id, '' || customer_id AS \"rdfs:label\","
+           + " \"CUSTOMER_ID\" AS \"customer_id^^xsd:integer\","
+           + " \"NAME\" AS \"name@\", \"LAST_NAME\" AS \"last_name@\","
+           + " \"ORG_ID\" AS \"org_id->organisation\", \"CREATED\" AS \"created^^xsd:date\" FROM \"CUSTOMER\"";
         assertEquals(expected, props.getProperty("customer.query"));
 
         expected = "SELECT '' || invoice_id AS id, "
-         + "'' || invoice_id AS 'rdfs:label', "
-         + "`invoice_id` AS 'invoice_id^^xsd:integer', "
-         + "`billing` AS 'billing->CUSTOMER', "
-         + "`delivery` AS 'delivery->CUSTOMER', "
-         + "`total` AS 'total^^xsd:decimal' FROM `INVOICE`";
+         + "'' || invoice_id AS \"rdfs:label\", "
+         + "\"INVOICE_ID\" AS \"invoice_id^^xsd:integer\", "
+         + "\"BILLING\" AS \"billing->customer\", "
+         + "\"DELIVERY\" AS \"delivery->customer\", "
+         + "\"TOTAL\" AS \"total^^xsd:decimal\" FROM \"INVOICE\"";
         assertEquals(expected, props.getProperty("invoice.query"));
 
         expected = "SELECT '' || invoice_id || line_id AS id, "
-         + "'' || invoice_id || line_id AS 'rdfs:label', "
-         + "`invoice_id` AS 'invoice_id->INVOICE', "
-         + "`line_id` AS 'line_id^^xsd:integer', "
-         + "`description` AS 'description@', "
-         + "`amount` AS 'amount^^xsd:integer', "
-         + "`price` AS 'price^^xsd:decimal' FROM `INVOICE ITEM`";
+         + "'' || invoice_id || line_id AS \"rdfs:label\", "
+         + "\"INVOICE_ID\" AS \"invoice_id->invoice\", "
+         + "\"LINE_ID\" AS \"line_id^^xsd:integer\", "
+         + "\"DESCRIPTION\" AS \"description@\", "
+         + "\"AMOUNT\" AS \"amount^^xsd:integer\", "
+         + "\"PRICE\" AS \"price^^xsd:decimal\" FROM \"INVOICE ITEM\"";
         assertEquals(expected, props.getProperty("invoice%20item.query"));
     }
 

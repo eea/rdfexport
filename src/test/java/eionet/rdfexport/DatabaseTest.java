@@ -73,8 +73,13 @@ public class DatabaseTest {
         props.setProperty("sqldialect.access.skiptables",
              "VALIDATION_METADATA_DO_NOT_MODIFY" // DataDict reserved table
             + " MSYSACCESSOBJECTS MSYSACCESSXML MSYSACES MSYSOBJECTS MSYSQUERIES MSYSRELATIONSHIPS");
-        props.setProperty("sqldialect.h2.column.before", "'");
-        props.setProperty("sqldialect.h2.column.after", "'");
+        props.setProperty("sqldialect.h2.column.before", "\"");
+        props.setProperty("sqldialect.h2.column.after", "\"");
+//      props.setProperty("sqldialect.h2.column.before", "");
+//      props.setProperty("sqldialect.h2.column.after", "");
+        props.setProperty("sqldialect.h2.alias.before", "\"");
+        props.setProperty("sqldialect.h2.alias.after", "\"");
+        props.setProperty("sqldialect.h2.concat", "concat");
         props.setProperty("sqldialect.access.column.before", "[");
         props.setProperty("sqldialect.access.column.after", "]");
     }
@@ -106,10 +111,13 @@ public class DatabaseTest {
 
     @Test
     public void simplePersonExport() throws Exception {
-        props.setProperty("person.query", "SELECT ID, NAME, LAST_NAME, BORN, ORG AS INORG FROM PERSON ORDER BY ID");
-        props.setProperty("objectproperty.INORG", "orgs");
+        props.setProperty("person.query", "SELECT ID, name AS \"name\", last_name AS \"last_name\","
+                + " born AS \"born\", org as \"inorg\" FROM PERSON ORDER BY ID");
+        props.setProperty("query", "SELECT NULL AS ID, 'Ηλέκτρα' AS \"dcterms:creator\"");
+        props.setProperty("objectproperty.inorg", "orgs");
         classToTest = new GenerateRDF(testWriter, dbConn, props);
         classToTest.exportTable("person");
+        classToTest.exportDocumentInformation();
         classToTest.writeRdfFooter();
         String actual = testOutput.toString(UTF8_ENCODING);
         //System.out.println(actual);
@@ -333,7 +341,28 @@ public class DatabaseTest {
         ExploreDB edb = new ExploreDB(dbConn, props, false);
         edb.discoverTables(false);
         assertEquals("discovered tables", "person ", props.getProperty("tables"));
-        assertEquals("SELECT '' || id AS id, '' || id AS 'rdfs:label', `id` AS 'id', `name` AS 'name', `last_name` AS 'last_name', `born` AS 'born', `org` AS 'org' FROM `PERSON`", props.getProperty("person.query"));
+        assertEquals("SELECT concat('', id) AS id, concat('', id) AS \"rdfs:label\", \"ID\" AS \"id\","
+                + " \"NAME\" AS \"name\", \"LAST_NAME\" AS \"last_name\", \"BORN\" AS \"born\","
+                + " \"ORG\" AS \"org\" FROM \"PERSON\"", props.getProperty("person.query"));
+    }
+
+    /*
+     * Discover a table, and then execute the query
+     */
+    @Test
+    public void exploreAndRun() throws Exception {
+        ExploreDB edb = new ExploreDB(dbConn, props, false);
+        edb.discoverTables(false);
+        assertEquals("discovered tables", "person ", props.getProperty("tables"));
+        assertEquals("SELECT concat('', id) AS id, concat('', id) AS \"rdfs:label\", \"ID\" AS \"id\","
+                + " \"NAME\" AS \"name\", \"LAST_NAME\" AS \"last_name\", \"BORN\" AS \"born\","
+                + " \"ORG\" AS \"org\" FROM \"PERSON\"", props.getProperty("person.query"));
+        classToTest = new GenerateRDF(testWriter, dbConn, props);
+        classToTest.exportTable("person");
+        classToTest.writeRdfFooter();
+        String actual = testOutput.toString(UTF8_ENCODING);
+        String expected = loadFile("rdf-person-discovered.xml");
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -341,7 +370,9 @@ public class DatabaseTest {
         ExploreDB edb = new ExploreDB(dbConn, props, false);
         edb.discoverTables(true);
         assertEquals("discovered tables", "person ", props.getProperty("tables"));
-        assertEquals("SELECT '' || id AS id, '' || id AS 'rdfs:label', `id` AS 'id^^xsd:integer', `name` AS 'name@', `last_name` AS 'last_name@', `born` AS 'born^^xsd:dateTime', `org` AS 'org@' FROM `PERSON`", props.getProperty("person.query"));
+        assertEquals("SELECT concat('', id) AS id, concat('', id) AS \"rdfs:label\", \"ID\" AS \"id^^xsd:integer\","
+                + " \"NAME\" AS \"name@\", \"LAST_NAME\" AS \"last_name@\", \"BORN\" AS \"born^^xsd:dateTime\","
+                + " \"ORG\" AS \"org@\" FROM \"PERSON\"", props.getProperty("person.query"));
     }
 
     /*
@@ -353,6 +384,8 @@ public class DatabaseTest {
         ExploreDB edb = new ExploreDB(dbConn, props, false);
         edb.discoverTables(true);
         assertEquals("discovered tables", "person ", props.getProperty("tables"));
-        assertEquals("SELECT '' || id AS id, '' || id AS 'rdfs:label', `id` AS 'id^^xsd:integer', `name` AS 'name@', `last_name` AS 'last_name@', `born` AS 'born^^xsd:integer', `org` AS 'org@' FROM `PERSON`", props.getProperty("person.query"));
+        assertEquals("SELECT concat('', id) AS id, concat('', id) AS \"rdfs:label\", \"ID\" AS \"id^^xsd:integer\","
+                + " \"NAME\" AS \"name@\", \"LAST_NAME\" AS \"last_name@\", \"BORN\" AS \"born^^xsd:integer\","
+                + " \"ORG\" AS \"org@\" FROM \"PERSON\"", props.getProperty("person.query"));
     }
 }

@@ -196,7 +196,7 @@
         <!-- See http://checkstyle.sf.net/config_misc.html -->
         <module name="ArrayTypeStyle"/>
         <!-- <module name="TodoComment"/> --> <!-- covered by Task scanner -->
-        <module name="UncommentedMain"/> <!-- Don't debug with main() - use unit tests! -->
+        <!-- <module name="UncommentedMain"/> --> <!-- Don't debug with main() - use unit tests! -->
         <module name="UpperEll"/>
 
     </module>

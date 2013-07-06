@@ -17,6 +17,7 @@
  *
  * Contributor(s):
  *        Juhan Voolaid
+ *        Søren Roug
  */
 
 package eionet.rdfexport;
@@ -60,7 +61,7 @@ public final class Execute {
      *
      * rdfexport -T template.properties -x -m Waterbase_Rivers_DDviolations_solutions.mdb -p rdfexport.properties
      *
-     * This command copies the properties from template.properties into rdfexport.properties (i.e. the one identified by "-f")
+     * This command copies the properties from template.properties into rdfexport.properties (i.e. the one identified by "-p")
      * and also constructs a db.database=jdbc:access:/Waterbase_Rivers_DDviolations_solutions.mdb that it puts
      * into rdfexport.properties. From then on, the user can simply run this command:
      *
@@ -70,6 +71,9 @@ public final class Execute {
 
     /** Driver class given on command line. */
     private String jdbcDriver;
+
+    /** Database URL given on command line. */
+    private String jdbcUrl;
 
     /** Database user name given on command line. */
     private String userName;
@@ -124,11 +128,17 @@ public final class Execute {
         // meaning that we're not going to generate RDF, but we shall generate a properties output file based on the
         // properties template file and auto-discovered information about the database if auto-discovery turned on.
         // Otherwise we shall load properties from the properties input file.
-        if (templatePropsFilePath != null && !templatePropsFilePath.isEmpty() && outputPropsFilePath != null
-                && !outputPropsFilePath.isEmpty()) {
-            File file = new File(templatePropsFilePath);
-            if (!file.exists() || !file.isFile()) {
-                throw new IllegalArgumentException("Failed to find template properties at " + templatePropsFilePath);
+        if (selfExplore) {
+            if (templatePropsFilePath != null && !templatePropsFilePath.isEmpty()) {
+    //              && outputPropsFilePath != null && !outputPropsFilePath.isEmpty()) {
+                File file = new File(templatePropsFilePath);
+                if (!file.exists() || !file.isFile()) {
+                    throw new IllegalArgumentException("Failed to find template properties at " + templatePropsFilePath);
+                }
+            } else {
+                //props.load(Execute.class.getResourceAsStream("/someProps.properties"));
+                // Provide backup template from JAR file
+                templatePropsFilePath = Execute.class.getClassLoader().getResource("explore.properties").getFile();
             }
             Execute.loadProperties(props, templatePropsFilePath);
         } else {
@@ -147,21 +157,23 @@ public final class Execute {
             props.setProperty("baseurl", baseUri);
         }
 
-        // Get the vocabulary URI from the loaded input properties.If it's null or empty, then generate it on the basis of the
-        // given base URI. If the latter is not given either, just set it to "#properties/".
-        // Finally, place the resulting vocabulary URI into the loaded input properties map.
-        vocabularyUri = props.getProperty("vocabulary");
-        if (vocabularyUri == null || vocabularyUri.isEmpty()) {
+        if (vocabularyUri == null) {
+            // Get the vocabulary URI from the loaded input properties.If it's null or empty, then generate it on the basis of the
+            // given base URI. If the latter is not given either, just set it to "#properties/".
+            // Finally, place the resulting vocabulary URI into the loaded input properties map.
+            vocabularyUri = props.getProperty("vocabulary");
+            if (vocabularyUri == null || vocabularyUri.isEmpty()) {
 
-            // TODO: The 'vocabulary' property has to be generated if it is not in the template file.
-            // and then written to the properties file.
+                // TODO: The 'vocabulary' property has to be generated if it is not in the template file.
+                // and then written to the properties file.
 
-            if (baseUri == null || baseUri.isEmpty()) {
-                vocabularyUri = "#properties/";
-            } else {
-                vocabularyUri = baseUri.concat("properties/");
+                if (baseUri == null || baseUri.isEmpty()) {
+                    vocabularyUri = "#properties/";
+                } else {
+                    vocabularyUri = baseUri.concat("properties/");
+                }
+                props.setProperty("vocabulary", vocabularyUri);
             }
-            props.setProperty("vocabulary", vocabularyUri);
         }
     }
 
@@ -173,7 +185,7 @@ public final class Execute {
      */
     private void parseArguments(String[] args) {
 
-        OptionParser op = new OptionParser(args, "xazp:b:i:m:o:f:D:U:P:T:");
+        OptionParser op = new OptionParser(args, "xazp:i:m:o:f:B:D:J:U:P:T:V:");
         selfExplore = op.getOptionFlag("x");
         if (selfExplore) {
             interActiveMode = op.getOptionFlag("a");
@@ -189,9 +201,11 @@ public final class Execute {
         }
         inputPropsFilePath = op.getOptionArgument("f");
         rowId = op.getOptionArgument("i");
+        jdbcUrl = op.getOptionArgument("J");
         jdbcDriver = op.getOptionArgument("D");
         userName = op.getOptionArgument("U");
         password = op.getOptionArgument("P");
+        vocabularyUri = op.getOptionArgument("V");
 
         unusedArguments = op.getUnusedArguments();
     }
@@ -284,6 +298,9 @@ public final class Execute {
      */
     private Connection getConnection() throws SQLException {
 
+        if (jdbcUrl != null) {
+            props.setProperty("db.database", jdbcUrl);
+        }
         // An MS Access file given from command line always overrides the one given in properties file.
         if (mdbFilePath != null && !mdbFilePath.isEmpty()) {
 
@@ -292,10 +309,11 @@ public final class Execute {
                 throw new IllegalArgumentException("The given file is not found: " + mdbFilePath);
             }
 
-            String dbUrl = "jdbc:access:/" + mdbFile;
-            props.setProperty("db.database", dbUrl);
+            jdbcUrl = "jdbc:access:/" + mdbFile;
+            props.setProperty("db.database", jdbcUrl);
+        } else {
+            jdbcUrl = props.getProperty("db.database");
         }
-        String dbUrl = props.getProperty("db.database");
 
         if (jdbcDriver != null) {
             props.setProperty("db.driver", jdbcDriver);
@@ -316,13 +334,13 @@ public final class Execute {
         if (driver == null || driver.isEmpty()) {
             throw new IllegalArgumentException("The database driver property must not be empty!");
         }
-        if (dbUrl == null || dbUrl.isEmpty()) {
+        if (jdbcUrl == null || jdbcUrl.isEmpty()) {
             throw new IllegalArgumentException("Failed to detect database from command line or properties file!");
         }
 
         try {
             Class.forName(driver);
-            return DriverManager.getConnection(dbUrl, userName, password);
+            return DriverManager.getConnection(jdbcUrl, userName, password);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("Failed to find the driver class: " + driver, e);
         }
@@ -431,6 +449,7 @@ public final class Execute {
                 + " the output_properties_file is generated"
                 + " that can then be used as an input_properties_file for multiple reuse.");
 
+        System.out.println(" -J jdbc_database_url        The URL to the database.");
         System.out.println(" -D jdbc_driver_class        For MySQL use com.mysql.jdbc.Driver.");
         System.out.println(" -U database_user            The user to log into the database.");
         System.out.println(" -P password                 The password for the database.");
@@ -439,13 +458,15 @@ public final class Execute {
                 + " If -T and -p have been specified, then -f is ignored and no RDF output generated."
                 + " Instead, the output_properties_file will be generated and the program exits.");
 
-        System.out.println(" -z                          The RDF output file will be zipped. if this argument present.");
+        System.out.println(" -z                          The RDF output file will be zipped. if this argument is present.");
 
         System.out.println(" -m                          Path of the MS Access file to query from."
                 + " Overrides the one given in input_properties_file or template_properties_file.");
         System.out.println(" -x                          Tables/keys of the database will be auto-discovered.");
         System.out.println(" -xa                         Tables/keys will be auto-discovered, user prompted for confirmation.");
-        System.out.println(" -b base_uri                 Base URI which overrides the one in the"
+        System.out.println(" -B base_uri                 Base URI which overrides the one in the"
+                + " input_properties_file or template_properties_file.");
+        System.out.println(" -V vocabulary_uri           Vocabulary URI which overrides the one in the"
                 + " input_properties_file or template_properties_file.");
         System.out.println(" -i rowId                    Only records with this primary key value will be exported.");
         System.out.println("Unrecognized arguments will be treated as names of tables to export");

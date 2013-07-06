@@ -27,7 +27,6 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,11 +39,13 @@ import java.util.Map.Entry;
 import java.util.Properties;
 
 /**
- * A class representing fkColumn-pkColumn pairs and the order of pkColumns. Tables are not given, so it's kind of out of context.
+ * A class representing fkColumn-pkColumn pairs and the order of pkColumns.
+ * Tables are not given, so it's kind of out of context.
  */
 class FkColumns {
 
-    /** The map's keys are foreign-key columns, values are their corresponding primary key columns. */
+    /** The map's keys are foreign-key columns, values are their corresponding
+     * primary key columns. */
     Map<String, String> fkToPkColumns = new HashMap<String, String>();
     /** The order in which the foreign-key columns have been set. */
     Map<Integer, String> positions = new HashMap<Integer, String>();
@@ -77,11 +78,19 @@ class TableSpec {
     List<String> pkColumns;
 
     /**
-     * A map representing foreign keys found on this table. The map's keys stand for imported tables (aka pkTables). The map's
-     * values represent foreign keys pointing to the imported table. Every such foreign key is given as a map, where the key is the
-     * foreign key's name, and its value of {@link FkColumns} type.
+     * A map representing foreign keys found on this table. The map's keys stand
+     * for imported tables (aka pkTables). The map's values represent foreign
+     * keys pointing to the imported table. Every such foreign key is given as a
+     * map, where the key is the foreign key's name, and its value of {@link FkColumns} type.
      */
     Map<String, Map<String, FkColumns>> fkMap;
+
+    /** Hashtable of loaded properties. */
+    private Properties properties;
+
+    /** The JDBC sub-protocol in the URL used to obtain this connection. */
+    private String jdbcSubProtocol;
+
 
     /**
      * Constructor.
@@ -96,6 +105,24 @@ class TableSpec {
         this.datatypeMap = datatypeMap;
     }
 
+    public void setProperties(final Properties props) {
+        this.properties = props;
+    }
+
+    public void setJDBCSubProtocol(final String protocol) {
+        this.jdbcSubProtocol = protocol;
+    }
+
+    /**
+     * Make a RDF predicate name. That means, no spaces in the name.
+     *
+     * @param col - name of table column
+     * @return syntactically valid label
+     */
+    private String makeLabel(String col) {
+        return col.toLowerCase().replace(" ", "_");
+    }
+
     /**
      * Adds a column found on this table.
      *
@@ -106,7 +133,8 @@ class TableSpec {
         if (columns == null) {
             columns = new LinkedHashMap<String, Integer>();
         }
-        columns.put(col.toLowerCase(), dataType);
+        //columns.put(col.toLowerCase(), dataType);
+        columns.put(col, dataType);
     }
 
     /**
@@ -141,7 +169,8 @@ class TableSpec {
             fKeys.put(fkName, fkColumns);
         }
 
-        fkColumns.fkToPkColumns.put(fkCol.toLowerCase(), pkCol.toLowerCase());
+        //TEST//fkColumns.fkToPkColumns.put(fkCol.toLowerCase(), pkCol.toLowerCase());
+        fkColumns.fkToPkColumns.put(fkCol, pkCol);
         fkColumns.positions.put(pos, fkCol.toLowerCase());
     }
 
@@ -181,8 +210,6 @@ class TableSpec {
     /**
      * Generate a SQL query for a table.
      *
-     * @param jdbcSubProtocol
-     *            - used for constructing DB vendor-specific dialects.
      * @param tablesPkColumns
      *            - simple primary keys of all tables (key = table, value = table's primary key column).
      * @param interActiveMode
@@ -191,40 +218,40 @@ class TableSpec {
      *            - if true, the table labels in the SQL query will have data types, like customer_id^^xsd:int
      * @return the SQL query
      */
-    public String createQuery(String jdbcSubProtocol, Map<String, String> tablesPkColumns, boolean interActiveMode,
+    public String createQuery(Map<String, String> tablesPkColumns, boolean interActiveMode,
             boolean addDataTypes) {
 
         Map<String, String> simpleForeignKeys = getSimpleForeignKeysToTables(tablesPkColumns);
+
+        String aliasEscapeStart = properties.getProperty("sqldialect." + jdbcSubProtocol + ".alias.before");
+        String aliasEscapeEnd = properties.getProperty("sqldialect." + jdbcSubProtocol + ".alias.after");
 
         StringBuilder query = new StringBuilder("SELECT ");
         if (pkColumns.isEmpty()) {
             query.append("'@' AS id");
         } else {
             // Concatenate primary key columns.
-            String pksConcatenated = concatColumns(pkColumns, jdbcSubProtocol);
-            query.append(pksConcatenated).append(" AS id, ").append(pksConcatenated).append(" AS 'rdfs:label'");
+            String pksConcatenated = concatColumns(pkColumns);
+            query.append(pksConcatenated).append(" AS id, ").append(pksConcatenated).append(" AS ")
+                .append(aliasEscapeStart).append("rdfs:label").append(aliasEscapeEnd);
         }
 
-        String colEscapeStart = "\u0060";
-        String colEscapeEnd = "\u0060";
-        if ("access".equalsIgnoreCase(jdbcSubProtocol)) {
-            colEscapeStart = "[";
-            colEscapeEnd = "]";
-        }
+        String colEscapeStart = properties.getProperty("sqldialect." + jdbcSubProtocol + ".column.before");
+        String colEscapeEnd = properties.getProperty("sqldialect." + jdbcSubProtocol + ".column.after");
 
         ArrayList<String> fkReferences = new ArrayList<String>();
         for (Map.Entry<String, Integer> columnEntry : columns.entrySet()) {
 
             String col = columnEntry.getKey();
             String type = getXsdDataType(columnEntry.getValue());
-            String label = (col.substring(0, 1).toLowerCase() + col.substring(1)).replace(" ", "_");
+            String label = makeLabel(col);
             String pkTable = simpleForeignKeys.get(col);
             if (pkTable != null) {
                 boolean exportAsReference =
                         !interActiveMode ? true : ExploreDB.readUserInputBoolean(tableName + "." + col + " is a FK to "
                                 + pkTable + ". Export as reference?");
                 if (exportAsReference) {
-                    label += "->" + pkTable;
+                    label += "->" + ExploreDB.encodeSegment(pkTable);
                     fkReferences.add(col + "->" + pkTable);
                 }
             } else {
@@ -234,24 +261,26 @@ class TableSpec {
                             !interActiveMode ? true : ExploreDB.readUserInputBoolean(tableName + "." + col
                                     + " has the same name as PK in " + pkTable + ". Export as reference?");
                     if (exportAsReference) {
-                        label += "->" + pkTable;
+                        label += "->" + ExploreDB.encodeSegment(pkTable);
                         fkReferences.add(col + "->" + pkTable);
                     }
                 }
             }
 
             query.append(", ").append(colEscapeStart).append(col).append(colEscapeEnd);
-            query.append(" AS '");
+            query.append(" AS ");
+            query.append(aliasEscapeStart);
             query.append(label);
             if (addDataTypes && !label.contains("->")) {
                 if (type.equals("xsd:string")) {
                     // notation for an empty language code
-                    query.append("@'");
+                    query.append("@");
+                    query.append(aliasEscapeEnd);
                 } else {
-                    query.append("^^").append(type).append("'");
+                    query.append("^^").append(type).append(aliasEscapeEnd);
                 }
             } else {
-                query.append("'");
+                query.append(aliasEscapeEnd);
             }
         }
         query.append(" FROM ").append(colEscapeStart).append(tableName).append(colEscapeEnd);
@@ -273,14 +302,14 @@ class TableSpec {
     /**
      * Returns the given map's first key that pairs with the given value.
      *
-     * @param map
-     * @param value
-     * @return
+     * @param map  Map representing simple primary keys of all tables in this database
+     * @param value Name of column
+     * @return map's first key that pairs with the given value
      */
     private String getFirstMatchingKey(Map<String, String> map, String value) {
 
         for (Entry<String, String> entry : map.entrySet()) {
-            if (value.equals(entry.getValue())) {
+            if (value.equalsIgnoreCase(entry.getValue())) {
                 return entry.getKey();
             }
         }
@@ -289,33 +318,29 @@ class TableSpec {
 
     /**
      * Returns a string representing the SQL concatenation of the columns given. The dialect differs depending on the DB-vendor
-     * represented by the given JDBC sub-protocol.
+     * represented by the JDBC sub-protocol.
      *
-     * @param columns
-     * @param jdbcSubProtocol - a token like "mysql", "access" etc.
+     * @param columns A list of columns
      * @return Proper SQL syntax of concatenated columns
      */
-    private String concatColumns(List<String> columns, String jdbcSubProtocol) {
+    private String concatColumns(List<String> columns) {
 
         StringBuilder result = new StringBuilder();
 
+        String strategy = properties.getProperty("sqldialect." + jdbcSubProtocol + ".concat");
         if (columns != null && !columns.isEmpty()) {
-            String dbVendor = jdbcSubProtocol.toLowerCase();
-            if (dbVendor.equals("mysql")) {
-
+            if (strategy.equals("concat")) {
                 result.append("concat(''");
                 for (String col : columns) {
                     result.append(", ").append(col);
                 }
                 result.append(")");
-            } else if (dbVendor.equals("postgresql")) {
-
+            } else if (strategy.equals("and")) {
                 result.append("''");
                 for (String col : columns) {
                     result.append(" || ").append(col);
                 }
-            } else if (dbVendor.equals("access")) {
-
+            } else if (strategy.equals("plus")) {
                 result.append("''");
                 for (String col : columns) {
                     result.append(" + CStr(").append(col).append(")");
@@ -323,11 +348,10 @@ class TableSpec {
             } else {
                 result.append("''");
                 for (String col : columns) {
-                    result.append(" || ").append(col);
+                    result.append(" ERROR ").append(col);
                 }
             }
         }
-
         return result.length() == 0 ? "'@'" : result.toString();
     }
 }
@@ -349,8 +373,6 @@ public class ExploreDB {
     private Connection con;
     /** The namespaces to add to the rdf:RDF element. */
     private HashMap<String, String> namespaces;
-    /** The properties that are object properties. They point to another object. */
-    private HashMap<String, String> objectProperties;
     /** The datatype mappings. */
     private HashMap<Integer, String> datatypeMap;
     /** All the tables in the database. */
@@ -362,28 +384,6 @@ public class ExploreDB {
     /** If true, user will be prompted for each discovered table and foreign key. */
     private boolean interActiveMode = false;
 
-    /** Known java types. */
-    private static HashMap<String, Integer> knownTypes = new HashMap<String, Integer>();
-    static {
-        knownTypes.put("decimal", Types.DECIMAL);
-        knownTypes.put("bigint", Types.BIGINT);
-        knownTypes.put("binary", Types.BINARY);
-        knownTypes.put("bit", Types.BIT);
-        knownTypes.put("blob", Types.BLOB);
-        knownTypes.put("boolean", Types.BOOLEAN);
-        knownTypes.put("date", Types.DATE);
-        knownTypes.put("decimal", Types.DECIMAL);
-        knownTypes.put("double", Types.DOUBLE);
-        knownTypes.put("float", Types.FLOAT);
-        knownTypes.put("integer", Types.INTEGER);
-        knownTypes.put("longvarbinary", Types.LONGVARBINARY);
-        knownTypes.put("numeric", Types.NUMERIC);
-        knownTypes.put("real", Types.REAL);
-        knownTypes.put("smallint", Types.SMALLINT);
-        knownTypes.put("timestamp", Types.TIMESTAMP);
-        knownTypes.put("tinyint", Types.TINYINT);
-        knownTypes.put("varbinary", Types.VARBINARY);
-    }
     /**
      *
      * Class constructor.
@@ -409,17 +409,13 @@ public class ExploreDB {
         namespaces = new HashMap<String, String>();
         namespaces.put("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
 
-        objectProperties = new HashMap<String, String>();
         datatypeMap = new HashMap<Integer, String>();
         tables = new HashMap<String, TableSpec>();
 
-        // Get the objectproperties from the properties file.
+        // Get the datatypes from the properties file.
         for (String key : props.stringPropertyNames()) {
-            if (key.startsWith("objectproperty.")) {
-                String value = props.getProperty(key);
-                addObjectProperty(key.substring(15), "->".concat(value));
-            } else if (key.startsWith("datatype.")) {
-                Integer type = knownTypes.get(key.substring(9));
+            if (key.startsWith("datatype.")) {
+                Integer type = Datatypes.getSQLType(key.substring(9));
                 datatypeMap.put(type, props.getProperty(key));
             }
         }
@@ -430,7 +426,7 @@ public class ExploreDB {
      *
      * @param dbCon
      *            - the database connection to explore
-     * @returns the sub-protocol (currently)
+     * @return the sub-protocol (currently)
      * @throws SQLException
      *            - if a database access error occurs
      */
@@ -442,43 +438,66 @@ public class ExploreDB {
     }
 
     /**
+     * Get set of tables that should be skipped. Will be amended by user input.
+     * Note: tables should already be encoded in properties file, but might also
+     * be different case.
+     *
+     * @return hashtable of table names.
+     */
+    private HashSet<String> getTablesToSkip() {
+        HashSet<String> skipTables = new HashSet<String>();
+        String skipTablesProperty = props.getProperty("sqldialect." + jdbcSubProtocol + ".skiptables");
+        if (skipTablesProperty != null && !skipTablesProperty.isEmpty()) {
+            String[] skipTablesList = skipTablesProperty.split("\\s+");
+            for (String t : skipTablesList) {
+                skipTables.add(encodeSegment(t));
+            }
+        }
+        return skipTables;
+    }
+    /**
      * Discover all tables in the database and create SELECT statements for the properties file.
      *
-     * @param addDataTypes
+     * @param addDataTypes If true, then add the RDF data types.
+     * @throws SQLException
+     *            - if a database access error occurs
      */
     public void discoverTables(boolean addDataTypes) throws SQLException {
+        DatabaseMetaData dbMetadata = con.getMetaData();
 
-        StringBuilder tablesListBuilder = new StringBuilder();
+        getTablesFromDB(dbMetadata);
+        HashMap<String, String> tablesPkColumns = discoverKeys(dbMetadata);
 
-        ResultSet rs = null;
+        // Now that all tables' primary/foreign keys have been set, create every table's query, and set it in properties
+        // that will be later used for RDF generation.
+        for (Map.Entry<String, TableSpec> entry : tables.entrySet()) {
+            String query = entry.getValue().createQuery(tablesPkColumns, interActiveMode, addDataTypes);
+            String segment = encodeSegment(entry.getKey());
+            props.setProperty(segment.concat(".query"), query);
+        }
+
+    }
+
+    /**
+     * Investigate the database for a list of tables. Then check if they should be skipped.
+     *
+     * @param dbMetadata - The metadata from the database
+     * @throws SQLException
+     *            - if a database access error occurs
+     */
+    private void getTablesFromDB(DatabaseMetaData dbMetadata) throws SQLException {
+            StringBuilder tablesListBuilder = new StringBuilder();
+            ResultSet rs = null;
+        
         try {
-            DatabaseMetaData dbMetadata = con.getMetaData();
             rs = dbMetadata.getColumns(null, null, "%", "%");
 
-            // Set of tables that should be skipped. Will be amended by user input below.
-            HashSet<String> skipTables = new HashSet<String>();
-            String skipTablesProperty = props.getProperty("sqldialect." + jdbcSubProtocol + ".skiptables");
-            if (skipTablesProperty != null && !skipTablesProperty.isEmpty()) {
-                String[] skipTablesList = skipTablesProperty.split("\\s+");
-                for (String t : skipTablesList) {
-                    skipTables.add(t.toUpperCase());
-                }
-            } else {
-                // This is a reserved table in MS-Access database templates generated from http://dd.eionet.europa.eu, lets skip.
-                // TODO: Phase out
-                skipTables.add("VALIDATION_METADATA_DO_NOT_MODIFY");
-                skipTables.add("MSysAccessObjects".toUpperCase());
-                skipTables.add("MSysAccessXML".toUpperCase());
-                skipTables.add("MSysACEs".toUpperCase());
-                skipTables.add("MSysObjects".toUpperCase());
-                skipTables.add("MSysQueries".toUpperCase());
-                skipTables.add("MSysRelationships".toUpperCase());
-            }
+            HashSet<String> skipTables = getTablesToSkip();
 
             while (rs.next()) {
 
                 String tableName = rs.getString(3);
-                if (!skipTables.contains(tableName.toUpperCase())) {
+                if (!skipTables.contains(encodeSegment(tableName))) {
 
                     TableSpec tableSpec = tables.get(tableName);
                     if (tableSpec == null) {
@@ -486,77 +505,69 @@ public class ExploreDB {
                         boolean exportThisTable =
                                 !interActiveMode ? true : readUserInputBoolean("Export table " + tableName + "?");
                         if (!exportThisTable) {
-                            skipTables.add(tableName.toUpperCase());
+                            skipTables.add(encodeSegment(tableName));
                             continue;
                         }
 
                         tableSpec = new TableSpec(tableName, datatypeMap);
+                        tableSpec.setProperties(props);
+                        tableSpec.setJDBCSubProtocol(jdbcSubProtocol);
                         tables.put(tableName, tableSpec);
-                        String segment = StringEncoder.encodeToIRI(tableName.toLowerCase());
+                        String segment = encodeSegment(tableName);
                         tablesListBuilder.append(segment).append(" ");
                     }
                     tableSpec.addColumn(rs.getString(4), rs.getInt(5));
                 }
             }
-            ExploreDB.close(rs);
-
-            // Loop through the discovered tables, and discover each one's primary and foreign keys too.
-            // While at it, remember simple (i.e. non-compound) primary keys of every table for later use below.
-
-            HashMap<String, String> tablesPkColumns = new HashMap<String, String>();
-            for (Map.Entry<String, TableSpec> entry : tables.entrySet()) {
-
-                String tableName = entry.getKey();
-                TableSpec tableSpec = entry.getValue();
-
-                HashMap<Short, String> primKeys = new HashMap<Short, String>();
-                rs = dbMetadata.getPrimaryKeys(null, null, tableName);
-                while (rs.next()) {
-                    primKeys.put(rs.getShort("KEY_SEQ"), rs.getString("COLUMN_NAME").toLowerCase());
-                }
-                ExploreDB.close(rs);
-
-                tableSpec.pkColumns = ExploreDB.listValuesSortedByKeys(primKeys);
-                if (primKeys.size() == 1) {
-                    tablesPkColumns.put(tableName, primKeys.values().iterator().next());
-                }
-
-                rs = dbMetadata.getImportedKeys(null, null, tableName);
-                while (rs.next()) {
-                    tableSpec.addFkColumn(rs.getString("PKTABLE_NAME"), rs.getString("FK_NAME"), rs.getString("FKCOLUMN_NAME"),
-                            rs.getString("PKCOLUMN_NAME"), rs.getShort("KEY_SEQ"));
-                }
-            }
-
-            // Now that all tables' primary/foreign keys have been set, create every table's query, and set it in properties
-            // that will be later used for RDF generation.
-            for (Map.Entry<String, TableSpec> entry : tables.entrySet()) {
-                String query = entry.getValue().createQuery(jdbcSubProtocol, tablesPkColumns, interActiveMode, addDataTypes);
-                String segment = StringEncoder.encodeToIRI(entry.getKey().toLowerCase());
-                props.setProperty(segment.concat(".query"), query);
-            }
+            props.setProperty("tables", tablesListBuilder.toString());
         } finally {
             ExploreDB.close(rs);
         }
-
-        props.setProperty("tables", tablesListBuilder.toString());
     }
 
     /**
-     * Add name of property to table of object properties.
+     * Loop through the discovered tables, and discover each one's primary and foreign keys too.
+     * While at it, remember simple (i.e. non-compound) primary keys of every table for later use below.
      *
-     * @param name
-     *            - name of column.
-     * @param reference
-     *            - will always start with '->'.
+     * @param dbMetadata - The metadata from the database
+     * @return hashtable of discovered key pairs
+     * @throws SQLException
+     *            - if a database access error occurs
      */
-    private void addObjectProperty(String name, String reference) {
-        objectProperties.put(name, reference);
+    private HashMap<String, String> discoverKeys(DatabaseMetaData dbMetadata) throws SQLException {
+        ResultSet rs = null;
+        HashMap<String, String> tablesPkColumns = new HashMap<String, String>();
+        for (Map.Entry<String, TableSpec> entry : tables.entrySet()) {
+
+            String tableName = entry.getKey();
+            TableSpec tableSpec = entry.getValue();
+
+            HashMap<Short, String> primKeys = new HashMap<Short, String>();
+            rs = dbMetadata.getPrimaryKeys(null, null, tableName);
+            while (rs.next()) {
+                primKeys.put(rs.getShort("KEY_SEQ"), rs.getString("COLUMN_NAME").toLowerCase());
+            }
+            ExploreDB.close(rs);
+
+            tableSpec.pkColumns = ExploreDB.listValuesSortedByKeys(primKeys);
+            if (primKeys.size() == 1) {
+                tablesPkColumns.put(tableName, primKeys.values().iterator().next());
+            }
+
+            rs = dbMetadata.getImportedKeys(null, null, tableName);
+            while (rs.next()) {
+                tableSpec.addFkColumn(rs.getString("PKTABLE_NAME"), rs.getString("FK_NAME"), rs.getString("FKCOLUMN_NAME"),
+                        rs.getString("PKCOLUMN_NAME"), rs.getShort("KEY_SEQ"));
+            }
+            // No close of rs?
+        }
+        return tablesPkColumns;
     }
 
+
     /**
-     *
-     * @param rs
+     * Close a result set ignoring exceptions.
+     * @param rs - result set to close
      */
     protected static void close(ResultSet rs) {
         if (rs != null) {
@@ -569,9 +580,11 @@ public class ExploreDB {
     }
 
     /**
-     *
-     * @param map
-     * @return
+     * List values sorted by keys.
+     * @param map of key/value pairs
+     * @param <K> Key type
+     * @param <V> Value type
+     * @return sorted list of values by key
      */
     protected static <K extends Comparable<? super K>, V> List<V> listValuesSortedByKeys(Map<K, V> map) {
 
@@ -607,4 +620,15 @@ public class ExploreDB {
         System.out.println("Tried 10 times, assuming the answer is 'n'!");
         return false;
     }
+
+    /**
+     * Make a segment of an RDF predicate. That means, no spaces in the name.
+     *
+     * @param table - name of table
+     * @return syntactically valid segment
+     */
+    static String encodeSegment(String table) {
+        return StringEncoder.encodeToIRI(table.toLowerCase());
+    }
+
 }
