@@ -488,7 +488,7 @@ public class ExploreDB {
     private void getTablesFromDB(DatabaseMetaData dbMetadata) throws SQLException {
             StringBuilder tablesListBuilder = new StringBuilder();
             ResultSet rs = null;
-        
+
         try {
             rs = dbMetadata.getColumns(null, null, "%", "%");
 
