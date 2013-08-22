@@ -424,7 +424,7 @@ public final class Execute {
      */
     public static void main(String[] args) throws SQLException, IOException {
 
-        if (args == null || args.length == 0 || args[0].equalsIgnoreCase("-?")) {
+        if (args == null || args.length == 0 || args[0].equalsIgnoreCase("-?") || args[0].equalsIgnoreCase("-h")) {
             printUsage();
             return;
         }
@@ -469,6 +469,7 @@ public final class Execute {
         System.out.println(" -V vocabulary_uri           Vocabulary URI which overrides the one in the"
                 + " input_properties_file or template_properties_file.");
         System.out.println(" -i rowId                    Only records with this primary key value will be exported.");
+        System.out.println(" -h or -?                    Show this help");
         System.out.println("Unrecognized arguments will be treated as names of tables to export");
     }
 }
