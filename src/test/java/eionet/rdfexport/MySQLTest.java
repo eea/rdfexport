@@ -179,6 +179,24 @@ public class MySQLTest {
     }
 
     @Test
+    public void concatWithIntInAttr() throws Exception {
+        props.setProperty("test.query", "SELECT 'c' AS ID, CONCAT(3456, '/view') AS 'foaf:isPrimaryTopicOf->test'");
+        classToTest = new GenerateRDF(testWriter, dbConn, props);
+        classToTest.exportTable("test");
+        classToTest.writeRdfFooter();
+        String actual = testOutput.toString(UTF8_ENCODING);
+        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
+            + " xmlns=\"http://voc\">\n"
+            + "\n"
+            + "<Test rdf:about=\"#test/c\">\n"
+            + " <foaf:isPrimaryTopicOf rdf:resource=\"#test/3456/view\"/>\n"
+            + "</Test>\n"
+            + "</rdf:RDF>\n";
+        assertEquals(expected, actual);
+    }
+
+    @Test
     public void prtrPollutant() throws Exception {
         props.setProperty("pollutant.vocabulary", "http://prtr/");
         props.setProperty("pollutant.class", "prtr:Pollutant");
