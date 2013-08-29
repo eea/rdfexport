@@ -130,22 +130,12 @@ public final class Execute {
         // Otherwise we shall load properties from the properties input file.
         if (selfExplore) {
             if (templatePropsFilePath != null && !templatePropsFilePath.isEmpty()) {
-    //              && outputPropsFilePath != null && !outputPropsFilePath.isEmpty()) {
-                File file = new File(templatePropsFilePath);
-                if (!file.exists() || !file.isFile()) {
-                    throw new IllegalArgumentException("Failed to find template properties at " + templatePropsFilePath);
-                }
+                Execute.loadProperties(props, templatePropsFilePath);
             } else {
-                //props.load(Execute.class.getResourceAsStream("/someProps.properties"));
                 // Provide backup template from JAR file
-                templatePropsFilePath = Execute.class.getClassLoader().getResource("explore.properties").getFile();
+                props.load(Execute.class.getResourceAsStream("/explore.properties"));
             }
-            Execute.loadProperties(props, templatePropsFilePath);
         } else {
-            File file = new File(inputPropsFilePath);
-            if (!file.exists() || !file.isFile()) {
-                throw new IllegalArgumentException("Failed to find input properties at " + inputPropsFilePath);
-            }
             Execute.loadProperties(props, inputPropsFilePath);
         }
 
@@ -285,6 +275,8 @@ public final class Execute {
             } finally {
                 Execute.close(inputStream);
             }
+        } else {
+            throw new IllegalArgumentException("Failed to find input properties at " + filePath);
         }
     }
 
@@ -470,6 +462,6 @@ public final class Execute {
                 + " input_properties_file or template_properties_file.");
         System.out.println(" -i rowId                    Only records with this primary key value will be exported.");
         System.out.println(" -h or -?                    Show this help");
-        System.out.println("Unrecognized arguments will be treated as names of tables to export");
+        System.out.println("Unrecognized arguments will be treated as names of tables to export. If no arguments are found, all tables will be exported.");
     }
 }
