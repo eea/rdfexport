@@ -674,10 +674,12 @@ public class GenerateRDF {
      *            triple consisting of name, datatype and langcode
      * @param value
      *            from database.
+     * @throws SQLException
+     *             - if the SQL database is not available
      * @throws IOException
      *             - if the output is not open.
      */
-    void writeProperty(RDFField property, Object value) throws IOException {
+    void writeProperty(RDFField property, Object value) throws SQLException, IOException {
         String typelangAttr = "";
         if (value == null) {
             return;
