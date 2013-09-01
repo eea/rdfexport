@@ -18,7 +18,7 @@ public class DatatypesTest {
     @Test
     public void escapeNeeded() {
         String input = "Fruit & vegetables";
-        String expct = "Fruit &amp; vegetables";
+        String expct = "Fruit & vegetables";
         assertEquals(expct, Datatypes.getFormattedValue(input));
     }
 
@@ -26,7 +26,7 @@ public class DatatypesTest {
     public void asCharArray() throws UnsupportedEncodingException {
         String strInput = "Fruit & vegetables";
         byte[] input = strInput.getBytes("UTF8");
-        String expct = "Fruit &amp; vegetables";
+        String expct = "Fruit & vegetables";
         assertEquals(expct, Datatypes.getFormattedValue(input));
     }
 

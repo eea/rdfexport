@@ -470,7 +470,7 @@ public class GenerateRDF {
 
         ResultSet rs = null;
         Statement stmt = null;
-        Object currentId = "/..";
+        String currentId = "/..";
         Integer currentRow = 0;
         Boolean firstTime = true;
 
@@ -489,9 +489,9 @@ public class GenerateRDF {
 
                     currentRow += 1;
 
-                    Object id = rs.getObject(1);
+                    String id = rs.getString(1);
                     if (id != null && id.equals("@")) {
-                        id = currentRow;
+                        id = currentRow.toString();
                     }
 
                     if (currentId != null && !currentId.equals(id)) {
@@ -537,7 +537,7 @@ public class GenerateRDF {
 
         ResultSet rs = null;
         Statement stmt = null;
-        Object currentId = "/..";
+        String currentId = "/..";
         Integer currentRow = 0;
         Boolean firstTime = true;
 
@@ -555,9 +555,9 @@ public class GenerateRDF {
                     currentRow += 1;
 
                     RDFField property = new RDFField();
-                    Object id = rs.getObject(1);
+                    String id = rs.getString(1);
                     if (id != null && id.equals("@")) {
-                        id = currentRow;
+                        id = currentRow.toString();
                     }
 
                     if (currentId != null && !currentId.equals(id)) {
@@ -639,7 +639,7 @@ public class GenerateRDF {
      * @throws IOException
      *             - if the output is not open.
      */
-    private void writeStartResource(String rdfClass, String baseurl, String segment, Object id) throws IOException {
+    private void writeStartResource(String rdfClass, String baseurl, String segment, String id) throws IOException {
         output("<");
         output(rdfClass);
         output(" rdf:about=\"");
@@ -689,7 +689,7 @@ public class GenerateRDF {
             if (property.datatype.length() == 2) {
                 // Handle the case where the value contains the pointer.
                 output(" rdf:resource=\"");
-                output(StringEncoder.encodeToXml(StringEncoder.encodeToIRI(value.toString())));
+                output(StringEncoder.encodeToXml(StringEncoder.encodeToIRI(Datatypes.getFormattedValue(value))));
                 output("\"/>\n");
             } else {
                 // Handle the case of ->countries or ->http://...
@@ -702,7 +702,7 @@ public class GenerateRDF {
                 }
                 output(StringEncoder.encodeToIRI(refSegment));
                 output("/");
-                output(StringEncoder.encodeToXml(StringEncoder.encodeToIRI(value.toString())));
+                output(StringEncoder.encodeToXml(StringEncoder.encodeToIRI(Datatypes.getFormattedValue(value))));
                 output("\"/>\n");
             }
             return;
@@ -716,7 +716,7 @@ public class GenerateRDF {
         }
         output(typelangAttr);
         output(">");
-        output(Datatypes.getFormattedValue(value));
+        output(StringEncoder.encodeToXml(Datatypes.getFormattedValue(value)));
         output("</");
         output(property.name);
         output(">\n");

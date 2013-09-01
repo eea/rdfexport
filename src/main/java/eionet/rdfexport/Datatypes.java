@@ -160,10 +160,10 @@ public final class Datatypes {
         }
 
         if (value instanceof byte[]) {
-            return StringEncoder.encodeToXml(new String((byte[]) value));
+            return new String((byte[]) value);
         }
 
-        return StringEncoder.encodeToXml(value.toString());
+        return value.toString();
 
     }
 }
