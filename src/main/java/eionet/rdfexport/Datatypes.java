@@ -21,6 +21,10 @@
  */
 package eionet.rdfexport;
 
+import java.nio.charset.Charset;
+import java.sql.Blob;
+import java.sql.Clob;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.SimpleDateFormat;
@@ -146,21 +150,35 @@ public final class Datatypes {
      * Returns RDF formatted string representation of the value object. The value comes from a database.
      *
      * @param value - value to format
+     * @throws SQLException
+     *             - if the SQL database is not available
+     *
      * @return the formatted string
      */
-    public static String getFormattedValue(Object value) {
+    public static String getFormattedValue(Object value) throws SQLException {
         if (value instanceof java.sql.Date) {
             Date sqlDate = (java.sql.Date) value;
             return dateFormat.format(new Date(sqlDate.getTime()));
         }
 
-        if (value instanceof java.sql.Timestamp) {
+        if (value instanceof Timestamp) {
             Timestamp sqlDate = (Timestamp) value;
             return dateTimeFormat.format(new Date(sqlDate.getTime()));
         }
 
+        if (value instanceof Clob) {
+            Clob tValue = (Clob) value;
+            return tValue.getSubString(1, (int) tValue.length());
+        }
+
+        if (value instanceof Blob) {
+            // There is no guarantee that we'll get text data from a BLOB.
+            Blob tValue = (Blob) value;
+            return new String(tValue.getBytes(1, (int) tValue.length()), Charset.forName("UTF-8"));
+        }
+
         if (value instanceof byte[]) {
-            return new String((byte[]) value);
+            return new String((byte[]) value, Charset.forName("UTF-8"));
         }
 
         return value.toString();

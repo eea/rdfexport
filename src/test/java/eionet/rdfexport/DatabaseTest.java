@@ -125,6 +125,55 @@ public class DatabaseTest {
         assertEquals(expected, actual);
     }
 
+   /**
+     * Test correctness when the output type is binary.
+     * It is unknown if '63' is handled correctly.
+     */
+    @Test
+    public void castToVarBinary() throws Exception {
+        props.setProperty("test.query", "SELECT CAST('63' AS VARBINARY) AS ID"
+            + ", CAST('70' AS VARBINARY) AS name"
+            + ", CAST('3456' AS VARBINARY) AS \"foaf:isPrimaryTopicOf->test\"");
+        classToTest = new GenerateRDF(testWriter, dbConn, props);
+        classToTest.exportTable("test");
+        classToTest.writeRdfFooter();
+        String actual = testOutput.toString(UTF8_ENCODING);
+        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
+            + " xmlns=\"http://voc\">\n"
+            + "\n"
+            + "<Test rdf:about=\"#test/63\">\n"
+            + " <NAME>p</NAME>\n"
+            + " <foaf:isPrimaryTopicOf rdf:resource=\"#test/4V\"/>\n"
+            + "</Test>\n"
+            + "</rdf:RDF>\n";
+        assertEquals(expected, actual);
+    }
+
+   /**
+     * Test correctnes when the output type is CLOB.
+     */
+    @Test
+    public void castToClob() throws Exception {
+        props.setProperty("test.query", "SELECT CAST('c' AS CLOB) AS ID"
+            + ", CAST('plain string' AS CLOB) AS \"name@\""
+            + ", CAST('3456/view' AS CLOB) AS \"foaf:isPrimaryTopicOf->test\"");
+        classToTest = new GenerateRDF(testWriter, dbConn, props);
+        classToTest.exportTable("test");
+        classToTest.writeRdfFooter();
+        String actual = testOutput.toString(UTF8_ENCODING);
+        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
+            + " xmlns=\"http://voc\">\n"
+            + "\n"
+            + "<Test rdf:about=\"#test/c\">\n"
+            + " <name>plain string</name>\n"
+            + " <foaf:isPrimaryTopicOf rdf:resource=\"#test/3456/view\"/>\n"
+            + "</Test>\n"
+            + "</rdf:RDF>\n";
+        assertEquals(expected, actual);
+    }
+
     @Test
     public void basePersonExport() throws Exception {
         props.setProperty("person.query", "SELECT ID, NAME, LAST_NAME, BORN, ORG AS INORG FROM PERSON ORDER BY ID");
