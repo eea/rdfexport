@@ -392,7 +392,7 @@ public class DatabaseTest {
         assertEquals("discovered tables", "person ", props.getProperty("tables"));
         assertEquals("SELECT concat('', id) AS id, concat('', id) AS \"rdfs:label\", \"ID\" AS \"id\","
                 + " \"NAME\" AS \"name\", \"LAST_NAME\" AS \"last_name\", \"BORN\" AS \"born\","
-                + " \"ORG\" AS \"org\" FROM \"PERSON\"", props.getProperty("person.query"));
+                + " \"ORG\" AS \"org\" FROM \"PUBLIC\".\"PERSON\"", props.getProperty("person.query"));
     }
 
     /*
@@ -405,7 +405,7 @@ public class DatabaseTest {
         assertEquals("discovered tables", "person ", props.getProperty("tables"));
         assertEquals("SELECT concat('', id) AS id, concat('', id) AS \"rdfs:label\", \"ID\" AS \"id\","
                 + " \"NAME\" AS \"name\", \"LAST_NAME\" AS \"last_name\", \"BORN\" AS \"born\","
-                + " \"ORG\" AS \"org\" FROM \"PERSON\"", props.getProperty("person.query"));
+                + " \"ORG\" AS \"org\" FROM \"PUBLIC\".\"PERSON\"", props.getProperty("person.query"));
         classToTest = new GenerateRDF(testWriter, dbConn, props);
         classToTest.exportTable("person");
         classToTest.writeRdfFooter();
@@ -421,7 +421,7 @@ public class DatabaseTest {
         assertEquals("discovered tables", "person ", props.getProperty("tables"));
         assertEquals("SELECT concat('', id) AS id, concat('', id) AS \"rdfs:label\", \"ID\" AS \"id^^xsd:integer\","
                 + " \"NAME\" AS \"name@\", \"LAST_NAME\" AS \"last_name@\", \"BORN\" AS \"born^^xsd:dateTime\","
-                + " \"ORG\" AS \"org@\" FROM \"PERSON\"", props.getProperty("person.query"));
+                + " \"ORG\" AS \"org@\" FROM \"PUBLIC\".\"PERSON\"", props.getProperty("person.query"));
     }
 
     /*
@@ -435,6 +435,6 @@ public class DatabaseTest {
         assertEquals("discovered tables", "person ", props.getProperty("tables"));
         assertEquals("SELECT concat('', id) AS id, concat('', id) AS \"rdfs:label\", \"ID\" AS \"id^^xsd:integer\","
                 + " \"NAME\" AS \"name@\", \"LAST_NAME\" AS \"last_name@\", \"BORN\" AS \"born^^xsd:integer\","
-                + " \"ORG\" AS \"org@\" FROM \"PERSON\"", props.getProperty("person.query"));
+                + " \"ORG\" AS \"org@\" FROM \"PUBLIC\".\"PERSON\"", props.getProperty("person.query"));
     }
 }

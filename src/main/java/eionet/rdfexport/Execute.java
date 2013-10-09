@@ -28,9 +28,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Scanner;
 import java.util.zip.GZIPOutputStream;
@@ -52,8 +58,11 @@ public final class Execute {
     /** Path to the input export properties file. */
     private String inputPropsFilePath = null;
 
-    /** Path to the file where the auto-discovered tables and generated queries shall be written into, if requested so. */
-    private String outputPropsFilePath = null;
+    /**  Output a properties file containing the auto-discovered tables and generated queries. */
+    private boolean outputProps = false;
+
+    /** Output a list of tables. */
+    private boolean outputList = false;
 
     /**
      * The template file used for the export's pre-configuration. Contains the JDBC driver's class name, various driver specific
@@ -84,8 +93,8 @@ public final class Execute {
     /** If true, the tables and primary/foreign keys shall be auto-discovered, disregarding the ones given in properties file. */
     private boolean selfExplore = false;
 
-    /** Path to the file where the RDF shall be generated into. */
-    private String rdfOutputFilePath = null;
+    /** Path to the file where the result shall be generated into. */
+    private String outputFilePath = null;
 
     /** If true, the generated RDF output shall be zipped. */
     private boolean zipOutput = false;
@@ -148,7 +157,7 @@ public final class Execute {
         }
 
         if (vocabularyUri == null) {
-            // Get the vocabulary URI from the loaded input properties.If it's null or empty, then generate it on the basis of the
+            // Get the vocabulary URI from the loaded input properties. If it's null or empty, then generate it on the basis of the
             // given base URI. If the latter is not given either, just set it to "#properties/".
             // Finally, place the resulting vocabulary URI into the loaded input properties map.
             vocabularyUri = props.getProperty("vocabulary");
@@ -175,19 +184,20 @@ public final class Execute {
      */
     private void parseArguments(String[] args) {
 
-        OptionParser op = new OptionParser(args, "xazp:i:m:o:f:B:D:J:U:P:T:V:");
+        OptionParser op = new OptionParser(args, "xclzpi:m:o:f:B:D:J:U:P:T:V:");
         selfExplore = op.getOptionFlag("x");
         if (selfExplore) {
-            interActiveMode = op.getOptionFlag("a");
+            interActiveMode = op.getOptionFlag("c");
         }
+        outputList = op.getOptionFlag("l");
         zipOutput = op.getOptionFlag("z");
-        outputPropsFilePath = op.getOptionArgument("p");
+        outputProps = op.getOptionFlag("p");
         baseUri = op.getOptionArgument("b");
         templatePropsFilePath = op.getOptionArgument("T");
         mdbFilePath = op.getOptionArgument("m");
-        rdfOutputFilePath = op.getOptionArgument("o");
-        if ("-".equals(rdfOutputFilePath)) {
-            rdfOutputFilePath = null; // Linux convention
+        outputFilePath = op.getOptionArgument("o");
+        if ("-".equals(outputFilePath)) {
+            outputFilePath = null; // Linux convention
         }
         inputPropsFilePath = op.getOptionArgument("f");
         rowId = op.getOptionArgument("i");
@@ -214,24 +224,47 @@ public final class Execute {
         Connection conn = null;
         OutputStream outputStream = System.out;
         try {
-            conn = getConnection();
-
-            if (selfExplore) {
-                ExploreDB dbExplorer = new ExploreDB(conn, props, interActiveMode);
-                dbExplorer.discoverTables(true);
-            }
-
-            if (outputPropsFilePath != null && !outputPropsFilePath.isEmpty()) {
-                Execute.outputProperties(outputPropsFilePath, props);
-                return;
-            }
-
-            if (rdfOutputFilePath != null && !rdfOutputFilePath.isEmpty()) {
-                outputStream = new FileOutputStream(rdfOutputFilePath);
+            if (outputFilePath != null && !outputFilePath.isEmpty()) {
+                outputStream = new FileOutputStream(outputFilePath);
             }
 
             if (zipOutput) {
                 outputStream = new GZIPOutputStream(outputStream);
+            }
+
+            conn = getConnection();
+
+            if (selfExplore) {
+                ExploreDB dbExplorer = new ExploreDB(conn, props, interActiveMode);
+                List<TableSpec> tablesToAskExport = dbExplorer.listTables();
+                ArrayList<TableSpec> tablesToDiscover = new ArrayList<TableSpec>();
+                if (interActiveMode) {
+                    for (TableSpec tableSpec : tablesToAskExport) {
+                        boolean exportThisTable = readUserInputBoolean("Export table " + tableSpec.tableName + "?");
+                        if (exportThisTable) {
+                            tablesToDiscover.add(tableSpec);
+                        }
+
+                    }
+                } else {
+                    for (TableSpec tableSpec : tablesToAskExport) {
+                        tablesToDiscover.add(tableSpec);
+                    }
+                }
+                dbExplorer.registerTables(tablesToDiscover);
+                if (interActiveMode) {
+                    askAboutKeys(dbExplorer, tablesToDiscover);
+                }
+                if (outputList) {
+                    outputListOfTables(outputStream, tablesToDiscover);
+                    return;
+                }
+                dbExplorer.createQuery(tablesToDiscover, true);
+            }
+
+            if (outputProps) {
+                Execute.outputProperties(outputStream, props);
+                return;
             }
 
             GenerateRDF exporter = new GenerateRDF(outputStream, conn, props);
@@ -251,6 +284,30 @@ public final class Execute {
         } finally {
             Execute.close(outputStream);
             Execute.close(conn);
+        }
+    }
+
+    /**
+     * Ask whether discovered foreign key should be used.
+     * @param dbExplorer - object holding the explored tables.
+     * @param tables - list of tables.
+     * @throws SQLException
+     *             - if the SQL database is not available
+     */
+    private void askAboutKeys(ExploreDB dbExplorer, List<TableSpec> tables) throws SQLException {
+        for (TableSpec tableSpec : tables) {
+            Map<String, String> simpleForeignKeys = dbExplorer.getSimpleForeignKeys(tableSpec.tableName);
+            Collection<String> cols = dbExplorer.getColumns(tableSpec.tableName);
+            for (String col : cols) {
+                for (Entry<String, String> entry : simpleForeignKeys.entrySet()) {
+                    String pkTable = entry.getValue();
+                    boolean linkForeignKey = readUserInputBoolean(tableSpec.tableName + "." + col + " is a foreign key to "
+                                                    + pkTable + ". Export as reference?");
+                    if (!linkForeignKey) {
+                        dbExplorer.removeForeignKey(tableSpec.tableName, col, pkTable);
+                    }
+                }
+            }
         }
     }
 
@@ -311,6 +368,12 @@ public final class Execute {
             props.setProperty("db.driver", jdbcDriver);
         }
         String driver = props.getProperty("db.driver");
+        if (driver == null) {
+            String jdbcSubProtocol = jdbcUrl.substring(5, jdbcUrl.indexOf(':', 5)).toLowerCase();
+            jdbcDriver = props.getProperty("sqldialect." + jdbcSubProtocol + ".driver");
+            props.setProperty("db.driver", jdbcDriver);
+            driver = jdbcDriver;
+        }
 
         if (userName != null) {
             props.setProperty("db.user", userName);
@@ -339,25 +402,50 @@ public final class Execute {
     }
 
     /**
-     * Writes the given properties into the given file path.
+     * Writes the given properties into the given output, but first remove
+     * irrelevant keys.
      *
-     * @param outputFilePath
-     *         - The pathname to write the properties to
+     * @param outputStream
+     *         - The output stream to write the properties to
      * @param properties
      *         - The properties object
      * @throws IOException if the file can't be written
      */
-    private static void outputProperties(String outputFilePath, Properties properties) throws IOException {
+    private static void outputProperties(OutputStream outputStream, Properties properties) throws IOException {
 
-        FileOutputStream outputStream = null;
-        try {
-            outputStream = new FileOutputStream(outputFilePath);
-            SortedProperties props = new SortedProperties();
-            props.putAll(properties);
-            props.store(outputStream, "");
-        } finally {
-            Execute.close(outputStream);
+        SortedProperties props = new SortedProperties();
+        props.putAll(properties);
+        for (String key : props.stringPropertyNames()) {
+            if (key.startsWith("sqldialect.")) {
+                props.remove(key);
+            }
         }
+        props.store(outputStream, "");
+    }
+
+    /**
+     * Writes the discovered tables to the output.
+     *
+     * @param outputStream
+     *         - The output stream to write the list to
+     * @param tablesToAskExport - list of tables.
+     * @throws IOException if the file can't be written
+     */
+    private void outputListOfTables(OutputStream outputStream, List<TableSpec> tablesToAskExport) throws IOException {
+        OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
+        for (TableSpec tableSpec : tablesToAskExport) {
+            //if (tableSpec.tableCatalog != null) {
+            //    writer.write(tableSpec.tableCatalog);
+            //    writer.write(".");
+            //}
+            if (tableSpec.tableSchema != null) {
+                writer.write(tableSpec.tableSchema);
+                writer.write(".");
+            }
+            writer.write(tableSpec.tableName);
+            writer.write("\n");
+        }
+        writer.close();
     }
 
     /**
@@ -406,6 +494,27 @@ public final class Execute {
     }
 
     /**
+     * Post a yes/no question to the user and return the answer.
+     * @param question to ask the user
+     * @return the answer in boolean
+     */
+    static boolean readUserInputBoolean(String question) {
+
+        for (int i = 0; i < 10; i++) {
+            System.out.print(question + " (y/n): ");
+            String line = Execute.USER_INPUT.nextLine().trim().toLowerCase();
+            if (line.equals("y")) {
+                return true;
+            } else if (line.equals("n")) {
+                return false;
+            }
+        }
+
+        System.out.println("Tried 10 times, assuming the answer is 'n'!");
+        return false;
+    }
+
+    /**
      * Main method.
      *
      * @param args - the command line arguments provided by the operating system.
@@ -442,11 +551,11 @@ public final class Execute {
                 + " that can then be used as an input_properties_file for multiple reuse.");
 
         System.out.println(" -J jdbc_database_url        The URL to the database.");
-        System.out.println(" -D jdbc_driver_class        For MySQL use com.mysql.jdbc.Driver.");
+        System.out.println(" -D jdbc_driver_class        For MySQL and PostgresQL the driver is known from the JDBC URL.");
         System.out.println(" -U database_user            The user to log into the database.");
         System.out.println(" -P password                 The password for the database.");
 
-        System.out.println(" -p output_properties_file   Generated from template_properties_file and auto-discovered info."
+        System.out.println(" -p                          Generate a properties file from auto-discovered info."
                 + " If -T and -p have been specified, then -f is ignored and no RDF output generated."
                 + " Instead, the output_properties_file will be generated and the program exits.");
 
@@ -454,14 +563,16 @@ public final class Execute {
 
         System.out.println(" -m                          Path of the MS Access file to query from."
                 + " Overrides the one given in input_properties_file or template_properties_file.");
+        System.out.println(" -l                          List tables in the database.");
         System.out.println(" -x                          Tables/keys of the database will be auto-discovered.");
-        System.out.println(" -xa                         Tables/keys will be auto-discovered, user prompted for confirmation.");
+        System.out.println(" -xc                         Tables/keys will be auto-discovered, user prompted for confirmation.");
         System.out.println(" -B base_uri                 Base URI which overrides the one in the"
                 + " input_properties_file or template_properties_file.");
         System.out.println(" -V vocabulary_uri           Vocabulary URI which overrides the one in the"
                 + " input_properties_file or template_properties_file.");
         System.out.println(" -i rowId                    Only records with this primary key value will be exported.");
         System.out.println(" -h or -?                    Show this help");
-        System.out.println("Unrecognized arguments will be treated as names of tables to export. If no arguments are found, all tables will be exported.");
+        System.out.println("Unrecognized arguments will be treated as names of tables to export."
+            + " If no arguments are found, all tables will be exported.");
     }
 }

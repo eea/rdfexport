@@ -56,21 +56,31 @@ Naturally, the JDBC driver must be on the classpath.
 
 The usage of rdf-exporter-xx.jar is as follows:
 
-> java -cp ./target/rdf-export-xx.jar eionet.rdfexport.Execute <options>
+$ java -cp target/rdf-exporter-1.0-SNAPSHOT.jar eionet.rdfexport.Execute <options>
+  or:
+$ java -jar target/rdf-exporter-1.0-SNAPSHOT-jar-with-dependencies.jar <options>
 
 If <options> is not supplied, then a help text on possible options is printed:
 
--f properties_input_file      Path to the file that contains properties for database connection and RDF generation.
--o rdf_output_file            Path to the RDF output file.
--T databae_template_file      Path to the template file to export (MS-Access database).
--z                            The RDF output file will be zipped.
--x                            Tables/keys will be auto-discovered.
--xa                           Tables/keys will be auto-discovered, user prompted for confirmation.
--b base_uri                   Base URI which overrides the one in the properties file.
--p properties_output_file     If -x or -xa given then auto-discovered info is saved into this file.
--i rowId                      Only records with this primary key value will be exported.
+----------------------------------------
+Usage: This command accepts the following command line arguments:
 
-NB! Note that unrecognized arguments will be treated as names of tables to export. If not
-such arguments are found, all tables will be exported. Alternatively, you can use -xa option
-to be prompted for confirmation on each table (i.e. interactive mode).
-
+ -f input_properties_file    Path of the input properties file containing everything needed for RDF generation. That includes the database's JDBC url, JDBC driver class name, datatype mappings, namespaces, SQL queries to export, etc.
+ -o rdf_output_file          Path of the RDF output file to be generated.
+ -T template_properties_file From this file and auto-discovered info about the database, the output_properties_file is generated that can then be used as an input_properties_file for multiple reuse.
+ -J jdbc_database_url        The URL to the database.
+ -D jdbc_driver_class        For MySQL use com.mysql.jdbc.Driver.
+ -U database_user            The user to log into the database.
+ -P password                 The password for the database.
+ -p                          Generate a properties file from auto-discovered info. If -T and -p have been specified, then -f is ignored and no RDF output generated. Instead, the output_properties_file will be generated and the program exits.
+ -z                          The RDF output file will be zipped. if this argument is present.
+ -m                          Path of the MS Access file to query from. Overrides the one given in input_properties_file or template_properties_file.
+ -l                          List tables in the database.
+ -x                          Tables/keys of the database will be auto-discovered.
+ -xc                         Tables/keys will be auto-discovered, user prompted for confirmation.
+ -B base_uri                 Base URI which overrides the one in the input_properties_file or template_properties_file.
+ -V vocabulary_uri           Vocabulary URI which overrides the one in the input_properties_file or template_properties_file.
+ -i rowId                    Only records with this primary key value will be exported.
+ -h or -?                    Show this help
+Unrecognized arguments will be treated as names of tables to export. If no arguments are found, all tables will be exported.
+----------------------------------------

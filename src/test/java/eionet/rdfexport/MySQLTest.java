@@ -315,8 +315,8 @@ public class MySQLTest {
         String dbPassword = props.getProperty("db.password").trim();
         File temp = File.createTempFile("outsimple", ".properties");
         String outfile = temp.toString();
-        String[] args = {"-x",
-            "-p", outfile,
+        String[] args = {"-xp",
+            "-o", outfile,
             "-D", dbDriver,
             "-J", dbDatabase,
             "-U", dbUser,

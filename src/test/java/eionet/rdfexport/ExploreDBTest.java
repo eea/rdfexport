@@ -1,7 +1,9 @@
 package eionet.rdfexport;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -9,6 +11,10 @@ import java.io.OutputStreamWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import org.apache.commons.io.IOUtils;
 import org.dbunit.dataset.IDataSet;
@@ -19,10 +25,11 @@ import org.dbunit.operation.DatabaseOperation;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
-/*
- * Test ExploreDB class
+/**
+ * Test ExploreDB class.
  */
 public class ExploreDBTest {
 
@@ -140,11 +147,11 @@ public class ExploreDBTest {
         String expected = "SELECT '' || customer_id AS id, '' || customer_id AS \"rdfs:label\","
            + " \"CUSTOMER_ID\" AS \"customer_id\","
            + " \"NAME\" AS \"name\", \"LAST_NAME\" AS \"last_name\","
-           + " \"ORG_ID\" AS \"org_id->organisation\", \"CREATED\" AS \"created\" FROM \"CUSTOMER\"";
+           + " \"ORG_ID\" AS \"org_id->organisation\", \"CREATED\" AS \"created\" FROM \"PUBLIC\".\"CUSTOMER\"";
         assertEquals(expected, props.getProperty("customer.query"));
     }
 
-    /*
+    /**
      * Force a timestamp to be exported as xsd:integer via the properties file.
      */
     @Test
@@ -157,7 +164,7 @@ public class ExploreDBTest {
         String expected = "SELECT '' || customer_id AS id, '' || customer_id AS \"rdfs:label\","
            + " \"CUSTOMER_ID\" AS \"customer_id^^xsd:integer\","
            + " \"NAME\" AS \"name@\", \"LAST_NAME\" AS \"last_name@\","
-           + " \"ORG_ID\" AS \"org_id->organisation\", \"CREATED\" AS \"created^^xsd:integer\" FROM \"CUSTOMER\"";
+           + " \"ORG_ID\" AS \"org_id->organisation\", \"CREATED\" AS \"created^^xsd:integer\" FROM \"PUBLIC\".\"CUSTOMER\"";
         assertEquals(expected, props.getProperty("customer.query"));
     }
 
@@ -165,14 +172,13 @@ public class ExploreDBTest {
     public void exploreInvoiceWithTypes() throws Exception {
         String expected;
         ExploreDB edb = new ExploreDB(dbConn, props, false);
-
         edb.discoverTables(true);
         assertEquals("discovered tables", "customer invoice invoice%20item organisation ", props.getProperty("tables"));
 
         expected = "SELECT '' || customer_id AS id, '' || customer_id AS \"rdfs:label\","
            + " \"CUSTOMER_ID\" AS \"customer_id^^xsd:integer\","
            + " \"NAME\" AS \"name@\", \"LAST_NAME\" AS \"last_name@\","
-           + " \"ORG_ID\" AS \"org_id->organisation\", \"CREATED\" AS \"created^^xsd:date\" FROM \"CUSTOMER\"";
+           + " \"ORG_ID\" AS \"org_id->organisation\", \"CREATED\" AS \"created^^xsd:date\" FROM \"PUBLIC\".\"CUSTOMER\"";
         assertEquals(expected, props.getProperty("customer.query"));
 
         expected = "SELECT '' || invoice_id AS id, "
@@ -180,7 +186,7 @@ public class ExploreDBTest {
          + "\"INVOICE_ID\" AS \"invoice_id^^xsd:integer\", "
          + "\"BILLING\" AS \"billing->customer\", "
          + "\"DELIVERY\" AS \"delivery->customer\", "
-         + "\"TOTAL\" AS \"total^^xsd:decimal\" FROM \"INVOICE\"";
+         + "\"TOTAL\" AS \"total^^xsd:decimal\" FROM \"PUBLIC\".\"INVOICE\"";
         assertEquals(expected, props.getProperty("invoice.query"));
 
         expected = "SELECT '' || invoice_id || line_id AS id, "
@@ -189,8 +195,56 @@ public class ExploreDBTest {
          + "\"LINE_ID\" AS \"line_id^^xsd:integer\", "
          + "\"DESCRIPTION\" AS \"description@\", "
          + "\"AMOUNT\" AS \"amount^^xsd:integer\", "
-         + "\"PRICE\" AS \"price^^xsd:decimal\" FROM \"INVOICE ITEM\"";
+         + "\"PRICE\" AS \"price^^xsd:decimal\" FROM \"PUBLIC\".\"INVOICE ITEM\"";
         assertEquals(expected, props.getProperty("invoice%20item.query"));
     }
 
+    @Test
+    public void listTables() throws Exception {
+        ExploreDB dbExplorer = new ExploreDB(dbConn, props, false);
+        List<TableSpec> tableToAskExport = dbExplorer.listTables();
+        List<String> listOfTableNames = new ArrayList<String>();
+        for (TableSpec tableSpec : tableToAskExport) {
+        //    System.out.println(tableSpec.tableName);
+            listOfTableNames.add(tableSpec.tableName);
+        }
+        assertTrue(listOfTableNames.contains("CUSTOMER"));
+        assertTrue(listOfTableNames.contains("INVOICE ITEM"));
+        assertEquals("Size of list expected to be 4", 4, tableToAskExport.size());
+    }
+
+    @Test
+    public void registerTablesNoChanges() throws Exception {
+        ExploreDB dbExplorer = new ExploreDB(dbConn, props, false);
+        List<TableSpec> tableToAskExport = dbExplorer.listTables();
+        dbExplorer.registerTables(tableToAskExport);
+        for (TableSpec tableSpec : tableToAskExport) {
+            Map<String, String> simpleForeignKeys = dbExplorer.getSimpleForeignKeys(tableSpec.tableName);
+        }
+    }
+
+    @Ignore @Test
+    public void registerOneTable() throws Exception {
+        ExploreDB dbExplorer = new ExploreDB(dbConn, props, false);
+        //List<TableSpec> tableToAskExport = dbExplorer.listTables();
+        ArrayList<TableSpec> tablesToRegister = new ArrayList<TableSpec>();
+        tablesToRegister.add(new TableSpec("CUSTOMER"));
+        tablesToRegister.add(new TableSpec("ORGANISATION"));
+        tablesToRegister.add(new TableSpec("INVOICE"));
+        dbExplorer.registerTables(tablesToRegister);
+        for (TableSpec tableSpec : tablesToRegister) {
+            Map<String, String> simpleForeignKeys = dbExplorer.getSimpleForeignKeys(tableSpec.tableName);
+            assertNotNull(simpleForeignKeys);
+            assertEquals(1, simpleForeignKeys.size());
+            System.out.println(simpleForeignKeys);
+        }
+    }
+
+    @Ignore @Test
+    public void getInvoiceTable() throws Exception {
+        ExploreDB dbExplorer = new ExploreDB(dbConn, props, false);
+        List<TableSpec> tableToAskExport = dbExplorer.listTables();
+        TableSpec ts = dbExplorer.getTable("INVOICE");
+        assertNotNull(ts);
+    }
 }
