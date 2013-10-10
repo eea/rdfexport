@@ -72,7 +72,7 @@ class TableSpec {
     LinkedHashMap<String, Integer> columns;
 
     /** Columns constituting the primary key, in that same order. */
-    List<String> pkColumns;
+    List<String> primaryKeyColumns;
 
     /**
      * A map representing foreign keys found on this table. The map's keys stand
@@ -223,11 +223,11 @@ class TableSpec {
         String aliasEscapeEnd = properties.getProperty("sqldialect." + jdbcSubProtocol + ".alias.after");
 
         StringBuilder query = new StringBuilder("SELECT ");
-        if (pkColumns.isEmpty()) {
+        if (primaryKeyColumns == null || primaryKeyColumns.isEmpty()) {
             query.append("'@' AS id");
         } else {
             // Concatenate primary key columns.
-            String pksConcatenated = concatColumns(pkColumns);
+            String pksConcatenated = concatColumns(primaryKeyColumns);
             query.append(pksConcatenated).append(" AS id, ").append(pksConcatenated).append(" AS ")
                 .append(aliasEscapeStart).append("rdfs:label").append(aliasEscapeEnd);
         }

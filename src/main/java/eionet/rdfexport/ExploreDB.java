@@ -289,6 +289,7 @@ public class ExploreDB {
     private HashMap<String, String> discoverKeys(DatabaseMetaData dbMetadata) throws SQLException {
         ResultSet rs = null;
         HashMap<String, String> tPkColumns = new HashMap<String, String>();
+
         for (Entry<String, TableSpec> entry : tables.entrySet()) {
 
             String tableName = entry.getKey();
@@ -301,14 +302,15 @@ public class ExploreDB {
             }
             ExploreDB.close(rs);
 
-            tableSpec.pkColumns = ExploreDB.listValuesSortedByKeys(primKeys);
+            tableSpec.primaryKeyColumns = ExploreDB.listValuesSortedByKeys(primKeys);
             if (primKeys.size() == 1) {
                 tPkColumns.put(tableName, primKeys.values().iterator().next());
             }
 
             rs = dbMetadata.getImportedKeys(null, null, tableName);
             while (rs.next()) {
-                tableSpec.addFkColumn(rs.getString("PKTABLE_NAME"), rs.getString("FK_NAME"), rs.getString("FKCOLUMN_NAME"),
+                tableSpec.addFkColumn(rs.getString("PKTABLE_NAME"),
+                        rs.getString("FK_NAME"), rs.getString("FKCOLUMN_NAME"),
                         rs.getString("PKCOLUMN_NAME"), rs.getShort("KEY_SEQ"));
             }
             // No close of rs?
@@ -351,29 +353,6 @@ public class ExploreDB {
         }
         return result;
     }
-
-    /**
-     * Post a yes/no question to the user and return the answer.
-     * @param question to ask the user
-     * @return the answer in boolean
-     */
-    /*
-    protected static boolean readUserInputBoolean(String question) {
-
-        for (int i = 0; i < 10; i++) {
-            System.out.print(question + " (y/n): ");
-            String line = Execute.USER_INPUT.nextLine().trim().toLowerCase();
-            if (line.equals("y")) {
-                return true;
-            } else if (line.equals("n")) {
-                return false;
-            }
-        }
-
-        System.out.println("Tried 10 times, assuming the answer is 'n'!");
-        return false;
-    }
-    */
 
     /**
      * Make a segment of an RDF predicate. That means, no spaces in the name.
