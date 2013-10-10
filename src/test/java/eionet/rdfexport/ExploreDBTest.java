@@ -140,7 +140,7 @@ public class ExploreDBTest {
      */
     @Test
     public void exploreInvoice() throws Exception {
-        ExploreDB edb = new ExploreDB(dbConn, props, false);
+        ExploreDB edb = new ExploreDB(dbConn, props);
         edb.discoverTables(false);
         assertEquals("discovered tables", "customer invoice invoice%20item organisation ", props.getProperty("tables"));
 
@@ -157,7 +157,7 @@ public class ExploreDBTest {
     @Test
     public void exploreInvoiceWithBadTypes() throws Exception {
         props.setProperty("datatype.date", "xsd:integer");
-        ExploreDB edb = new ExploreDB(dbConn, props, false);
+        ExploreDB edb = new ExploreDB(dbConn, props);
         edb.discoverTables(true);
         assertEquals("discovered tables", "customer invoice invoice%20item organisation ", props.getProperty("tables"));
 
@@ -171,7 +171,7 @@ public class ExploreDBTest {
     @Test
     public void exploreInvoiceWithTypes() throws Exception {
         String expected;
-        ExploreDB edb = new ExploreDB(dbConn, props, false);
+        ExploreDB edb = new ExploreDB(dbConn, props);
         edb.discoverTables(true);
         assertEquals("discovered tables", "customer invoice invoice%20item organisation ", props.getProperty("tables"));
 
@@ -201,7 +201,7 @@ public class ExploreDBTest {
 
     @Test
     public void listTables() throws Exception {
-        ExploreDB dbExplorer = new ExploreDB(dbConn, props, false);
+        ExploreDB dbExplorer = new ExploreDB(dbConn, props);
         List<TableSpec> tableToAskExport = dbExplorer.listTables();
         List<String> listOfTableNames = new ArrayList<String>();
         for (TableSpec tableSpec : tableToAskExport) {
@@ -215,7 +215,7 @@ public class ExploreDBTest {
 
     @Test
     public void registerTablesNoChanges() throws Exception {
-        ExploreDB dbExplorer = new ExploreDB(dbConn, props, false);
+        ExploreDB dbExplorer = new ExploreDB(dbConn, props);
         List<TableSpec> tableToAskExport = dbExplorer.listTables();
         dbExplorer.registerTables(tableToAskExport);
         for (TableSpec tableSpec : tableToAskExport) {
@@ -225,7 +225,7 @@ public class ExploreDBTest {
 
     @Ignore @Test
     public void registerOneTable() throws Exception {
-        ExploreDB dbExplorer = new ExploreDB(dbConn, props, false);
+        ExploreDB dbExplorer = new ExploreDB(dbConn, props);
         //List<TableSpec> tableToAskExport = dbExplorer.listTables();
         ArrayList<TableSpec> tablesToRegister = new ArrayList<TableSpec>();
         tablesToRegister.add(new TableSpec("CUSTOMER"));
@@ -242,7 +242,7 @@ public class ExploreDBTest {
 
     @Ignore @Test
     public void getInvoiceTable() throws Exception {
-        ExploreDB dbExplorer = new ExploreDB(dbConn, props, false);
+        ExploreDB dbExplorer = new ExploreDB(dbConn, props);
         List<TableSpec> tableToAskExport = dbExplorer.listTables();
         TableSpec ts = dbExplorer.getTable("INVOICE");
         assertNotNull(ts);

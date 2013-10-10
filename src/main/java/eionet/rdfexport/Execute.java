@@ -177,7 +177,8 @@ public final class Execute {
     }
 
     /**
-     * Parses the given command line arguments, and sets the corresponding fields of this object.
+     * Parses the given command line arguments, and sets the corresponding
+     * fields of this object.
      *
      * @param args
      *         - the arguments
@@ -211,8 +212,10 @@ public final class Execute {
     }
 
     /**
-     * The core method that performs the auto-discovery of tables/keys (if requested) and generates the RDF. Assumes input
-     * properties and command line arguments have been processed, and corresponding fields set in the object.
+     * The core method that performs the auto-discovery of tables/keys
+     * (if requested) and generates the RDF. Assumes input properties and
+     * command line arguments have been processed, and corresponding fields set
+     * in the object.
      *
      * @throws SQLException
      *             - if the SQL database is not available
@@ -235,7 +238,7 @@ public final class Execute {
             conn = getConnection();
 
             if (selfExplore) {
-                ExploreDB dbExplorer = new ExploreDB(conn, props, interActiveMode);
+                ExploreDB dbExplorer = new ExploreDB(conn, props);
                 List<TableSpec> tablesToAskExport = dbExplorer.listTables();
                 ArrayList<TableSpec> tablesToDiscover = new ArrayList<TableSpec>();
                 if (interActiveMode) {

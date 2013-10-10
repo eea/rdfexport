@@ -251,7 +251,7 @@ public class MySQLTest {
      */
     @Test
     public void explorePersonTable() throws Exception {
-        ExploreDB edb = new ExploreDB(dbConn, props, false);
+        ExploreDB edb = new ExploreDB(dbConn, props);
         edb.discoverTables(false);
         String foundTable = props.getProperty("tables").trim();
         assertEquals("discovered tables", "person", foundTable);
@@ -268,7 +268,7 @@ public class MySQLTest {
      */
     @Test
     public void explorePersonTableWithTypes() throws Exception {
-        ExploreDB edb = new ExploreDB(dbConn, props, false);
+        ExploreDB edb = new ExploreDB(dbConn, props);
         edb.discoverTables(true);
         String foundTable = props.getProperty("tables").trim();
         assertEquals("discovered tables", "person", foundTable);

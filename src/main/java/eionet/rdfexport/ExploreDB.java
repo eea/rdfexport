@@ -70,8 +70,6 @@ public class ExploreDB {
     private Properties props;
     /** The JDBC sub-protocol in the URL used to obtain this connection. */
     private String jdbcSubProtocol;
-    /** If true, user will be prompted for each discovered table and foreign key. */
-    private boolean interActiveMode = false;
 
     /**
      *
@@ -81,17 +79,14 @@ public class ExploreDB {
      *            - the database connection to explore
      * @param properties
      *            - properties where to write the discovered tables, queries, etc.
-     * @param interActiveMode
-     *            if true, prompt user for each discovered table and foreign key
      *
      * @throws SQLException
      *            - if a database access error occurs
      */
-    public ExploreDB(Connection dbCon, Properties properties, boolean interActiveMode) throws SQLException {
+    public ExploreDB(Connection dbCon, Properties properties) throws SQLException {
 
         con = dbCon;
         props = properties;
-        this.interActiveMode = interActiveMode;
 
         jdbcSubProtocol = getDBProductName(con);
 
@@ -157,23 +152,6 @@ public class ExploreDB {
         registerTables(tablesToExport);
         createQuery(tablesToExport, addDataTypes);
     }
-    /*
-    public void discoverTables(boolean addDataTypes) throws SQLException {
-        DatabaseMetaData dbMetadata = con.getMetaData();
-
-        getTablesFromDB(dbMetadata);
-        HashMap<String, String> tablesPkColumns = discoverKeys(dbMetadata);
-
-        // Now that all tables' primary/foreign keys have been set, create every table's query, and set it in properties
-        // that will be later used for RDF generation.
-        for (Map.Entry<String, TableSpec> entry : tables.entrySet()) {
-            String query = entry.getValue().createQuery(tablesPkColumns, interActiveMode, addDataTypes, datatypeMap);
-            String segment = encodeSegment(entry.getKey());
-            props.setProperty(segment.concat(".query"), query);
-        }
-
-    }
-    */
 
     /**
      * Return a list of tables in the database. Skips tables as configured in
@@ -259,6 +237,7 @@ public class ExploreDB {
      * names of such columns. The tables they point to are the map's values.
      *
      * @param table - name of table
+     * @return - map of columns
      * @throws SQLException
      *            - if a database access error occurs
      */
@@ -298,57 +277,6 @@ public class ExploreDB {
     }
 
     /**
-     * Investigate the database for a list of tables. Then check if they should be skipped.
-     *
-     * @param dbMetadata - The metadata from the database
-     * @throws SQLException
-     *            - if a database access error occurs
-     */
-    /*
-    private void getTablesFromDB(DatabaseMetaData dbMetadata) throws SQLException {
-        StringBuilder tablesListBuilder = new StringBuilder();
-        ResultSet rs = null;
-
-        try {
-            rs = dbMetadata.getColumns(null, null, "%", "%");
-
-            HashSet<String> skipTables = getTablesToSkip();
-
-            while (rs.next()) {
-
-                String tableName = rs.getString(3);
-                if (!skipTables.contains(tableName.toLowerCase())) {
-
-                    TableSpec tableSpec = tables.get(tableName);
-                    if (tableSpec == null) {
-
-                        boolean exportThisTable =
-                                !interActiveMode ? true : readUserInputBoolean("Export table " + tableName + "?");
-                        if (!exportThisTable) {
-                            skipTables.add(encodeSegment(tableName));
-                            continue;
-                        }
-
-                        tableSpec = new TableSpec(tableName);
-                        tableSpec.tableCatalog = rs.getString(1);
-                        tableSpec.tableSchema = rs.getString(2);
-                        tableSpec.setProperties(props);
-                        tableSpec.setJDBCSubProtocol(jdbcSubProtocol);
-                        tables.put(tableName, tableSpec);
-                        String segment = encodeSegment(tableName);
-                        tablesListBuilder.append(segment).append(" ");
-                    }
-                    tableSpec.addColumn(rs.getString(4), rs.getInt(5));
-                }
-            }
-            props.setProperty("tables", tablesListBuilder.toString());
-        } finally {
-            ExploreDB.close(rs);
-        }
-    }
-    */
-
-    /**
      * Loop through the discovered tables, and discover each one's primary and
      * foreign keys too. While at it, remember simple (i.e. non-compound)
      * primary keys of every table for later use below.
@@ -361,7 +289,7 @@ public class ExploreDB {
     private HashMap<String, String> discoverKeys(DatabaseMetaData dbMetadata) throws SQLException {
         ResultSet rs = null;
         HashMap<String, String> tPkColumns = new HashMap<String, String>();
-        for (Map.Entry<String, TableSpec> entry : tables.entrySet()) {
+        for (Entry<String, TableSpec> entry : tables.entrySet()) {
 
             String tableName = entry.getKey();
             TableSpec tableSpec = entry.getValue();

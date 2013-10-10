@@ -387,7 +387,7 @@ public class DatabaseTest {
      */
     @Test
     public void explorePersonTable() throws Exception {
-        ExploreDB edb = new ExploreDB(dbConn, props, false);
+        ExploreDB edb = new ExploreDB(dbConn, props);
         edb.discoverTables(false);
         assertEquals("discovered tables", "person ", props.getProperty("tables"));
         assertEquals("SELECT concat('', id) AS id, concat('', id) AS \"rdfs:label\", \"ID\" AS \"id\","
@@ -400,7 +400,7 @@ public class DatabaseTest {
      */
     @Test
     public void exploreAndRun() throws Exception {
-        ExploreDB edb = new ExploreDB(dbConn, props, false);
+        ExploreDB edb = new ExploreDB(dbConn, props);
         edb.discoverTables(false);
         assertEquals("discovered tables", "person ", props.getProperty("tables"));
         assertEquals("SELECT concat('', id) AS id, concat('', id) AS \"rdfs:label\", \"ID\" AS \"id\","
@@ -416,7 +416,7 @@ public class DatabaseTest {
 
     @Test
     public void explorePersonTableWithTypes() throws Exception {
-        ExploreDB edb = new ExploreDB(dbConn, props, false);
+        ExploreDB edb = new ExploreDB(dbConn, props);
         edb.discoverTables(true);
         assertEquals("discovered tables", "person ", props.getProperty("tables"));
         assertEquals("SELECT concat('', id) AS id, concat('', id) AS \"rdfs:label\", \"ID\" AS \"id^^xsd:integer\","
@@ -430,7 +430,7 @@ public class DatabaseTest {
     @Test
     public void explorePersonTableWithBadTypes() throws Exception {
         props.setProperty("datatype.timestamp", "xsd:integer");
-        ExploreDB edb = new ExploreDB(dbConn, props, false);
+        ExploreDB edb = new ExploreDB(dbConn, props);
         edb.discoverTables(true);
         assertEquals("discovered tables", "person ", props.getProperty("tables"));
         assertEquals("SELECT concat('', id) AS id, concat('', id) AS \"rdfs:label\", \"ID\" AS \"id^^xsd:integer\","

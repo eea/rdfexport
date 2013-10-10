@@ -19,7 +19,7 @@
  *  Søren Roug, EEA
  *  Jaanus Heinlaid, TripleDev
  *
- * $Id: ExploreDB.java 14381 2013-07-06 08:14:02Z roug $
+ * $Id$
  */
 package eionet.rdfexport;
 
