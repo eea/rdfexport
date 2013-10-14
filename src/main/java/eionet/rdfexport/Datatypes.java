@@ -103,7 +103,7 @@ public final class Datatypes {
         defaultMapping.put(Types.REAL, "xsd:decimal");
         defaultMapping.put(Types.SMALLINT, "xsd:int");
         defaultMapping.put(Types.TIME, "xsd:time");
-        defaultMapping.put(Types.TIMESTAMP, "xsd:datetime");
+        defaultMapping.put(Types.TIMESTAMP, "xsd:dateTime");
         defaultMapping.put(Types.TINYINT, "xsd:int");
         defaultMapping.put(Types.VARBINARY, "");
         defaultMapping.put(Types.VARCHAR, "");
