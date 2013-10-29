@@ -337,6 +337,29 @@ public class DatabaseTest {
         assertEquals(expected, actual);
     }
 
+    /**
+     * Check that the rdf:about can handle an address with a colon.
+     */
+    @Test
+    public void resourceWithColon() throws Exception {
+        props.setProperty("pollutant.vocabulary", "http://prtr/");
+        props.setProperty("pollutant.class", "prtr:Pollutant");
+        props.setProperty("pollutant.query", "SELECT '05:XX' AS ID, '06:XX' AS \"parent->pollutant\"");
+        props.setProperty("baseurl", "http://base/url/");
+        classToTest = new GenerateRDF(testWriter, dbConn, props);
+        classToTest.exportTable("pollutant");
+        classToTest.writeRdfFooter();
+        String actual = testOutput.toString(UTF8_ENCODING);
+        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
+            + " xmlns=\"http://prtr/\" xml:base=\"http://base/url/\">\n"
+            + "\n"
+            + "<prtr:Pollutant rdf:about=\"pollutant/05:XX\">\n"
+            + " <parent rdf:resource=\"pollutant/06:XX\"/>\n"
+            + "</prtr:Pollutant>\n"
+            + "</rdf:RDF>\n";
+        assertEquals(expected, actual);
+    }
     @Test
     public void prtrElektra() throws Exception {
         props.setProperty("greek.vocabulary", "http://prtr/");
