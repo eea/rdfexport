@@ -24,20 +24,19 @@ primary and foreign keys by itself, or you can provide the
 tables-to-export and queries-to-run through a properties
 file that we call below as "RDF export properties file".
 
+The output file is specified with the -o option. If it's not given,
+standard output is used.
+
 For the auto-discovery, provide -x as command line option. If you
 supply -xa, the auto-discovery mode will prompt you for confirmation
 on all tables and foreign keys discovered.
 
-Auto-discovered information will be saved into a given properties
-file and no RDF exported, when you provide that file's path in the
--p command line option.
+Auto-discovered information will be saved into a given output
+file and no RDF exported, when you provide -p command line option.
 
 The database connection properties and also numerous properties required
 for the RDF generation are given in a properties file whose path is
 supplied via the -f command line option.
-
-The RDF output file is specified with the -o option. If it's not given,
-standard output is used.
 
 If the database is an MS-Access file (aka MDB file) or a dBase (aka DBF)
 directory, then it can be provided with the -T command line option.
@@ -50,8 +49,14 @@ not the file.
 
 Naturally, the JDBC driver must be on the classpath.
 
+**********************
+3. The properties file
+**********************
+Queries are stored in a Java properties file. The full description is
+provided in the docs/FILEFORMAT.html
+
 ************************************************************
-3. Execution and command line options.
+4. Execution and command line options.
 ************************************************************
 
 The usage of rdf-exporter-xx.jar is as follows:
