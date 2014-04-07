@@ -12,6 +12,7 @@ import java.sql.DriverManager;
 import java.sql.Statement;
 import java.util.Properties;
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.PropertyConfigurator;
 import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
 import org.dbunit.IDatabaseTester;
@@ -45,6 +46,20 @@ public class DatabaseTest {
             + "BORN DATETIME,"
             + "ORG varchar(30))");
         statement.close();
+    }
+
+    /**
+     * Initialize the logging system. It is used by dbunit.
+     */
+    @BeforeClass
+    public static void setupLogger() throws Exception {
+        Properties logProperties = new Properties();
+        logProperties.setProperty("log4j.rootCategory", "DEBUG, CONSOLE");
+        logProperties.setProperty("log4j.appender.CONSOLE", "org.apache.log4j.ConsoleAppender");
+        logProperties.setProperty("log4j.appender.CONSOLE.Threshold", "ERROR");
+        logProperties.setProperty("log4j.appender.CONSOLE.layout", "org.apache.log4j.PatternLayout");
+        logProperties.setProperty("log4j.appender.CONSOLE.layout.ConversionPattern", "- %m%n");
+        PropertyConfigurator.configure(logProperties);
     }
 
     @Before

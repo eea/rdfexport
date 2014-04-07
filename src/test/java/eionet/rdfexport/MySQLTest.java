@@ -5,6 +5,7 @@ import static junit.framework.Assert.assertNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.sql.Connection;
@@ -299,6 +300,26 @@ public class MySQLTest {
         assertEquals(expected, actual);
     }
 
+    /**
+     * Test simple discovery where option 'd' is used.
+     * This can only by done with a disk-stored database, as the Execute class opens a new connection to the database.
+     */
+    @Test
+    public void executeSimpleWithDOption() throws Exception {
+        Properties resultProps = new Properties();
+
+        String resourcefile = MySQLTest.class.getClassLoader().getResource("exportsimple.properties").getFile();
+        File temp = File.createTempFile("outsimple", ".properties");
+        String outfile = temp.toString();
+        String[] args = {"-xp", "-d", resourcefile, "-o", outfile};
+        Execute.main(args);
+        //String expected = loadFile("rdf-person.xml");
+        //String actual = IOUtils.toString(temp.toURI(), "UTF-8");
+        resultProps.load(new FileInputStream(temp));
+        temp.delete();
+        String actual = resultProps.getProperty("db.user");
+        assertEquals("testuser", actual);
+    }
     /**
      * Test simple query. This can only by done with a disk-stored database, as the Execute class
      * opens a new connection to the database.

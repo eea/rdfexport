@@ -55,6 +55,9 @@ public final class Execute {
     /** List of unrecognized command line arguments. They will be interpreted as names of tables to export. */
     private String[] unusedArguments = new String[0];
 
+    /** Path to the database properties file. */
+    private String dbPropsFilePath = null;
+
     /** Path to the input export properties file. */
     private String inputPropsFilePath = null;
 
@@ -128,6 +131,10 @@ public final class Execute {
         // First, parse the command line arguments.
         parseArguments(args);
 
+        if (dbPropsFilePath != null && !dbPropsFilePath.isEmpty()) {
+            Execute.loadProperties(props, dbPropsFilePath);
+        }
+
         // Use default path for the input properties file if not given from command line arguments.
         if (inputPropsFilePath == null || inputPropsFilePath.isEmpty()) {
             inputPropsFilePath = DEFAULT_INPUT_PROPS_FILE_PATH;
@@ -185,7 +192,7 @@ public final class Execute {
      */
     private void parseArguments(String[] args) {
 
-        OptionParser op = new OptionParser(args, "xclzpi:m:o:f:B:D:J:U:P:T:V:");
+        OptionParser op = new OptionParser(args, "xclzpd:i:m:o:f:B:D:J:U:P:T:V:");
         selfExplore = op.getOptionFlag("x");
         if (selfExplore) {
             interActiveMode = op.getOptionFlag("c");
@@ -200,6 +207,7 @@ public final class Execute {
         if ("-".equals(outputFilePath)) {
             outputFilePath = null; // Linux convention
         }
+        dbPropsFilePath = op.getOptionArgument("d");
         inputPropsFilePath = op.getOptionArgument("f");
         rowId = op.getOptionArgument("i");
         jdbcUrl = op.getOptionArgument("J");
@@ -546,6 +554,7 @@ public final class Execute {
         System.out.println(" -f input_properties_file    Path of the input properties file containing everything needed"
                 + " for RDF generation. That includes the database's JDBC url, JDBC driver class name,"
                 + " datatype mappings, namespaces, SQL queries to export, etc.");
+        System.out.println(" -d input_properties_file    Path of the input properties file containing database URL, user name and password.");
 
         System.out.println(" -o rdf_output_file          Path of the RDF output file to be generated.");
 
@@ -562,7 +571,7 @@ public final class Execute {
                 + " If -T and -p have been specified, then -f is ignored and no RDF output generated."
                 + " Instead, the output_properties_file will be generated and the program exits.");
 
-        System.out.println(" -z                          The RDF output file will be zipped. if this argument is present.");
+        System.out.println(" -z                          The RDF output file will be zipped if this argument is present.");
 
         System.out.println(" -m                          Path of the MS Access file to query from."
                 + " Overrides the one given in input_properties_file or template_properties_file.");
