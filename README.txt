@@ -9,6 +9,10 @@ in the root directory of this project:
 
 > mvn clean install
 
+or
+
+> mvn -Dmaven.test.skip=true clean install
+
 The JAR is generated into the target/ directory auto-created
 by Maven. It will be named rdf-exporter-xx.jar, where the
 'xx' is the version number or version label stated in pom.xml.
