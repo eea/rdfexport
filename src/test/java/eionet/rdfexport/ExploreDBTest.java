@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.PropertyConfigurator;
 import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
 import org.dbunit.IDatabaseTester;
@@ -72,6 +73,20 @@ public class ExploreDBTest {
             + "PRICE decimal(6,2),"
             + "PRIMARY KEY (INVOICE_ID, LINE_ID))");
         statement.close();
+    }
+
+    /**
+     * Initialize the logging system. It is used by dbunit.
+     */
+    @BeforeClass
+    public static void setupLogger() throws Exception {
+        Properties logProperties = new Properties();
+        logProperties.setProperty("log4j.rootCategory", "DEBUG, CONSOLE");
+        logProperties.setProperty("log4j.appender.CONSOLE", "org.apache.log4j.ConsoleAppender");
+        logProperties.setProperty("log4j.appender.CONSOLE.Threshold", "ERROR");
+        logProperties.setProperty("log4j.appender.CONSOLE.layout", "org.apache.log4j.PatternLayout");
+        logProperties.setProperty("log4j.appender.CONSOLE.layout.ConversionPattern", "- %m%n");
+        PropertyConfigurator.configure(logProperties);
     }
 
     @Before

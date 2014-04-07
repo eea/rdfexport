@@ -68,12 +68,14 @@ class RDFField {
 }
 
 /**
- * RDF generator. The queries are stored in a properties file. There are two types of queries. A plain select and an attributes
- * table. For the plain select the class will use the first column as the <em>identifier</em>, and create RDF properties for the
- * other columns.
+ * RDF generator. The queries are stored in a properties file. There are two
+ * types of queries. A plain select and an attributes table. For the plain
+ * select the class will use the first column as the <em>identifier</em>, and
+ * create RDF properties for the other columns.
  *
- * For the attributes table the result must have one + X * four columns: 1. id, 2. attribute name, 3. value, 4. datatype, 5.
- * languagecode, 6. attribute name, 7. value, 8. datatype, 9. languagecode, etc.
+ * For the attributes table the result must have one + X * four columns:
+ * 1. id, 2. attribute name, 3. value, 4. datatype, 5. languagecode,
+ * 6. attribute name, 7. value, 8. datatype, 9. languagecode, etc.
  */
 public class GenerateRDF {
 
@@ -99,6 +101,8 @@ public class GenerateRDF {
     private Properties props;
     /** The output stream to send output to. */
     private OutputStreamWriter outputStream;
+    /** Treat empty strings as NULL. */
+    private boolean emptyStringIsNull = false;
 
 
     /**
@@ -115,7 +119,8 @@ public class GenerateRDF {
      * @throws SQLException
      *             - if the SQL database is not available
      */
-    public GenerateRDF(OutputStream writer, Connection dbCon, Properties properties) throws IOException, SQLException {
+    public GenerateRDF(OutputStream writer, Connection dbCon,
+                Properties properties) throws IOException, SQLException {
         this(new OutputStreamWriter(writer, "UTF-8"), dbCon, properties);
     }
 
@@ -133,12 +138,15 @@ public class GenerateRDF {
      * @throws SQLException
      *             - if the SQL database is not available
      */
-    public GenerateRDF(OutputStreamWriter writer, Connection dbCon, Properties properties) throws IOException, SQLException {
+    public GenerateRDF(OutputStreamWriter writer, Connection dbCon,
+                Properties properties) throws IOException, SQLException {
         outputStream = writer;
         if (!"UTF8".equals(outputStream.getEncoding())) {
             throw new RuntimeException("Only UTF-8 is supported!");
         }
         props = properties;
+
+        emptyStringIsNull = Boolean.parseBoolean(props.getProperty("emptystringisnull", "false"));
 
         String tablesProperty = props.getProperty("tables");
         if (tablesProperty != null && !tablesProperty.isEmpty()) {
@@ -172,8 +180,9 @@ public class GenerateRDF {
     }
 
     /**
-     * The user can choose one record to output. This is done by inserting a HAVING ID=... into the SELECT statement. (using HAVING
-     * is slow). If the ID is numeric, then Mysql will convert the type to match
+     * The user can choose one record to output. This is done by inserting a
+     * HAVING ID=... into the SELECT statement. (using HAVING is slow). If
+     * the ID is numeric, then Mysql will convert the type to match.
      *
      * @param query
      *            - SQL query to patch
@@ -203,8 +212,9 @@ public class GenerateRDF {
     }
 
     /**
-     * The user can choose one record to output. This is done by inserting a WHERE <em>key</em>=... into the SELECT statement. If
-     * the ID is numeric, then Mysql will convert the type to match
+     * The user can choose one record to output. This is done by inserting a
+     * WHERE <em>key</em>=... into the SELECT statement. If the ID is numeric,
+     * then Mysql will convert the type to match.
      *
      * @param query
      *            - SQL query to patch
@@ -260,9 +270,10 @@ public class GenerateRDF {
     }
 
     /**
-     * Export a table as RDF. A table can consist of several queries specified as property names table.query1, table.query2,
-     * table.attributetable1 etc. The queries are sorted on name before being executed with the x.query first then x.attributetable
-     * second.
+     * Export a table as RDF. A table can consist of several queries specified
+     * as property names table.query1, table.query2, table.attributetable1 etc.
+     * The queries are sorted on name before being executed with the x.query
+     * first then x.attributetable second.
      *
      * @param table
      *            - name of table in properties file
@@ -328,7 +339,8 @@ public class GenerateRDF {
     }
 
     /**
-     * Looks for 'class' and 'query' properties from the rdf properties file like this:
+     * Looks for 'class' and 'query' properties from the rdf properties file
+     * like this.
      *
      * <pre>
      *  class = bibo:Document
@@ -338,7 +350,8 @@ public class GenerateRDF {
      * 'http://creativecommons.org/licenses/by/2.5/dk/' AS 'dcterms:licence->'
      *
      * </pre>
-     * When found, {@code <bibo:Document rdf:about="">} section with given properties will be exported.
+     * When found, {@code <bibo:Document rdf:about="">} section with given
+     * properties will be exported.
      * @throws IOException
      *             - if the output is not open.
      * @throws SQLException
@@ -452,8 +465,9 @@ public class GenerateRDF {
     }
 
     /**
-     * Run a query. First value is the key. The others are the attributes. The column names are the attribute names. If first value
-     * is null, then the attributes are assigned to the namespace of the table.
+     * Run a query. First value is the key. The others are the attributes. The
+     * column names are the attribute names. If first value is null, then the
+     * attributes are assigned to the namespace of the table.
      *
      * @param segment
      *            - the namespace of the table
@@ -668,7 +682,8 @@ public class GenerateRDF {
     }
 
     /**
-     * Write a property. If the property.datatype is "->" then it is a resource reference.
+     * Write a property. If the property.datatype is "->" then it is a resource
+     * reference.
      *
      * @param property
      *            triple consisting of name, datatype and langcode
@@ -681,7 +696,7 @@ public class GenerateRDF {
      */
     void writeProperty(RDFField property, Object value) throws SQLException, IOException {
         String typelangAttr = "";
-        if (value == null) {
+        if (value == null || (emptyStringIsNull && "".equals(value))) {
             return;
         }
         output(" <");
@@ -712,9 +727,9 @@ public class GenerateRDF {
             if (property.datatype.startsWith("xsd:")) {
                 property.datatype = "http://www.w3.org/2001/XMLSchema#" + property.datatype.substring(4);
             }
-            typelangAttr = " rdf:datatype=\"" + property.datatype + '"';
+            typelangAttr = " rdf:datatype=\"" + property.datatype + "\"";
         } else if (!"".equals(property.langcode)) {
-            typelangAttr = " xml:lang=\"" + property.langcode + '"';
+            typelangAttr = " xml:lang=\"" + property.langcode + "\"";
         }
         output(typelangAttr);
         output(">");
@@ -725,8 +740,9 @@ public class GenerateRDF {
     }
 
     /**
-     * Get the metadata from the columns. Check what datatype the database delivers. but override if the user has specified
-     * something else in the column label.
+     * Get the metadata from the columns. Check what datatype the database
+     * delivers. but override if the user has specified something else in the
+     * column label.
      *
      * @param rsmd
      *            - metadata extracted from database.
@@ -756,9 +772,14 @@ public class GenerateRDF {
     }
 
     /**
-     * Parses a column label. It can be parsed into three parts: name, datatype, language. hasRef-&gt; becomes "hasRef","-&gt;",""
-     * hasRef-&gt;expert becomes "hasRef","-&gt;expert","" price^^xsd:decimal becomes "price","xsd:decimal","" rdfs:label@fr becomes
-     * "rdfs:label","","fr"
+     * Parses a column label. It can be parsed into three parts: name,
+     * datatype, language.
+     * <ul>
+     * <li>hasRef-&gt; becomes "hasRef","-&gt;",""</li>
+     * <li>hasRef-&gt;expert becomes "hasRef","-&gt;expert",""</li>
+     * <li>price^^xsd:decimal becomes "price","xsd:decimal",""</li>
+     * <li>rdfs:label@fr becomes "rdfs:label","","fr"</li>
+     * </ul>
      *
      * @param complexname
      *            - name containing column name plus datatype or language code.

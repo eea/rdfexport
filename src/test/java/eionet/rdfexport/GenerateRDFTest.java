@@ -181,6 +181,20 @@ public class GenerateRDFTest {
         assertEquals("", testOutput.toString());
     }
 
+    /**
+     * An empty string value shall create output.
+     */
+    @Test
+    public void writeEmpty() throws Exception {
+        RDFField f = new RDFField();
+        f.name = "rdfs:label";
+        f.datatype = "";
+        f.langcode = "";
+        classToTest.writeProperty(f, "");
+        testWriter.close();
+        assertEquals(" <rdfs:label></rdfs:label>\n", testOutput.toString());
+    }
+
     @Test
     public void writeLiteral1() throws Exception {
         RDFField f = new RDFField();
@@ -309,6 +323,25 @@ public class GenerateRDFTest {
         classToTest.writeProperty(f, "20");
         testWriter.close();
         assertEquals(" <hello rdf:datatype=\"http://www.w3.org/2001/XMLSchema#int\">20</hello>\n", testOutput.toString());
+    }
+
+    /**
+     * An emplty value shall not create output if emptystringisnull is set to true.
+     */
+    @Test
+    public void writeNullWhenEmpty() throws Exception {
+        Properties props = new Properties();
+        props.setProperty("emptystringisnull", "true");
+        props.setProperty("vocabulary", "http://voc");
+        GenerateRDF testClass = new GenerateRDF(testWriter, null, props);
+
+        RDFField f = new RDFField();
+        f.name = "rdfs:label";
+        f.datatype = "";
+        f.langcode = "";
+        testClass.writeProperty(f, "");
+        testWriter.close();
+        assertEquals("", testOutput.toString());
     }
 
 }
