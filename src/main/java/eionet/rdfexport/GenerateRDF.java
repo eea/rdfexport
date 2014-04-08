@@ -79,6 +79,8 @@ class RDFField {
  */
 public class GenerateRDF {
 
+    /** Tell the DB driver how much to fetch at a time. */
+    private static final int FETCH_SIZE = 1000;
     /** Base of XML file. */
     private String baseurl;
     /** Connection to database. */
@@ -490,6 +492,7 @@ public class GenerateRDF {
 
         try {
             stmt = con.createStatement();
+            stmt.setFetchSize(FETCH_SIZE);
             if (stmt.execute(sql)) {
 
                 rs = stmt.getResultSet();
@@ -557,6 +560,7 @@ public class GenerateRDF {
 
         try {
             stmt = con.createStatement();
+            stmt.setFetchSize(FETCH_SIZE);
 
             if (stmt.execute(sql)) {
                 rs = stmt.getResultSet();
