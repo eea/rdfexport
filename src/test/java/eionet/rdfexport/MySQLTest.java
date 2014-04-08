@@ -66,6 +66,7 @@ public class MySQLTest {
         createSchema();
         IDataSet dataSet = readDataSet();
         cleanlyInsert(dataSet);
+        dbConn.setAutoCommit(false); // Emulate command line use
 
         testOutput = new ByteArrayOutputStream();
         testWriter = new OutputStreamWriter(testOutput, "UTF-8");

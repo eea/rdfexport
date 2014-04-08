@@ -406,7 +406,10 @@ public final class Execute {
 
         try {
             Class.forName(driver);
-            return DriverManager.getConnection(jdbcUrl, userName, password);
+            Connection con = DriverManager.getConnection(jdbcUrl, userName, password);
+            // make sure autocommit is off - we always read
+            con.setAutoCommit(false);
+            return con;
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("Failed to find the driver class: " + driver, e);
         }
