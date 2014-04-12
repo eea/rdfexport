@@ -557,7 +557,8 @@ public final class Execute {
         System.out.println(" -f input_properties_file    Path of the input properties file containing everything needed"
                 + " for RDF generation. That includes the database's JDBC url, JDBC driver class name,"
                 + " datatype mappings, namespaces, SQL queries to export, etc.");
-        System.out.println(" -d input_properties_file    Path of the input properties file containing database URL, user name and password.");
+        System.out.println(" -d input_properties_file    Path of the input properties file containing database URL,"
+                + " user name and password.");
 
         System.out.println(" -o rdf_output_file          Path of the RDF output file to be generated.");
 
