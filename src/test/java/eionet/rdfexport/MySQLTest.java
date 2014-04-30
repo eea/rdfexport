@@ -257,7 +257,7 @@ public class MySQLTest {
         edb.discoverTables(false);
         String foundTable = props.getProperty("tables").trim();
         assertEquals("discovered tables", "person", foundTable);
-        String expected = "SELECT concat('', id) AS id, concat('', id) AS 'rdfs:label',"
+        String expected = "SELECT id AS id, id AS 'rdfs:label^^',"
             + " `id` AS 'id', `name` AS 'name', `last_name` AS 'last_name',"
             + " `born` AS 'born', `org` AS 'org' FROM `PERSON`";
         String actual = props.getProperty(foundTable + ".query");
@@ -274,7 +274,7 @@ public class MySQLTest {
         edb.discoverTables(true);
         String foundTable = props.getProperty("tables").trim();
         assertEquals("discovered tables", "person", foundTable);
-        String expected = "SELECT concat('', id) AS id, concat('', id) AS 'rdfs:label',"
+        String expected = "SELECT id AS id, id AS 'rdfs:label^^',"
             + " `id` AS 'id^^xsd:integer', `name` AS 'name@', `last_name` AS 'last_name@',"
             + " `born` AS 'born^^xsd:dateTime', `org` AS 'org@' FROM `PERSON`";
         String actual = props.getProperty(foundTable + ".query");

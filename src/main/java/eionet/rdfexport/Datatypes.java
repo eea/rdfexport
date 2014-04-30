@@ -25,6 +25,7 @@ import java.nio.charset.Charset;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.SQLException;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.SimpleDateFormat;
@@ -159,6 +160,11 @@ public final class Datatypes {
         if (value instanceof java.sql.Date) {
             Date sqlDate = (java.sql.Date) value;
             return dateFormat.format(new Date(sqlDate.getTime()));
+        }
+
+        if (value instanceof Time) {
+            Time sqlDate = (Time) value;
+            return dateTimeFormat.format(new Date(sqlDate.getTime()));
         }
 
         if (value instanceof Timestamp) {

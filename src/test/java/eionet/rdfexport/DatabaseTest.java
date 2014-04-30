@@ -429,7 +429,7 @@ public class DatabaseTest {
         ExploreDB edb = new ExploreDB(dbConn, props);
         edb.discoverTables(false);
         assertEquals("discovered tables", "person ", props.getProperty("tables"));
-        assertEquals("SELECT concat('', id) AS id, concat('', id) AS \"rdfs:label\", \"ID\" AS \"id\","
+        assertEquals("SELECT id AS id, id AS \"rdfs:label^^\", \"ID\" AS \"id\","
                 + " \"NAME\" AS \"name\", \"LAST_NAME\" AS \"last_name\", \"BORN\" AS \"born\","
                 + " \"ORG\" AS \"org\" FROM \"PUBLIC\".\"PERSON\"", props.getProperty("person.query"));
     }
@@ -442,7 +442,7 @@ public class DatabaseTest {
         ExploreDB edb = new ExploreDB(dbConn, props);
         edb.discoverTables(false);
         assertEquals("discovered tables", "person ", props.getProperty("tables"));
-        assertEquals("SELECT concat('', id) AS id, concat('', id) AS \"rdfs:label\", \"ID\" AS \"id\","
+        assertEquals("SELECT id AS id, id AS \"rdfs:label^^\", \"ID\" AS \"id\","
                 + " \"NAME\" AS \"name\", \"LAST_NAME\" AS \"last_name\", \"BORN\" AS \"born\","
                 + " \"ORG\" AS \"org\" FROM \"PUBLIC\".\"PERSON\"", props.getProperty("person.query"));
         classToTest = new GenerateRDF(testWriter, dbConn, props);
@@ -458,7 +458,7 @@ public class DatabaseTest {
         ExploreDB edb = new ExploreDB(dbConn, props);
         edb.discoverTables(true);
         assertEquals("discovered tables", "person ", props.getProperty("tables"));
-        assertEquals("SELECT concat('', id) AS id, concat('', id) AS \"rdfs:label\", \"ID\" AS \"id^^xsd:integer\","
+        assertEquals("SELECT id AS id, id AS \"rdfs:label^^\", \"ID\" AS \"id^^xsd:integer\","
                 + " \"NAME\" AS \"name@\", \"LAST_NAME\" AS \"last_name@\", \"BORN\" AS \"born^^xsd:dateTime\","
                 + " \"ORG\" AS \"org@\" FROM \"PUBLIC\".\"PERSON\"", props.getProperty("person.query"));
     }
@@ -472,7 +472,7 @@ public class DatabaseTest {
         ExploreDB edb = new ExploreDB(dbConn, props);
         edb.discoverTables(true);
         assertEquals("discovered tables", "person ", props.getProperty("tables"));
-        assertEquals("SELECT concat('', id) AS id, concat('', id) AS \"rdfs:label\", \"ID\" AS \"id^^xsd:integer\","
+        assertEquals("SELECT id AS id, id AS \"rdfs:label^^\", \"ID\" AS \"id^^xsd:integer\","
                 + " \"NAME\" AS \"name@\", \"LAST_NAME\" AS \"last_name@\", \"BORN\" AS \"born^^xsd:integer\","
                 + " \"ORG\" AS \"org@\" FROM \"PUBLIC\".\"PERSON\"", props.getProperty("person.query"));
     }

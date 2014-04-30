@@ -229,7 +229,7 @@ class TableSpec {
             // Concatenate primary key columns.
             String pksConcatenated = concatColumns(primaryKeyColumns);
             query.append(pksConcatenated).append(" AS id, ").append(pksConcatenated).append(" AS ")
-                .append(aliasEscapeStart).append("rdfs:label").append(aliasEscapeEnd);
+                .append(aliasEscapeStart).append("rdfs:label^^").append(aliasEscapeEnd);
         }
 
         String colEscapeStart = properties.getProperty("sqldialect." + jdbcSubProtocol + ".column.before");
@@ -321,25 +321,55 @@ class TableSpec {
         String strategy = properties.getProperty("sqldialect." + jdbcSubProtocol + ".concat");
         if (columns != null && !columns.isEmpty()) {
             if (strategy.equals("concat")) {
-                result.append("concat(''");
-                for (String col : columns) {
-                    result.append(", ").append(col);
+                boolean first = true;
+                if (columns.size() > 1) {
+                    result.append("CONCAT(");
                 }
-                result.append(")");
+                for (String col : columns) {
+                    if (!first) {
+                        result.append(", ");
+                    }
+                    result.append(col);
+                    first = false;
+                }
+                if (columns.size() > 1) {
+                    result.append(")");
+                }
             } else if (strategy.equals("and")) {
-                result.append("''");
+                boolean first = true;
                 for (String col : columns) {
-                    result.append(" || ").append(col);
+                    if (!first) {
+                        result.append(" || ");
+                    }
+                    result.append(col);
+                    first = false;
                 }
-            } else if (strategy.equals("plus")) {
-                result.append("''");
+            } else if (strategy.equals("plus") || strategy.equals("plus-cstr")) {
+                boolean first = true;
                 for (String col : columns) {
-                    result.append(" + CStr(").append(col).append(")");
+                    if (!first) {
+                        result.append(" + ");
+                    }
+                    result.append("CStr(").append(col).append(")");
+                    first = false;
+                }
+            } else if (strategy.equals("plus-convert") || strategy.equals("plus-cast")) {
+                boolean first = true;
+                for (String col : columns) {
+                    if (!first) {
+                        result.append(" + ");
+                    }
+                    result.append("CAST(").append(col).append("AS VARCHAR(36))");
+                    first = false;
                 }
             } else {
-                result.append("''");
+                boolean first = true;
                 for (String col : columns) {
-                    result.append(" ERROR ").append(col);
+                    if (!first) {
+                        result.append(" ERROR ");
+                    }
+                    result.append(col);
+                    first = false;
                 }
             }
         }
