@@ -318,61 +318,63 @@ class TableSpec {
 
         StringBuilder result = new StringBuilder();
 
-        String strategy = properties.getProperty("sqldialect." + jdbcSubProtocol + ".concat");
+        String concatStrategy = properties.getProperty("sqldialect." + jdbcSubProtocol + ".concat");
+        String castStrategy = properties.getProperty("sqldialect." + jdbcSubProtocol + ".cast");
+
         if (columns != null && !columns.isEmpty()) {
-            if (strategy.equals("concat")) {
-                boolean first = true;
-                if (columns.size() > 1) {
-                    result.append("CONCAT(");
+            boolean first = true;
+            if ("concat".equalsIgnoreCase(concatStrategy) && columns.size() > 1) {
+                result.append("CONCAT(");
+            }
+            for (String col : columns) {
+                if (!first) {
+                    result.append(concatFunction(concatStrategy));
                 }
-                for (String col : columns) {
-                    if (!first) {
-                        result.append(", ");
-                    }
-                    result.append(col);
-                    first = false;
-                }
-                if (columns.size() > 1) {
-                    result.append(")");
-                }
-            } else if (strategy.equals("and")) {
-                boolean first = true;
-                for (String col : columns) {
-                    if (!first) {
-                        result.append(" || ");
-                    }
-                    result.append(col);
-                    first = false;
-                }
-            } else if (strategy.equals("plus") || strategy.equals("plus-cstr")) {
-                boolean first = true;
-                for (String col : columns) {
-                    if (!first) {
-                        result.append(" + ");
-                    }
-                    result.append("CStr(").append(col).append(")");
-                    first = false;
-                }
-            } else if (strategy.equals("plus-convert") || strategy.equals("plus-cast")) {
-                boolean first = true;
-                for (String col : columns) {
-                    if (!first) {
-                        result.append(" + ");
-                    }
-                    result.append("CAST(").append(col).append("AS VARCHAR(36))");
-                    first = false;
-                }
-            } else {
-                boolean first = true;
-                for (String col : columns) {
-                    if (!first) {
-                        result.append(" ERROR ");
-                    }
-                    result.append(col);
-                    first = false;
-                }
+                result.append(castFunction(col, castStrategy));
+                first = false;
+            }
+            if ("concat".equalsIgnoreCase(concatStrategy) && columns.size() > 1) {
+                result.append(")");
             }
         }
         return result.length() == 0 ? "'@'" : result.toString();
     }
+
+    /**
+     * Returns a string that provides the operation to concatenate.
+     *
+     * @param concatStrategy A token defining the operation to use for the concatenation
+     * @return The operation
+     */
+    private String concatFunction(String concatStrategy) {
+        if ("concat".equalsIgnoreCase(concatStrategy)) {
+            return ", ";
+        } else if ("or".equalsIgnoreCase(concatStrategy)) {
+            return " || ";
+        } else if ("ampersand".equalsIgnoreCase(concatStrategy)) {
+            return " & ";
+        } else if ("plus".equalsIgnoreCase(concatStrategy)) {
+            return " + ";
+        } else {
+            return " UNKNOWN ";
+        }
+    }
+
+    /**
+     * Returns a string that provides the column name wrapped in a cast to string.
+     *
+     * @param colName The name of the column
+     * @param castStrategy A token defining the operation to use for the cast
+     * @return The wrapped column
+     */
+    private String castFunction(String colName, String castStrategy) {
+        if ("cstr".equalsIgnoreCase(castStrategy)) {
+            return "CStr(" + colName + ")";
+        } else if ("cast".equalsIgnoreCase(castStrategy)) {
+            return "CAST(" + colName + " AS VARCHAR(36))";
+        } else {
+            return colName;
+        }
+    }
+
 }

@@ -120,7 +120,7 @@ public class ExploreDBTest {
         props.setProperty("sqldialect.h2.column.after", "\"");
         props.setProperty("sqldialect.h2.alias.before", "\"");
         props.setProperty("sqldialect.h2.alias.after", "\"");
-        props.setProperty("sqldialect.h2.concat", "and");
+        props.setProperty("sqldialect.h2.concat", "or");
 
         props.setProperty("sqldialect.access.column.before", "[");
         props.setProperty("sqldialect.access.column.after", "]");
