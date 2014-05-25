@@ -257,9 +257,9 @@ public class MySQLTest {
         edb.discoverTables(false);
         String foundTable = props.getProperty("tables").trim();
         assertEquals("discovered tables", "person", foundTable);
-        String expected = "SELECT id AS id, id AS 'rdfs:label^^',"
-            + " `id` AS 'id', `name` AS 'name', `last_name` AS 'last_name',"
-            + " `born` AS 'born', `org` AS 'org' FROM `PERSON`";
+        String expected = "SELECT id AS id,\n    id AS 'rdfs:label^^',\n   "
+            + " `id` AS 'id',\n    `name` AS 'name',\n    `last_name` AS 'last_name',\n   "
+            + " `born` AS 'born',\n    `org` AS 'org' FROM `PERSON`";
         String actual = props.getProperty(foundTable + ".query");
         assertEquals(expected.toLowerCase(), actual.toLowerCase());
     }
@@ -274,9 +274,9 @@ public class MySQLTest {
         edb.discoverTables(true);
         String foundTable = props.getProperty("tables").trim();
         assertEquals("discovered tables", "person", foundTable);
-        String expected = "SELECT id AS id, id AS 'rdfs:label^^',"
-            + " `id` AS 'id^^xsd:integer', `name` AS 'name@', `last_name` AS 'last_name@',"
-            + " `born` AS 'born^^xsd:dateTime', `org` AS 'org@' FROM `PERSON`";
+        String expected = "SELECT id AS id,\n    id AS 'rdfs:label^^',\n   "
+            + " `id` AS 'id^^xsd:integer',\n    `name` AS 'name@',\n    `last_name` AS 'last_name@',\n   "
+            + " `born` AS 'born^^xsd:dateTime',\n    `org` AS 'org@' FROM `PERSON`";
         String actual = props.getProperty(foundTable + ".query");
         assertEquals(expected.toLowerCase(), actual.toLowerCase());
     }

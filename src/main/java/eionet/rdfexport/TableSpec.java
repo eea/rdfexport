@@ -228,7 +228,7 @@ class TableSpec {
         } else {
             // Concatenate primary key columns.
             String pksConcatenated = concatColumns(primaryKeyColumns);
-            query.append(pksConcatenated).append(" AS id, ").append(pksConcatenated).append(" AS ")
+            query.append(pksConcatenated).append(" AS id,\n    ").append(pksConcatenated).append(" AS ")
                 .append(aliasEscapeStart).append("rdfs:label^^").append(aliasEscapeEnd);
         }
 
@@ -253,7 +253,7 @@ class TableSpec {
                 }
             }
 
-            query.append(", ").append(colEscapeStart).append(col).append(colEscapeEnd);
+            query.append(",\n    ").append(colEscapeStart).append(col).append(colEscapeEnd);
             query.append(" AS ");
             query.append(aliasEscapeStart);
             query.append(label);

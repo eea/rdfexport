@@ -429,8 +429,8 @@ public class DatabaseTest {
         ExploreDB edb = new ExploreDB(dbConn, props);
         edb.discoverTables(false);
         assertEquals("discovered tables", "person ", props.getProperty("tables"));
-        assertEquals("SELECT id AS id, id AS \"rdfs:label^^\", \"ID\" AS \"id\","
-                + " \"NAME\" AS \"name\", \"LAST_NAME\" AS \"last_name\", \"BORN\" AS \"born\","
+        assertEquals("SELECT id AS id,\n    id AS \"rdfs:label^^\",\n    \"ID\" AS \"id\",\n   "
+                + " \"NAME\" AS \"name\",\n    \"LAST_NAME\" AS \"last_name\",\n    \"BORN\" AS \"born\",\n   "
                 + " \"ORG\" AS \"org\" FROM \"PUBLIC\".\"PERSON\"", props.getProperty("person.query"));
     }
 
@@ -442,8 +442,8 @@ public class DatabaseTest {
         ExploreDB edb = new ExploreDB(dbConn, props);
         edb.discoverTables(false);
         assertEquals("discovered tables", "person ", props.getProperty("tables"));
-        assertEquals("SELECT id AS id, id AS \"rdfs:label^^\", \"ID\" AS \"id\","
-                + " \"NAME\" AS \"name\", \"LAST_NAME\" AS \"last_name\", \"BORN\" AS \"born\","
+        assertEquals("SELECT id AS id,\n    id AS \"rdfs:label^^\",\n    \"ID\" AS \"id\",\n   "
+                + " \"NAME\" AS \"name\",\n    \"LAST_NAME\" AS \"last_name\",\n    \"BORN\" AS \"born\",\n   "
                 + " \"ORG\" AS \"org\" FROM \"PUBLIC\".\"PERSON\"", props.getProperty("person.query"));
         classToTest = new GenerateRDF(testWriter, dbConn, props);
         classToTest.exportTable("person");
@@ -458,8 +458,8 @@ public class DatabaseTest {
         ExploreDB edb = new ExploreDB(dbConn, props);
         edb.discoverTables(true);
         assertEquals("discovered tables", "person ", props.getProperty("tables"));
-        assertEquals("SELECT id AS id, id AS \"rdfs:label^^\", \"ID\" AS \"id^^xsd:integer\","
-                + " \"NAME\" AS \"name@\", \"LAST_NAME\" AS \"last_name@\", \"BORN\" AS \"born^^xsd:dateTime\","
+        assertEquals("SELECT id AS id,\n    id AS \"rdfs:label^^\",\n    \"ID\" AS \"id^^xsd:integer\",\n   "
+                + " \"NAME\" AS \"name@\",\n    \"LAST_NAME\" AS \"last_name@\",\n    \"BORN\" AS \"born^^xsd:dateTime\",\n   "
                 + " \"ORG\" AS \"org@\" FROM \"PUBLIC\".\"PERSON\"", props.getProperty("person.query"));
     }
 
@@ -472,8 +472,8 @@ public class DatabaseTest {
         ExploreDB edb = new ExploreDB(dbConn, props);
         edb.discoverTables(true);
         assertEquals("discovered tables", "person ", props.getProperty("tables"));
-        assertEquals("SELECT id AS id, id AS \"rdfs:label^^\", \"ID\" AS \"id^^xsd:integer\","
-                + " \"NAME\" AS \"name@\", \"LAST_NAME\" AS \"last_name@\", \"BORN\" AS \"born^^xsd:integer\","
+        assertEquals("SELECT id AS id,\n    id AS \"rdfs:label^^\",\n    \"ID\" AS \"id^^xsd:integer\",\n   "
+                + " \"NAME\" AS \"name@\",\n    \"LAST_NAME\" AS \"last_name@\",\n    \"BORN\" AS \"born^^xsd:integer\",\n   "
                 + " \"ORG\" AS \"org@\" FROM \"PUBLIC\".\"PERSON\"", props.getProperty("person.query"));
     }
 }

@@ -30,20 +30,10 @@ import java.util.HashMap;
  *
  * @author Søren Roug
  */
-public class ResourceWriterXML implements ResourceWriter {
+public class ResourceWriterXML extends ResourceWriter {
 
-    /** Base of XML file. */
-    private String baseurl;
-    /** The namespaces to add to the rdf:RDF element. */
-    private HashMap<String, String> namespaces;
-    /** The URL of the null namespace. */
-    private String nullNamespace;
     /** If output has started, then you can't change the nullNamespace. */
     private Boolean rdfHeaderWritten = false;
-    /** The output stream to send output to. */
-    private OutputStreamWriter outputStream;
-    /** Treat empty strings as NULL. */
-    private boolean emptyStringIsNull = false;
 
     /**
      * Constructor.
@@ -51,9 +41,7 @@ public class ResourceWriterXML implements ResourceWriter {
      * @param stream - the stream to write the output to
      */
     public ResourceWriterXML(OutputStreamWriter stream) {
-        outputStream = stream;
-        namespaces = new HashMap<String, String>();
-        namespaces.put("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+        super(stream);
     }
 
     @Override
@@ -65,26 +53,10 @@ public class ResourceWriterXML implements ResourceWriter {
     }
 
     @Override
-    public void setBaseURL(final String url) {
-        baseurl = url;
-    }
-
-    @Override
-    public void setEmptyStringIsNull(final boolean emptyStringIsNull) {
-        this.emptyStringIsNull = emptyStringIsNull;
-    }
-
-    @Override
-    public void addNamespace(String name, String url) {
-        namespaces.put(name, url);
-    }
-
-    @Override
     public void writeRdfHeader() throws IOException {
         if (rdfHeaderWritten) {
             throw new RuntimeException("Can't write header twice!");
         }
-        //output("<?xml version=\"1.0\" encoding=\"" + outputStream.getEncoding() + "\"?>\n");
         output("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         output("<rdf:RDF");
         for (Object key : namespaces.keySet()) {
@@ -113,9 +85,8 @@ public class ResourceWriterXML implements ResourceWriter {
             writeRdfHeader();
         }
         output("</rdf:RDF>\n");
-        outputStream.flush();
+        flush();
     }
-
 
     @Override
     public void writeStartResource(String rdfClass, String segment, String id) throws IOException {
@@ -185,17 +156,4 @@ public class ResourceWriterXML implements ResourceWriter {
         output(property.name);
         output(">\n");
     }
-
-    /**
-     * Called from the other methods to do the output.
-     *
-     * @param v
-     *            - value to print.
-     * @throws IOException
-     *             - if the output is not open.
-     */
-    private void output(String v) throws IOException {
-        outputStream.write(v);
-    }
-
 }

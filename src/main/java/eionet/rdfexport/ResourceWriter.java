@@ -21,14 +21,42 @@
 package eionet.rdfexport;
 
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.sql.SQLException;
+import java.util.HashMap;
 
 /**
  * Interface for writing a resource in RDF/XML or Turtle or N3.
  *
  * @author Søren Roug
  */
-public interface ResourceWriter {
+abstract class ResourceWriter {
+
+    /** The namespaces to add to the rdf:RDF element. */
+    protected HashMap<String, String> namespaces;
+
+    /** The output stream to send output to. */
+    private OutputStreamWriter outputStream;
+
+    /** Base of XML file. */
+    protected String baseurl;
+
+    /** The URL of the null namespace. */
+    protected String nullNamespace;
+
+    /** Treat empty strings as NULL. */
+    protected boolean emptyStringIsNull = false;
+
+    /**
+     * Constructor.
+     *
+     * @param stream - the stream to write the output to
+     */
+    public ResourceWriter(OutputStreamWriter stream) {
+        outputStream = stream;
+        namespaces = new HashMap<String, String>();
+        namespaces.put("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+    }
 
     /**
      * Set the vocabulary in case it needs to be different from the properties file.
@@ -36,7 +64,9 @@ public interface ResourceWriter {
      * @param url
      *            - namespace url.
      */
-    void setVocabulary(final String url);
+    public void setVocabulary(final String url) {
+        nullNamespace = url;
+    }
 
     /**
      * Set the base URL.
@@ -44,7 +74,9 @@ public interface ResourceWriter {
      * @param url
      *            - the base url.
      */
-    void setBaseURL(final String url);
+    public void setBaseURL(final String url) {
+        baseurl = url;
+    }
 
     /**
      * Set a flag that tells how to deal with empty strings.
@@ -52,7 +84,9 @@ public interface ResourceWriter {
      * @param emptyStringIsNull
      *            - flag. If true then don't output properties for empty strings.
      */
-    void setEmptyStringIsNull(boolean emptyStringIsNull);
+    public void setEmptyStringIsNull(final boolean emptyStringIsNull) {
+        this.emptyStringIsNull = emptyStringIsNull;
+    }
 
     /**
      * Add namespace to table.
@@ -62,7 +96,10 @@ public interface ResourceWriter {
      * @param url
      *            - namespace url.
      */
-    void addNamespace(String name, String url);
+    public void addNamespace(String name, String url) {
+        namespaces.put(name, url);
+    }
+
 
     /**
      * Generate the RDF header element. You can in principle get the encoding
@@ -72,7 +109,7 @@ public interface ResourceWriter {
      * @throws IOException
      *             - if the output is not open.
      */
-    void writeRdfHeader() throws IOException;
+    abstract void writeRdfHeader() throws IOException;
 
     /**
      * Generate the RDF footer element.
@@ -80,7 +117,7 @@ public interface ResourceWriter {
      * @throws IOException
      *             - if the output is not open.
      */
-    void writeRdfFooter() throws IOException;
+    abstract void writeRdfFooter() throws IOException;
 
     /**
      * Write the start of a resource - the line with rdf:about.
@@ -93,7 +130,7 @@ public interface ResourceWriter {
      * @throws IOException
      *             - if the output is not open.
      */
-    void writeStartResource(String rdfClass, String segment, String id) throws IOException;
+    abstract void writeStartResource(String rdfClass, String segment, String id) throws IOException;
 
     /**
      * Write the end of a resource.
@@ -102,7 +139,7 @@ public interface ResourceWriter {
      * @throws IOException
      *             - if the output is not open.
      */
-    void writeEndResource(String rdfClass) throws IOException;
+    abstract void writeEndResource(String rdfClass) throws IOException;
 
     /**
      * Write a property. If the property.datatype is "->" then it is a resource
@@ -117,6 +154,30 @@ public interface ResourceWriter {
      * @throws IOException
      *             - if the output is not open.
      */
-    void writeProperty(RDFField property, Object value) throws SQLException, IOException;
+    abstract void writeProperty(RDFField property, Object value) throws SQLException, IOException;
+
+    /**
+     * Called from the other methods to do the output.
+     *
+     * @param v
+     *            - value to print.
+     * @throws IOException
+     *             - if the output is not open.
+     */
+    protected void output(String v) throws IOException {
+        outputStream.write(v);
+    }
+
+    /**
+     * Called from the other methods to flush the output.
+     *
+     * @param v
+     *            - value to print.
+     * @throws IOException
+     *             - if the output is not open.
+     */
+    protected void flush() throws IOException {
+        outputStream.flush();
+    }
 
 }
