@@ -67,9 +67,11 @@ public class ResourceWriterXML extends ResourceWriter {
             output(url);
             output("\"\n");
         }
-        output(" xmlns=\"");
-        output(nullNamespace);
-        output("\"");
+        if (nullNamespace != null) {
+            output(" xmlns=\"");
+            output(nullNamespace);
+            output("\"");
+        }
         if (baseurl != null) {
             output(" xml:base=\"");
             output(baseurl);
