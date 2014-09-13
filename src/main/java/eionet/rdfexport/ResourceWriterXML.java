@@ -55,7 +55,7 @@ public class ResourceWriterXML extends ResourceWriter {
     @Override
     public void writeRdfHeader() throws IOException {
         if (rdfHeaderWritten) {
-            throw new RuntimeException("Can't write header twice!");
+            return;
         }
         output("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         output("<rdf:RDF");
@@ -83,9 +83,7 @@ public class ResourceWriterXML extends ResourceWriter {
 
     @Override
     public void writeRdfFooter() throws IOException {
-        if (!rdfHeaderWritten) {
-            writeRdfHeader();
-        }
+        writeRdfHeader();
         output("</rdf:RDF>\n");
         flush();
     }

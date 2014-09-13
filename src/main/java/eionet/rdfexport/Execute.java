@@ -149,7 +149,12 @@ public final class Execute {
                 Execute.loadProperties(props, templatePropsFilePath);
             } else {
                 // Provide backup template from JAR file
-                props.load(Execute.class.getResourceAsStream("/explore.properties"));
+                InputStream inStream = Execute.class.getResourceAsStream("/explore.properties");
+                try {
+                    props.load(inStream);
+                } finally {
+                    inStream.close();
+                }
             }
         } else {
             Execute.loadProperties(props, inputPropsFilePath);

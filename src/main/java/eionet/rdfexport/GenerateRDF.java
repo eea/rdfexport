@@ -52,10 +52,6 @@ public class GenerateRDF {
     private Connection con;
     /** Names, types and langcodes of columns. */
     private RDFField[] names;
-    /** The URL of the null namespace. */
-    private String nullNamespace;
-    /** If output has started, then you can't change the nullNamespace. */
-    private Boolean rdfHeaderWritten = false;
     /** The properties that are object properties. They point to another object. */
     private HashMap<String, String> objectProperties;
     /** The datatype mappings. */
@@ -252,10 +248,7 @@ public class GenerateRDF {
         } else {
             resourceWriter.setVocabulary(props.getProperty("vocabulary"));
         }
-        if (!rdfHeaderWritten) {
-            resourceWriter.writeRdfHeader();
-            rdfHeaderWritten = true;
-        }
+        resourceWriter.writeRdfHeader();
         Boolean firstQuery = true;
         String rdfClass = table.substring(0, 1).toUpperCase() + table.substring(1).toLowerCase();
         rdfClass = props.getProperty(table.concat(".class"), rdfClass);
@@ -324,19 +317,13 @@ public class GenerateRDF {
 
         String queryTable = props.getProperty("query");
         if (queryTable != null) {
-            if (!rdfHeaderWritten) {
-                resourceWriter.writeRdfHeader();
-                rdfHeaderWritten = true;
-            }
+            resourceWriter.writeRdfHeader();
             runQuery("", queryTable, rdfClass);
             rdfClass = "rdf:Description"; // Any further declaration must be anonymous
         }
         String attributesTable = props.getProperty("attributetable");
         if (attributesTable != null) {
-            if (!rdfHeaderWritten) {
-                resourceWriter.writeRdfHeader();
-                rdfHeaderWritten = true;
-            }
+            resourceWriter.writeRdfHeader();
             runAttributes("", attributesTable, rdfClass);
             rdfClass = "rdf:Description"; // Any further declaration must be anonymous
         }

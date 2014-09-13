@@ -55,7 +55,7 @@ public class ResourceWriterTTL extends ResourceWriter {
     @Override
     public void writeRdfHeader() throws IOException {
         if (rdfHeaderWritten) {
-            throw new RuntimeException("Can't write header twice!");
+            return;
         }
         for (Object key : namespaces.keySet()) {
             String url = namespaces.get(key).toString();
@@ -78,9 +78,7 @@ public class ResourceWriterTTL extends ResourceWriter {
 
     @Override
     public void writeRdfFooter() throws IOException {
-        if (!rdfHeaderWritten) {
-            writeRdfHeader();
-        }
+        writeRdfHeader();
         output("\n");
         flush();
     }
