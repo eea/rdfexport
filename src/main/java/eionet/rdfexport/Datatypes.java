@@ -40,7 +40,7 @@ public final class Datatypes {
     /** Format of xsd:date value. */
     private static final String DATE_FORMAT = "yyyy-MM-dd";
     /** Format of xsd:dateTime value. */
-    private static final String DATE_TIME_FORMAT = "yyyy-MM-dd'T'hh:mm:ss";
+    private static final String DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
 
     /** Date format. */
     private static SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);

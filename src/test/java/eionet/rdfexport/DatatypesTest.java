@@ -39,8 +39,23 @@ public class DatatypesTest {
 
     @Test
     public void sqlDateTime() throws Exception {
-        Timestamp input = new Timestamp(1367359201000L); // 1 May 2013 One second past noon.
-        String expct = "2013-05-01T12:00:01";
+        long testTS = 1367359201000L;
+        long HOUR = 60L * 60L * 1000L;
+
+        Timestamp input = new Timestamp(testTS); // 1 May 2013 One second past midnight.
+        String expct = "2013-05-01T00:00:01";
+        assertEquals(expct, Datatypes.getFormattedValue(input));
+
+        input = new Timestamp(testTS + HOUR * 12); // 1 May 2013 One second past 12 (noon).
+        expct = "2013-05-01T12:00:01";
+        assertEquals(expct, Datatypes.getFormattedValue(input));
+
+        input = new Timestamp(testTS + HOUR); // 1 May 2013 One hour and one second past midnight.
+        expct = "2013-05-01T01:00:01";
+        assertEquals(expct, Datatypes.getFormattedValue(input));
+
+        input = new Timestamp(testTS + HOUR * 19); // 1 May 2013 One second past 19.
+        expct = "2013-05-01T19:00:01";
         assertEquals(expct, Datatypes.getFormattedValue(input));
     }
 }
