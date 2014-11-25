@@ -5,19 +5,19 @@
 <Person rdf:about="#person/182208">
  <name>Ηλέκτρα</name>
  <last_name>el Greco</last_name>
- <born rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">1984-03-18T08:55:31</born>
+ <born rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">1984-03-18T20:55:31</born>
  <inorg rdf:resource="#orgs/spectre"/>
 </Person>
 <Person rdf:about="#person/533922">
  <name>Alice</name>
  <last_name>Foo</last_name>
- <born rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">1980-11-02T12:00:00</born>
+ <born rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">1980-11-02T00:00:00</born>
  <inorg rdf:resource="#orgs/yakuza"/>
 </Person>
 <Person rdf:about="#person/882911">
  <name>Charlie</name>
  <last_name>Brown</last_name>
- <born rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">1970-04-30T12:00:00</born>
+ <born rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">1970-04-30T00:00:00</born>
  <inorg rdf:resource="#orgs/mafia%20%2B"/>
 </Person>
 <rdf:Description rdf:about="#">
