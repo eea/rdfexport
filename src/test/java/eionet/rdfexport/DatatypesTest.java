@@ -5,7 +5,6 @@ import java.io.UnsupportedEncodingException;
 import java.sql.Date;
 import java.sql.Timestamp;
 import org.junit.Test;
-import java.util.TimeZone;
 
 public class DatatypesTest {
 
