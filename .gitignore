@@ -1,0 +1,3 @@
+# target/ will match a directory target and paths underneath it, but not a regular file called target
+target/
+Makefile
