@@ -1,25 +1,27 @@
+RDFExport
+=========
 
-************************************************************
 1. Introduction
-************************************************************
+---------------
 
 This README explains how to use the RDF exporter JAR that
 you can build with Maven by issuing the following command
 in the root directory of this project:
 
-> mvn clean install
-
+```
+$ mvn clean install
+```
 or
-
-> mvn -Dmaven.test.skip=true clean install
+```
+$ mvn -Dmaven.test.skip=true clean install
+```
 
 The JAR is generated into the target/ directory auto-created
 by Maven. It will be named rdf-exporter-xx.jar, where the
 'xx' is the version number or version label stated in pom.xml.
 
-************************************************************
-2. What this JAR does and how to use it.
-************************************************************
+2. What this JAR does and how to use it
+---------------------------------------
 
 The JAR is capable of generating RDF out of a given relational
 database, using the JDBC protocol. Depending on command-line
@@ -53,27 +55,31 @@ not the file.
 
 Naturally, the JDBC driver must be on the classpath.
 
-**********************
 3. The properties file
-**********************
+----------------------
+
 Queries are stored in a Java properties file. The full description is
 provided in the docs/FILEFORMAT.html
 
-************************************************************
-4. Execution and command line options.
-************************************************************
+4. Execution and command line options
+-------------------------------------
 
 The usage of rdf-exporter-xx.jar is as follows:
 
+```
 $ java -cp target/rdf-exporter-1.0-SNAPSHOT.jar eionet.rdfexport.Execute <options>
+```
   or:
+```
 $ java -jar target/rdf-exporter-1.0-SNAPSHOT-jar-with-dependencies.jar <options>
+```
 
-If <options> is not supplied, then a help text on possible options is printed:
+If `<options>` is not supplied, then a help text on possible options is printed:
 
-----------------------------------------
+----
 Usage: This command accepts the following command line arguments:
 
+```
  -f input_properties_file    Path of the input properties file containing everything needed for RDF generation. That includes the database's JDBC url, JDBC driver class name, datatype mappings, namespaces, SQL queries to export, etc.
  -o rdf_output_file          Path of the RDF output file to be generated.
  -T template_properties_file From this file and auto-discovered info about the database, the output_properties_file is generated that can then be used as an input_properties_file for multiple reuse.
@@ -91,5 +97,5 @@ Usage: This command accepts the following command line arguments:
  -V vocabulary_uri           Vocabulary URI which overrides the one in the input_properties_file or template_properties_file.
  -i rowId                    Only records with this primary key value will be exported.
  -h or -?                    Show this help
+```
 Unrecognized arguments will be treated as names of tables to export. If no arguments are found, all tables will be exported.
-----------------------------------------

@@ -1,10 +1,10 @@
 #
 # Database parameters
 #
-driver = net.sourceforge.jtds.jdbc.Driver
-database = jdbc:jtds:sqlserver://hostname/database
-user = databaseuser
-password = password
+db.driver = net.sourceforge.jtds.jdbc.Driver
+db.database = jdbc:jtds:sqlserver://hostname/database
+db.user = databaseuser
+db.password = password
 #
 #driver = com.microsoft.sqlserver.jdbc.SQLServerDriver
 #database = jdbc:sqlserver://localhost:1433/

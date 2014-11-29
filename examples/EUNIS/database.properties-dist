@@ -1,7 +1,7 @@
 #
 # Database parameters
 #
-driver=com.mysql.jdbc.Driver
-database=jdbc:mysql://localhost/eunis?autoReconnect=true&useUnicode=true&characterEncoding=utf8
-user=username
-password=password
+db.driver=com.mysql.jdbc.Driver
+db.database=jdbc:mysql://localhost/eunis?autoReconnect=true&useUnicode=true&characterEncoding=utf8
+db.user=username
+db.password=password
