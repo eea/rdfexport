@@ -171,8 +171,6 @@ abstract class ResourceWriter {
     /**
      * Called from the other methods to flush the output.
      *
-     * @param v
-     *            - value to print.
      * @throws IOException
      *             - if the output is not open.
      */

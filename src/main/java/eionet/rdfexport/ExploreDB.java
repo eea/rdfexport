@@ -221,9 +221,10 @@ public class ExploreDB {
     }
 
     /**
-     * Get a table.
+     * Get the columns of a table.
      *
      * @param table - the name of the table
+     * @return the columns as a Set.
      */
     public Set<String> getColumns(String table) {
         TableSpec tabSpec = tables.get(table);
@@ -259,6 +260,8 @@ public class ExploreDB {
     /**
      * Generate a SQL query for a table.
      *
+     * @throws SQLException
+     *            - if a database access error occurs
      */
     public void createQuery(TableSpec tabSpec, boolean addDataTypes) throws SQLException {
         String query = tabSpec.createQuery(tablesPkColumns, addDataTypes, datatypeMap);
@@ -269,6 +272,8 @@ public class ExploreDB {
     /**
      * Generate a SQL query for each table in the list.
      *
+     * @throws SQLException
+     *            - if a database access error occurs
      */
     public void createQuery(List<TableSpec> tableList, boolean addDataTypes) throws SQLException {
         for (TableSpec tableSpec : tableList) {

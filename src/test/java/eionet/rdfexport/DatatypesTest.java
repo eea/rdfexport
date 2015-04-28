@@ -31,8 +31,15 @@ public class DatatypesTest {
     }
 
     @Test
-    public void sqlDate() throws Exception {
-        Date input = new Date(1367359200000L); // 1 May 2013
+    public void sqlDate30Apr() throws Exception {
+        Date input = new Date(1367359200L * 1000L); // 30 April 2013 22:00 in UTC
+        String expct = "2013-04-30";
+        assertEquals(expct, Datatypes.getFormattedValue(input));
+    }
+
+    @Test
+    public void sqlDate1May() throws Exception {
+        Date input = new Date((1367359200L + 7200L + 300L) * 1000L); // 1 May 2013 00:05 in UTC
         String expct = "2013-05-01";
         assertEquals(expct, Datatypes.getFormattedValue(input));
     }
