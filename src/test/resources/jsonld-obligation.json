@@ -21,21 +21,21 @@
   },
   "dcterms:valid" : {
     "@type" : "xsd:date",
-    "@value" : "2011-12-17"
+    "@value" : "2011-12-16"
   },
   "dcterms:title" : "(B) Information on zones and agglomerations (Article 6)",
   "rdfs:label" : "(B) Information on zones and agglomerations (Article 6)",
   "nextdeadline" : {
     "@type" : "xsd:date",
-    "@value" : "2015-09-30"
+    "@value" : "2015-09-29"
   },
   "nextdeadline2" : {
     "@type" : "xsd:date",
-    "@value" : "2016-09-30"
+    "@value" : "2016-09-29"
   },
   "lastUpdate" : {
     "@type" : "xsd:date",
-    "@value" : "2014-02-20"
+    "@value" : "2014-02-19"
   },
   "isTerminated" : {
     "@type" : "xsd:boolean",
@@ -43,15 +43,15 @@
   },
   "validSince" : {
     "@type" : "xsd:date",
-    "@value" : "2011-12-17"
+    "@value" : "2011-12-16"
   },
   "nextUpdate" : {
     "@type" : "xsd:date",
-    "@value" : "2014-09-30"
+    "@value" : "2014-09-29"
   },
   "verified" : {
     "@type" : "xsd:date",
-    "@value" : "2013-11-28"
+    "@value" : "2013-11-27"
   },
   "verifiedBy" : "EEA",
   "lastHarvested" : {
