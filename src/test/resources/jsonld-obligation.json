@@ -1,0 +1,94 @@
+{
+  "@context" : {
+    "sioc" : "http://rdfs.org/sioc/ns#",
+    "rdfs" : "http://www.w3.org/2000/01/rdf-schema#",
+    "geo" : "http://www.w3.org/2003/01/geo/wgs84_pos#",
+    "foaf" : "http://xmlns.com/foaf/0.1/",
+    "xsd" : "http://www.w3.org/2001/XMLSchema#",
+    "owl" : "http://www.w3.org/2002/07/owl#",
+    "rdf" : "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "skos" : "http://www.w3.org/2004/02/skos/core#",
+    "cc" : "http://creativecommons.org/ns#",
+    "dcterms" : "http://purl.org/dc/terms/",
+    "@base" : "http://rod.eionet.europa.eu/",
+    "@vocab" : "http://rod.eionet.europa.eu/schema.rdf#"
+  },
+  "@id" : "obligations/670",
+  "@type" : "Obligation",
+  "skos:notation" : "670",
+  "instrument" : {
+    "@id" : "instruments/650"
+  },
+  "dcterms:valid" : {
+    "@type" : "xsd:date",
+    "@value" : "2011-12-17"
+  },
+  "dcterms:title" : "(B) Information on zones and agglomerations (Article 6)",
+  "rdfs:label" : "(B) Information on zones and agglomerations (Article 6)",
+  "nextdeadline" : {
+    "@type" : "xsd:date",
+    "@value" : "2015-09-30"
+  },
+  "nextdeadline2" : {
+    "@type" : "xsd:date",
+    "@value" : "2016-09-30"
+  },
+  "lastUpdate" : {
+    "@type" : "xsd:date",
+    "@value" : "2014-02-20"
+  },
+  "isTerminated" : {
+    "@type" : "xsd:boolean",
+    "@value" : "false"
+  },
+  "validSince" : {
+    "@type" : "xsd:date",
+    "@value" : "2011-12-17"
+  },
+  "nextUpdate" : {
+    "@type" : "xsd:date",
+    "@value" : "2014-09-30"
+  },
+  "verified" : {
+    "@type" : "xsd:date",
+    "@value" : "2013-11-28"
+  },
+  "verifiedBy" : "EEA",
+  "lastHarvested" : {
+    "@type" : "xsd:dateTime",
+    "@value" : "2014-11-21T14:14:14"
+  },
+  "requester" : {
+    "@id" : "clients/104"
+  },
+  "dcterms:abstract" : "Article 6\r\nZones and agglomerations\r\n1. In accordance with the procedure referred to in Article 5 of this Decision, Member States shall make available the information set out in Part B of Annex II to this Decision on the delimitation and type of zones and agglomerations established in accordance with Article 3 of Directive 2004/107/EC and Article 4 of Directive 2008/50/EC and in which the assessment and management of air quality is to be carried out in the following calendar year.\r\nFor zones and agglomerations to which an exemption or a postponement applies pursuant to Article 22 of Directive 2008/50/EC, the information made available shall include an indication thereof.\r\n2. Member States shall make the information referred to in paragraph 1 available to the Commission no later than 31 December of each calendar year. Member States may indicate that there have been no changes to the information previously made available.\r\n3. Where changes are made to the delimitation and type of zones and agglomerations, the Member States shall inform the Commission thereof no later than 9 months after the end of the calendar year the changes were made.",
+  "primaryRepository" : {
+    "@id" : "http://cdr.eionet.europa.eu"
+  },
+  "reportingFrequencyMonths" : {
+    "@type" : "xsd:integer",
+    "@value" : "12"
+  },
+  "isEEAPrimary" : {
+    "@type" : "xsd:boolean",
+    "@value" : "false"
+  },
+  "isEEACore" : {
+    "@type" : "xsd:boolean",
+    "@value" : "false"
+  },
+  "isFlagged" : {
+    "@type" : "xsd:boolean",
+    "@value" : "false"
+  },
+  "dpsirCategory" : {
+    "@id" : "http://dd.eionet.europa.eu/vocabulary/common/dpsir/R"
+  },
+  "dataUsedFor" : {
+    "@id" : "http://www.eionet.europa.eu/aqportal"
+  },
+  "continuousReporting" : {
+    "@type" : "xsd:boolean",
+    "@value" : "false"
+  }
+}
