@@ -67,11 +67,11 @@ provided in the docs/FILEFORMAT.html
 The usage of rdf-exporter-xx.jar is as follows:
 
 ```
-$ java -cp target/rdf-exporter-1.0-SNAPSHOT.jar eionet.rdfexport.Execute <options>
+$ java -cp target/rdf-exporter-1.1-SNAPSHOT.jar eionet.rdfexport.Execute <options>
 ```
   or:
 ```
-$ java -jar target/rdf-exporter-1.0-SNAPSHOT-jar-with-dependencies.jar <options>
+$ java -jar target/rdf-exporter-1.1-SNAPSHOT-jar-with-dependencies.jar <options>
 ```
 
 If `<options>` is not supplied, then a help text on possible options is printed:
