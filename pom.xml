@@ -9,7 +9,7 @@
     <packaging>jar</packaging>
 
     <name>RDFExporter</name>
-    <url>http://maven.apache.org</url>
+    <url>https://github.com/eea/rdfexport</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -40,6 +40,7 @@
                     <compilerVersion>${java_version}</compilerVersion>
                     <source>${java_version}</source>
                     <target>${java_version}</target>
+                    <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
             <plugin>
