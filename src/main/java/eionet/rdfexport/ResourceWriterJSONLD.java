@@ -194,6 +194,10 @@ public class ResourceWriterJSONLD {
         json.writeEndObject();
     }
     
+    public void writeStartObject() throws IOException {
+        json.writeStartObject();
+    }
+        
     private void output(String s) throws IOException {
         outputStream.write(s);
     }
