@@ -5,11 +5,13 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import static junit.framework.Assert.assertEquals;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -17,7 +19,7 @@ import org.junit.Test;
  *
  * @author George Sofianos
  */
-public class MySQLTestJSON {
+public class MySQLJSONTest {
 
     private static final String JDBC_DRIVER = com.mysql.jdbc.Driver.class.getName();
     private static final String JDBC_URL = "jdbc:mysql:mxj://localhost:3336/RDFTest"
@@ -131,6 +133,13 @@ public class MySQLTestJSON {
         dbConn.close();
         dbConn = null;
     } 
+    @AfterClass
+    public static void cleanup() throws SQLException {
+        Connection dbConn = DriverManager.getConnection(JDBC_URL, USER, PASSWORD);
+        Statement statement = dbConn.createStatement();
+        // MySQL table names are case-sensitive on Linux
+        statement.executeUpdate("drop table if exists T_OBLIGATION");
+    }
 
     private String loadFile(String fileName) throws Exception {
         InputStream is = MySQLTest.class.getClassLoader().getResourceAsStream(fileName);

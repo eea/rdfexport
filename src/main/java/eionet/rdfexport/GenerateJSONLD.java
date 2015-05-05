@@ -59,9 +59,9 @@ public class GenerateJSONLD {
     private String[] tables = new String[0];
     /** Hashtable of loaded properties. */
     private Properties props;
-    
+
     ResourceWriterJSONLD resourceWriter;
-    
+
     /**
      * Constructor.
      *
@@ -245,7 +245,7 @@ public class GenerateJSONLD {
         } else {
             resourceWriter.setVocabulary(props.getProperty("vocabulary"));
         }
-        resourceWriter.writeJsonLDHeader();        
+        resourceWriter.writeJsonLDHeader();
         Boolean firstQuery = true;
         String rdfClass = table.substring(0, 1).toUpperCase() + table.substring(1).toLowerCase();
         rdfClass = props.getProperty(table.concat(".class"), rdfClass);
@@ -263,7 +263,7 @@ public class GenerateJSONLD {
                     } else {
                         query = injectHaving(query, identifier);
                     }
-                }                
+                }
                 runQuery(table, query, firstQuery ? rdfClass : "rdf:Description");
                 firstQuery = false;
             }
@@ -374,7 +374,7 @@ public class GenerateJSONLD {
                 queryStruct(rsmd);
 
                 int numcols = rsmd.getColumnCount();
-                
+
                 while (rs.next()) {
                     if (!rs.isLast() && currentRow == 0) {
                         resourceWriter.writeArray(names[2]);
@@ -396,7 +396,7 @@ public class GenerateJSONLD {
                         firstTime = false;
                     }
 
-                    for (int i = 2; i <= numcols; i++) {                        
+                    for (int i = 2; i <= numcols; i++) {
                         resourceWriter.writeProperty(names[i], rs.getObject(i),isArray);
                     }
                 }
@@ -445,8 +445,8 @@ public class GenerateJSONLD {
                 rs = stmt.getResultSet();
 
                 ResultSetMetaData rsmd = rs.getMetaData();
-                int numcols = rsmd.getColumnCount();                
-                
+                int numcols = rsmd.getColumnCount();
+
                 while (rs.next()) {
                     if (!rs.isLast() && currentRow == 0) {
                         resourceWriter.writeArray(names[2]);
@@ -483,13 +483,13 @@ public class GenerateJSONLD {
                             property.langcode = rs.getObject(b + 3).toString();
                         } else {
                             property.langcode = "";
-                        }                
+                        }
                         resourceWriter.writeProperty(property, rs.getObject(b + 1),isArray);
-                    }                                                         
+                    }
                 }
                 if (isArray) {
                     resourceWriter.writeEndArray();
-                }                   
+                }
             }
         } finally {
             GenerateJSONLD.closeIgnoringExceptions(rs);

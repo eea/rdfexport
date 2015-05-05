@@ -30,8 +30,20 @@ public class ResourceWriterJSONLDTest {
         classToTest.addNamespace("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
     }
 
+    // Test setBaseURL
+    
+    /**
+     * Test BaseURL
+     * 
+     */
+    @Test
+    public void setBaseURL() {
+        classToTest.setBaseURL("http://base");
+        assertEquals("http://base", classToTest.baseurl);
+    }
+    
     // Test writeProperty()
-
+    
     /**
      * A null value shall not create output.
      */
@@ -63,7 +75,24 @@ public class ResourceWriterJSONLDTest {
         testWriter.close();        
         assertEquals("{\n  \"rdfs:label\" : \"\"\n}", testOutput.toString());
     }
-
+    
+    /**
+     * An empty array shall create output.
+     * @throws Exception 
+     */
+    @Test
+    public void writeArray() throws Exception {
+        RDFField f = new RDFField();
+        f.name = "rdfs:label";
+        f.datatype = "";
+        f.langcode = "";
+        classToTest.writeStartObject();
+        classToTest.writeArray(f);
+        classToTest.writeEndArray();
+        classToTest.writeJsonLDFooter();
+        testWriter.close();        
+        assertEquals("{\n  \"rdfs:label\" : [ ]\n}", testOutput.toString());
+    }
     @Test
     public void writeLiteral1() throws Exception {
         RDFField f = new RDFField();
