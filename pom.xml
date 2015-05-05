@@ -3,13 +3,13 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>eionet.rdf-export</groupId>
+    <groupId>eionet</groupId>
     <artifactId>rdf-exporter</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>RDFExporter</name>
-    <url>http://maven.apache.org</url>
+    <url>https://github.com/eea/rdfexport</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -40,6 +40,7 @@
                     <compilerVersion>${java_version}</compilerVersion>
                     <source>${java_version}</source>
                     <target>${java_version}</target>
+                    <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
             <plugin>
