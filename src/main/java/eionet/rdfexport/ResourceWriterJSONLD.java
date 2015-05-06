@@ -18,15 +18,16 @@
  * Contributor(s):
  *        George Sofianos
  */
+
 package eionet.rdfexport;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.sql.SQLException;
 import java.util.HashMap;
-
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
 
 /**
  * Class for writing a resource in JSON-LD. This class does not read properties files.
@@ -66,7 +67,7 @@ public class ResourceWriterJSONLD {
     /**
      * Constructor
      * @param stream - the stream to write the output to
-     * @throws IOException
+     * @throws IOException - if the output is not open.
      */
     public ResourceWriterJSONLD(OutputStreamWriter stream) throws IOException {
         outputStream = stream;
@@ -80,7 +81,7 @@ public class ResourceWriterJSONLD {
 
     /**
      * Set the JSON-LD vocabulary in case it needs to be different from the properties file.
-     * @param url
+     * @param url - namespace url.
      */
     public void setVocabulary(final String url) {
         if (!url.equals(nullNamespace) && rdfHeaderWritten) {
@@ -91,7 +92,7 @@ public class ResourceWriterJSONLD {
 
     /**
      * Generate the JSON-LD header element.
-     * @throws IOException
+     * @throws IOException - if the output is not open.
      */
     void writeJsonLDHeader() throws IOException {
         if (rdfHeaderWritten) {
@@ -142,7 +143,7 @@ public class ResourceWriterJSONLD {
 
     /**
      * Generate the JSON-LD footer element.
-     * @throws IOException
+     * @throws IOException - if the output is not open.
      */
     public void writeJsonLDFooter() throws IOException {
         json.writeEndObject();
@@ -152,7 +153,7 @@ public class ResourceWriterJSONLD {
     /**
      * Generates a JSON array
      * @param property - triple consisting of name, datatype and langcode
-     * @throws IOException
+     * @throws IOException - if the output is not open.
      */
     void writeArray(RDFField property) throws IOException {
         json.writeArrayFieldStart(property.name);
@@ -160,7 +161,7 @@ public class ResourceWriterJSONLD {
 
     /**
      * Ends a JSON array
-     * @throws IOException
+     * @throws IOException - if the output is not open.
      */
     public void writeEndArray() throws IOException {
         json.writeEndArray();
@@ -171,7 +172,7 @@ public class ResourceWriterJSONLD {
      * @param rdfClass - the class to assign
      * @param segment - the namespace of the table
      * @param id - the unqualified identifier of the resource
-     * @throws IOException
+     * @throws IOException - if the output is not open.
      */
     public void writeStartResource(String rdfClass, String segment, String id) throws IOException {
         if (rdfHeaderWritten) {
@@ -243,7 +244,7 @@ public class ResourceWriterJSONLD {
 
     /**
      * Writes the end of a resource.
-     * @throws IOException
+     * @throws IOException - if the output is not open.
      */
     public void writeEndResource() throws IOException {
         json.writeEndObject();
@@ -251,7 +252,7 @@ public class ResourceWriterJSONLD {
 
     /**
      * Writes a JSON object start
-     * @throws IOException
+     * @throws IOException - if the output is not open.
      */
     public void writeStartObject() throws IOException {
         json.writeStartObject();
