@@ -31,7 +31,6 @@ import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.SimpleTimeZone;
 
 
 /**
@@ -44,9 +43,6 @@ public final class Datatypes {
 
     /** Format of xsd:dateTime value. */
     private static final String DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
-
-    /** Timezone for date formatting. */
-    private static SimpleTimeZone utcZone = new SimpleTimeZone(0, "UTC");
 
     /** Date format. */
     private static SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
@@ -165,13 +161,11 @@ public final class Datatypes {
     public static String getFormattedValue(Object value) throws SQLException {
         if (value instanceof java.sql.Date) {
             Date sqlDate = (java.sql.Date) value;
-            dateFormat.setTimeZone(utcZone);
             return dateFormat.format(new Date(sqlDate.getTime()));
         }
 
         if (value instanceof Time) {
             Time sqlDate = (Time) value;
-            dateTimeFormat.setTimeZone(utcZone);
             return dateTimeFormat.format(new Date(sqlDate.getTime()));
         }
 
