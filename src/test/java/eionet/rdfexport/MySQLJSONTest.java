@@ -13,12 +13,14 @@ import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  *
  * @author George Sofianos
  */
+@Ignore
 public class MySQLJSONTest {
 
     private static final String JDBC_DRIVER = com.mysql.jdbc.Driver.class.getName();
