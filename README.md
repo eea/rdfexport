@@ -53,7 +53,9 @@ Note that the DBF driver needs a directory name, and it then looks for DBF
 files in it. Those are then seen as tables. You therefore specify the folder-
 not the file.
 
-Naturally, the JDBC driver must be on the classpath.
+Naturally, the JDBC driver must be on the classpath. You include a `classpath`
+property in rdfexport.properties containing a colon or semicolon list of JAR
+files to load before doing any actions.
 
 3. The properties file
 ----------------------
@@ -67,11 +69,11 @@ provided in the docs/FILEFORMAT.html
 The usage of rdf-exporter-xx.jar is as follows:
 
 ```
-$ java -cp target/rdf-exporter-1.1-SNAPSHOT.jar eionet.rdfexport.Execute <options>
+$ java -cp target/rdf-exporter-1.2-SNAPSHOT.jar eionet.rdfexport.Execute <options>
 ```
   or:
 ```
-$ java -jar target/rdf-exporter-1.1-SNAPSHOT-jar-with-dependencies.jar <options>
+$ java -jar target/rdf-exporter-1.2-SNAPSHOT-jar-with-dependencies.jar <options>
 ```
 
 If `<options>` is not supplied, then a help text on possible options is printed:
@@ -81,6 +83,7 @@ Usage: This command accepts the following command line arguments:
 
 ```
  -f input_properties_file    Path of the input properties file containing everything needed for RDF generation. That includes the database's JDBC url, JDBC driver class name, datatype mappings, namespaces, SQL queries to export, etc.
+ -d input_properties_file    Path of the input properties file containing database URL, user name and password.
  -o rdf_output_file          Path of the RDF output file to be generated.
  -T template_properties_file From this file and auto-discovered info about the database, the output_properties_file is generated that can then be used as an input_properties_file for multiple reuse.
  -J jdbc_database_url        The URL to the database.

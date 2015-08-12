@@ -1,6 +1,8 @@
 #
 # Database parameters
 #
+classpath = /usr/share/java/mysql-connector-java.jar
+
 db.driver=com.mysql.jdbc.Driver
 db.database=jdbc:mysql://localhost/eunis?autoReconnect=true&useUnicode=true&characterEncoding=utf8
 db.user=username

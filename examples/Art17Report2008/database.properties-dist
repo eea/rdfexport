@@ -1,6 +1,8 @@
 #
 # Database parameters
 #
+classpath = /usr/share/java/mysql-connector-java.jar
+
 db.driver=com.mysql.jdbc.Driver
 db.database=jdbc:mysql://localhost:3306/art17_assesments
 db.user=databaseuser

@@ -160,6 +160,9 @@ public final class Execute {
             Execute.loadProperties(props, inputPropsFilePath);
         }
 
+        String extraJars = props.getProperty("classpath");
+        JarFileLoader.addPaths(extraJars);
+
         // If base URI was not given in command line, load it from the input properties,
         // otherwise place it into the loaded input properties map.
         if (baseUri == null) {
