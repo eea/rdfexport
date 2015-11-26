@@ -30,22 +30,22 @@ primary and foreign keys by itself, or you can provide the
 tables-to-export and queries-to-run through a properties
 file that we call below as "RDF export properties file".
 
-The output file is specified with the -o option. If it's not given,
+The output file is specified with the `-o` option. If it's not given,
 standard output is used.
 
-For the auto-discovery, provide -x as command line option. If you
-supply -xa, the auto-discovery mode will prompt you for confirmation
+For the auto-discovery, provide `-x` as command line option. If you
+supply `-xa`, the auto-discovery mode will prompt you for confirmation
 on all tables and foreign keys discovered.
 
 Auto-discovered information will be saved into a given output
-file and no RDF exported, when you provide -p command line option.
+file and no RDF exported, when you provide `-p` command line option.
 
 The database connection properties and also numerous properties required
 for the RDF generation are given in a properties file whose path is
-supplied via the -f command line option.
+supplied via the `-f` command line option.
 
 If the database is an MS-Access file (aka MDB file) or a dBase (aka DBF)
-directory, then it can be provided with the -T command line option.
+directory, then it can be provided with the `-T` command line option.
 Alternatively, it can be provided through the full JDBC connection URL
 in database connection properties or via the db.templateFilePath property.
 
@@ -53,7 +53,7 @@ Note that the DBF driver needs a directory name, and it then looks for DBF
 files in it. Those are then seen as tables. You therefore specify the folder-
 not the file.
 
-Naturally, the JDBC driver must be on the classpath. You include a `classpath`
+Naturally, the JDBC driver must be on the class path. You include a `classpath`
 property in rdfexport.properties containing a colon or semicolon list of JAR
 files to load before doing any actions.
 
