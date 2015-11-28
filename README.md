@@ -1,8 +1,8 @@
 RDFExport
 =========
 
-1. Introduction
----------------
+Introduction
+------------
 
 This README explains how to use the RDF exporter JAR that
 you can build with Maven by issuing the following command
@@ -20,8 +20,8 @@ The JAR is generated into the target/ directory auto-created
 by Maven. It will be named rdf-exporter-xx.jar, where the
 'xx' is the version number or version label stated in pom.xml.
 
-2. What this JAR does and how to use it
----------------------------------------
+What this JAR does and how to use it
+------------------------------------
 
 The JAR is capable of generating RDF out of a given relational
 database, using the JDBC protocol. Depending on command-line
@@ -57,14 +57,14 @@ Naturally, the JDBC driver must be on the class path. You include a `classpath`
 property in rdfexport.properties containing a colon or semicolon list of JAR
 files to load before doing any actions.
 
-3. The properties file
-----------------------
+The properties file
+-------------------
 
 Queries are stored in a Java properties file. The full description is
 provided in the docs/FILEFORMAT.html
 
-4. Execution and command line options
--------------------------------------
+Execution and command line options
+----------------------------------
 
 The usage of rdf-exporter-xx.jar is as follows:
 
@@ -102,3 +102,37 @@ Usage: This command accepts the following command line arguments:
  -h or -?                    Show this help
 ```
 Unrecognized arguments will be treated as names of tables to export. If no arguments are found, all tables will be exported.
+
+Example
+-------
+To discover the tables and create rdf of an MS-Access file, you first make a file called `database.properties` with the content below.
+You don't need the path to the database driver in the classpath property as UCanAccess is included.
+
+```
+classpath =
+
+db.driver = net.ucanaccess.jdbc.UcanaccessDriver
+db.database = jdbc:ucanaccess://MyAccessFile.mdb
+db.user =
+db.password =
+```
+
+Then you discover the tables in the file and write the queries to `rdfexport.properties`:
+
+```
+java -jar target/rdf-exporter-1.2-SNAPSHOT-jar-with-dependencies.jar \
+     -d database.properties -o rdfexport.properties -xp
+```
+Modify rdfexport.properties as needed and generate the RDF file. At minimum you want to set the `baseurl` and `vocabulary`
+properties to URLs you control and you won't use for other things. The identifiers in the tables are prefixed with the baseurl
+and table name to make them *globally unique identifiers.*
+```
+baseurl=http://mywebsite.com/myaccessfile/
+vocabulary=http://mywebsite.com/myaccessfile/ontology/
+```
+Run the generation.
+```
+java -jar target/rdf-exporter-1.2-SNAPSHOT-jar-with-dependencies.jar \
+     -f rdfexport.properties -o MyRDFFile.rdf
+```
+Enjoy your RDF file.
