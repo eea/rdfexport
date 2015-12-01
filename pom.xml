@@ -152,6 +152,7 @@
             <groupId>net.sf.ucanaccess</groupId>
             <artifactId>ucanaccess</artifactId>
             <version>3.0.2</version>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
