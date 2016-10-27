@@ -142,7 +142,7 @@ abstract class ResourceWriter {
     abstract void writeEndResource(String rdfClass) throws IOException;
 
     /**
-     * Write a property. If the property.datatype is "->" then it is a resource
+     * Write a property. If the property.datatype is "-&gt;" then it is a resource
      * reference.
      *
      * @param property

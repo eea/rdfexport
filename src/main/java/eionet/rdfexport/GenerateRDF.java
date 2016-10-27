@@ -302,10 +302,10 @@ public class GenerateRDF {
      *  query = SELECT NULL AS 'id', \
      *    'GEMET RDF file' AS 'rdfs:label', \
      *    'Søren Roug' AS 'dcterms:creator', \
-     * 'http://creativecommons.org/licenses/by/2.5/dk/' AS 'dcterms:licence->'
+     * 'http://creativecommons.org/licenses/by/2.5/dk/' AS 'dcterms:licence-&gt;'
      *
      * </pre>
-     * When found, {@code <bibo:Document rdf:about="">} section with given
+     * When found, {@code &lt;bibo:Document rdf:about=""&gt;} section with given
      * properties will be exported.
      * @throws IOException
      *             - if the output is not open.
@@ -336,7 +336,7 @@ public class GenerateRDF {
      * @param name
      *            - name of column.
      * @param reference
-     *            - will always start with '->'.
+     *            - will always start with '-&gt;'.
      */
     private void addObjectProperty(String name, String reference) {
         objectProperties.put(name, reference);
