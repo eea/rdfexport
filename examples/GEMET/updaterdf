@@ -3,5 +3,3 @@ JAR=../rdf-exporter-1.0-SNAPSHOT-jar-with-dependencies.jar
 
 java -jar $JAR -f rdfexport.properties -d database.properties -z -o gemet.rdf.gz
 
-cadaver http://www.eionet.europa.eu/gemet
-
