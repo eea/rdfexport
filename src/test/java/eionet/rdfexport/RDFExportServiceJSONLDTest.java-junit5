@@ -1,0 +1,21 @@
+package eionet.rdfexport;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import org.junit.jupiter.api.Test;
+import java.io.ByteArrayOutputStream;
+
+/**
+ * The RDFExportServiceJSONLD is really too simple to test.
+ */
+public class RDFExportServiceJSONLDTest {
+
+    @Test
+    public void instantiation() {
+        ByteArrayOutputStream testOutput = new ByteArrayOutputStream();
+        RDFExportService s = new RDFExportServiceJSONLD(testOutput, null, null);
+        assertNotNull(s, "Expected constructor to work");
+    }
+
+}

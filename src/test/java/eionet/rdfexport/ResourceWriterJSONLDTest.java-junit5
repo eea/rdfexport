@@ -1,0 +1,272 @@
+package eionet.rdfexport;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStreamWriter;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+/**
+ * Test the module.
+ *
+ * @see http://onjava.com/pub/a/onjava/2003/11/12/reflection.html
+ * @see http://download.oracle.com/javase/tutorial/reflect/class/index.html
+ * @see http://tutorials.jenkov.com/java-reflection/private-fields-and-methods.html
+ */
+public class ResourceWriterJSONLDTest {
+
+    private ResourceWriterJSONLD classToTest;
+    private ByteArrayOutputStream testOutput;
+    private OutputStreamWriter testWriter;
+
+    @BeforeEach
+    public void setUp() throws Exception {
+        testOutput = new ByteArrayOutputStream();
+        testWriter = new OutputStreamWriter(testOutput, "UTF-8");
+
+        classToTest = new ResourceWriterJSONLD(testWriter);
+        classToTest.setVocabulary("http://voc");
+        classToTest.addNamespace("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+    }
+
+    // Test setBaseURL
+    
+    /**
+     * Test BaseURL
+     * 
+     */
+    @Test
+    public void setBaseURL() {
+        classToTest.setBaseURL("http://base");
+        assertEquals("http://base", classToTest.baseurl);
+    }
+    
+    // Test writeProperty()
+    
+    /**
+     * A null value shall not create output.
+     */
+    @Test
+    public void writeNull() throws Exception {
+        RDFField f = new RDFField();
+        f.name = "rdfs:label";
+        f.datatype = "";
+        f.langcode = "";
+        classToTest.writeStartObject();
+        classToTest.writeProperty(f, null, false);
+        classToTest.writeJsonLDFooter();
+        testWriter.close();
+        assertEquals("{ }", testOutput.toString());
+    }
+
+    /**
+     * An empty string value shall create output.
+     */
+    @Test
+    public void writeEmpty() throws Exception {
+        RDFField f = new RDFField();
+        f.name = "rdfs:label";
+        f.datatype = "";
+        f.langcode = "";
+        classToTest.writeStartObject();
+        classToTest.writeProperty(f, "", false);
+        classToTest.writeJsonLDFooter();
+        testWriter.close();        
+        assertEquals("{\n  \"rdfs:label\" : \"\"\n}", testOutput.toString());
+    }
+    
+    /**
+     * An empty array shall create output.
+     * @throws Exception 
+     */
+    @Test
+    public void writeArray() throws Exception {
+        RDFField f = new RDFField();
+        f.name = "rdfs:label";
+        f.datatype = "";
+        f.langcode = "";
+        classToTest.writeStartObject();
+        classToTest.writeArray(f);
+        classToTest.writeEndArray();
+        classToTest.writeJsonLDFooter();
+        testWriter.close();        
+        assertEquals("{\n  \"rdfs:label\" : [ ]\n}", testOutput.toString());
+    }
+    @Test
+    public void writeLiteral1() throws Exception {
+        RDFField f = new RDFField();
+        f.name = "rdfs:label";
+        f.datatype = "";
+        f.langcode = "";
+        classToTest.writeStartObject();
+        classToTest.writeProperty(f, "This is a label",false);
+        classToTest.writeJsonLDFooter();
+        testWriter.close();
+        assertEquals("{\n  \"rdfs:label\" : \"This is a label\"\n}", testOutput.toString());
+    }
+
+    @Test
+    public void writeLiteral2() throws Exception {
+        RDFField f = new RDFField("rdfs:label", "", "");
+        classToTest.writeStartObject();
+        classToTest.writeProperty(f, "This is a label",false);
+        classToTest.writeJsonLDFooter();
+        testWriter.close();
+        assertEquals("{\n  \"rdfs:label\" : \"This is a label\"\n}", testOutput.toString());
+    }
+
+    /**
+     * Write a reference where the URL to link to is fully in the value. It is then assumed it is already URI-encoded.
+     */
+    @Test
+    public void writeReference1() throws Exception {
+        RDFField f = new RDFField("foaf:page", "->", "");
+        classToTest.writeStartObject();
+        classToTest.writeProperty(f, "http://mypage.org/index.html",false);
+        classToTest.writeJsonLDFooter();
+        testWriter.close();        
+        assertEquals("{\n  \"foaf:page\" : {\n    \"@id\" : \"http://mypage.org/index.html\"\n  }\n}", testOutput.toString());
+    }
+
+    /**
+     * Write a reference to a complex foaf:page. Typical usage scenario.
+     */
+    @Test
+    public void writeReferenceComplex() throws Exception {
+        RDFField f = new RDFField("foaf:page", "->", "");
+        classToTest.writeStartObject();
+        classToTest.writeProperty(f, "http://mypage.org/green spider/index.html#here",false);
+        classToTest.writeJsonLDFooter();
+        testWriter.close();
+        assertEquals("{\n  \"foaf:page\" : {\n    \"@id\" : \"http://mypage.org/green%20spider/index.html#here\"\n  }\n}", testOutput.toString());
+    }
+
+    /**
+     * Write a reference to a foaf:page with a Query String. Typical usage scenario.
+     */
+    @Test
+    public void writeReferenceQS() throws Exception {
+        RDFField f = new RDFField("foaf:page", "->", "");
+        classToTest.writeStartObject();
+        classToTest.writeProperty(f, "http://mypage.org/greenspider/page.php?type=species&id=9288#x",false);
+        classToTest.writeJsonLDFooter();
+        testWriter.close();
+        assertEquals("{\n  \"foaf:page\" : {\n    \"@id\" : \"http://mypage.org/greenspider/page.php?type=species&amp;id=9288#x\"\n  }\n}", testOutput.toString());
+    }
+
+    /**
+     * Write a reference to a simple foaf:page. Typical usage scenario.
+     */
+    @Test
+    public void writeReference2() throws Exception {
+        RDFField f = new RDFField("foaf:page", "->http://mypage.org/index.html", "");
+        classToTest.writeStartObject();
+        classToTest.writeProperty(f, "",false);
+        classToTest.writeJsonLDFooter();
+        testWriter.close();
+        assertEquals("{\n  \"foaf:page\" : {\n    \"@id\" : \"http://mypage.org/index.html/\"\n  }\n}", testOutput.toString());
+    }
+
+    /**
+     * Write a reference where the value is relative. It is assumed the value is not already URI-encoded.
+     */
+    @Test
+    public void writeReference3() throws Exception {
+        RDFField f = new RDFField("hasSpecies", "->http://eunis.eea.europa.eu/species", "");
+        classToTest.writeStartObject();
+        classToTest.writeProperty(f, "canis lupus/linnaeus",false);
+        classToTest.writeJsonLDFooter();
+        //System.out.println(testOutput.toString());
+        testWriter.close();
+        assertEquals("{\n  \"hasSpecies\" : {\n    \"@id\" : \"http://eunis.eea.europa.eu/species/canis%20lupus/linnaeus\"\n  }\n}", testOutput.toString());
+    }
+
+    /**
+     * Write a reference where the value is relative. It is assumed the value is not already URI-encoded.
+     */
+    @Test
+    public void writeReferencePrtr() throws Exception {
+        RDFField f = new RDFField("prtr:Pollutant", "->http://prtr.ec.europa.eu/pollutant", "");
+        classToTest.writeStartObject();
+        classToTest.writeProperty(f, "ICHLOROETHANE-1,2 (DCE)", false);
+        classToTest.writeJsonLDFooter();
+        //System.out.println(testOutput.toString());
+        testWriter.close();
+        assertEquals("{\n  \"prtr:Pollutant\" : {\n    \"@id\" : \"http://prtr.ec.europa.eu/pollutant/ICHLOROETHANE-1,2%20(DCE)\"\n  }\n}", testOutput.toString());
+    }
+
+    @Test
+    public void writeReference4() throws Exception {
+        RDFField f = new RDFField("hasSpecies", "->species", "");
+        classToTest.writeStartObject();
+        classToTest.writeProperty(f, "1366", false);
+        classToTest.writeJsonLDFooter();
+        //System.out.println(testOutput.toString());
+        testWriter.close();
+        assertEquals("{\n  \"hasSpecies\" : {\n    \"@id\" : \"#species/1366\"\n  }\n}", testOutput.toString());
+    }
+
+    @Test
+    public void writeInt() throws Exception {
+        RDFField f = new RDFField("hasNumber", "xsd:int", "");
+        classToTest.writeStartObject();
+        classToTest.writeProperty(f, "1366", false);
+        classToTest.writeJsonLDFooter();
+        //System.out.println(testOutput.toString());
+        testWriter.close();
+        assertEquals("{\n  \"hasNumber\" : {\n    \"@type\" : \"xsd:int\",\n    \"@value\" : \"1366\"\n  }\n}", testOutput.toString());
+    }
+
+    @Test
+    public void writeOwnType() throws Exception {
+        RDFField f = new RDFField("hasDistance", "http://buzz#lightyear", "");
+        classToTest.writeStartObject();
+        classToTest.writeProperty(f, "20", false);
+        classToTest.writeJsonLDFooter();
+        testWriter.close();
+        assertEquals("{\n  \"hasDistance\" : {\n    \"@type\" : \"http://buzz#lightyear\",\n    \"@value\" : \"20\"\n  }\n}", testOutput.toString());
+    }
+
+    @Test
+    public void writeLitWithLang() throws Exception {
+        RDFField f = new RDFField("hello", "", "de");
+        classToTest.writeStartObject();
+        classToTest.writeProperty(f, "Welt", false);
+        classToTest.writeJsonLDFooter();
+        //System.out.println(testOutput.toString());
+        testWriter.close();
+        assertEquals("{\n  \"hello\" : {\n    \"@language\" : \"de\",\n    \"@value\" : \"Welt\"\n  }\n}", testOutput.toString());
+    }
+
+    @Test
+    public void writeIntWithLang() throws Exception {
+        RDFField f = new RDFField("hello", "xsd:int", "de");
+        classToTest.writeStartObject();
+        classToTest.writeProperty(f, "20", false);
+        classToTest.writeJsonLDFooter();
+        testWriter.close();
+        assertEquals("{\n  \"hello\" : {\n    \"@type\" : \"xsd:int\",\n    \"@value\" : \"20\"\n  }\n}", testOutput.toString());        
+    }
+
+    /**
+     * An emplty value shall not create output if emptystringisnull is set to true.
+     */
+    @Test
+    public void writeNullWhenEmpty() throws Exception {
+        ResourceWriterJSONLD testClass = new ResourceWriterJSONLD(testWriter);
+        testClass.setVocabulary("http://voc");
+        testClass.setEmptyStringIsNull(true);
+
+        RDFField f = new RDFField();
+        f.name = "rdfs:label";
+        f.datatype = "";
+        f.langcode = "";
+        testClass.writeStartObject();
+        testClass.writeProperty(f, "", false);
+        testClass.writeJsonLDFooter();
+        testWriter.close();
+        assertEquals("{ }", testOutput.toString());
+    }
+
+}

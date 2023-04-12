@@ -1,0 +1,168 @@
+package eionet.rdfexport;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStreamWriter;
+import java.util.Properties;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+/**
+ * Test the module.
+ *
+ * @see http://onjava.com/pub/a/onjava/2003/11/12/reflection.html
+ * @see http://download.oracle.com/javase/tutorial/reflect/class/index.html
+ * @see http://tutorials.jenkov.com/java-reflection/private-fields-and-methods.html
+ */
+public class GenerateRDFTest {
+
+    private GenerateRDF classToTest;
+    private ByteArrayOutputStream testOutput;
+    private OutputStreamWriter testWriter;
+
+    @BeforeEach
+    public void setUp() throws Exception {
+        testOutput = new ByteArrayOutputStream();
+        testWriter = new OutputStreamWriter(testOutput, "UTF-8");
+        Properties props = new Properties();
+        props.setProperty("tables", "coubiogeoreg     events  ");
+        props.setProperty("vocabulary", "http://voc");
+        props.setProperty("xmlns.rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+        props.setProperty("datatype.int", "xsd:integer");
+        props.setProperty("objectproperty.org", "orgs");
+        classToTest = new GenerateRDF(testWriter, null, props);
+    }
+
+    private void callParseName(String testString, String testDatatype, String expectedName, String expectedDatatype,
+            String expectedLangcode) throws Exception {
+
+        RDFField f = classToTest.parseName(testString, testDatatype);
+        assertEquals(expectedName, f.name);
+        assertEquals(expectedDatatype,  f.datatype);
+        assertEquals(expectedLangcode,  f.langcode);
+    }
+
+    @Test
+    public void testParseName() throws Exception {
+        callParseName("hasRef->export", "", "hasRef", "->export", "");
+        callParseName("hasRef->", "", "hasRef", "->", "");
+        callParseName("price^^xsd:decimal", "", "price", "xsd:decimal", "");
+        callParseName("title@de", "", "title", "", "de");
+        callParseName("rdfs:label@de", "", "rdfs:label", "", "de");
+        callParseName("rdfs:label", "", "rdfs:label", "", "");
+        callParseName("title", "xsd:string", "title", "xsd:string", "");
+    }
+
+    private void callInjectIdentifier(String testQuery, String testIdentifier, String expectedQuery) throws Exception {
+        String f;
+        f = classToTest.injectHaving(testQuery, testIdentifier);
+        assertEquals(expectedQuery, f);
+    }
+
+    @Test
+    public void testInjectHaving() throws Exception {
+        // Test injection of identifier
+        callInjectIdentifier("SELECT X AS id, * FROM Y", "819", "SELECT X AS id, * FROM Y HAVING id='819'");
+        callInjectIdentifier("SELECT X AS id, * FROM Y ORDER BY postcode", "819",
+                "SELECT X AS id, * FROM Y HAVING id='819' ORDER BY postcode");
+        // Test injection of identifier with LIMIT
+        callInjectIdentifier("SELECT X AS id, * FROM Y ORDER BY postcode LIMIT 10 OFFSET 2", "819",
+                "SELECT X AS id, * FROM Y HAVING id='819' ORDER BY postcode LIMIT 10 OFFSET 2");
+        callInjectIdentifier("SELECT X AS id, * FROM Y LIMIT 10 OFFSET 2", "819",
+                "SELECT X AS id, * FROM Y HAVING id='819' LIMIT 10 OFFSET 2");
+        // Test injection of identifier with HAVING
+        callInjectIdentifier("SELECT X AS id, count(*) FROM Y GROUP BY id HAVING Z=1", "819",
+                "SELECT X AS id, count(*) FROM Y GROUP BY id HAVING id='819' AND Z=1");
+        callInjectIdentifier("SELECT X AS id, count(*) FROM Y GROUP BY id HAVING Z=1 ORDER BY ID", "819",
+                "SELECT X AS id, count(*) FROM Y GROUP BY id HAVING id='819' AND Z=1 ORDER BY ID");
+    }
+
+    private void callInjectWhere(String testQuery, String testIdentifier, String testKey, String expectedQuery) throws Exception {
+        String f;
+        f = classToTest.injectWhere(testQuery, testKey, testIdentifier);
+        assertEquals(expectedQuery, f);
+    }
+
+    @Test
+    public void testInjectWhere() throws Exception {
+        // Test injection of identifier
+        callInjectWhere("SELECT X AS id, * FROM Y",
+                "819", "X",
+                "SELECT X AS id, * FROM Y WHERE X='819'");
+        callInjectWhere("SELECT X AS id, * FROM Y HAVING id='819'",
+                "819", "X",
+                "SELECT X AS id, * FROM Y WHERE X='819' HAVING id='819'");
+        callInjectWhere("SELECT X AS id, * FROM Y ORDER BY postcode",
+                "819", "X",
+                "SELECT X AS id, * FROM Y WHERE X='819' ORDER BY postcode");
+        callInjectWhere("SELECT X AS id, * FROM Y HAVING id='819' ORDER BY postcode",
+                "819", "X",
+                "SELECT X AS id, * FROM Y WHERE X='819' HAVING id='819' ORDER BY postcode");
+        // Test injection of identifier when WHERE exists already
+        callInjectWhere("SELECT X AS id, * FROM Y WHERE YEAR=2000",
+                "819", "X",
+                "SELECT X AS id, * FROM Y WHERE X='819' AND YEAR=2000");
+        // Test injection of identifier with LIMIT
+        callInjectWhere("SELECT X AS id, * FROM Y ORDER BY postcode LIMIT 10 OFFSET 2",
+                "819", "X",
+                "SELECT X AS id, * FROM Y WHERE X='819' ORDER BY postcode LIMIT 10 OFFSET 2");
+        callInjectWhere("SELECT X AS id, * FROM Y HAVING id='819' ORDER BY postcode LIMIT 10 OFFSET 2",
+                "819", "X",
+                "SELECT X AS id, * FROM Y WHERE X='819' HAVING id='819' ORDER BY postcode LIMIT 10 OFFSET 2");
+        callInjectWhere("SELECT X AS id, * FROM Y LIMIT 10 OFFSET 2",
+                "819", "X",
+                "SELECT X AS id, * FROM Y WHERE X='819' LIMIT 10 OFFSET 2");
+        // Test injection of identifier with HAVING
+        callInjectWhere("SELECT X AS id, count(*) FROM Y GROUP BY id HAVING Z=1",
+                "819", "X",
+                "SELECT X AS id, count(*) FROM Y WHERE X='819' GROUP BY id HAVING Z=1");
+        callInjectWhere("SELECT X AS id, count(*) FROM Y GROUP BY id HAVING id='819' AND Z=1",
+                "819", "X",
+                "SELECT X AS id, count(*) FROM Y WHERE X='819' GROUP BY id HAVING id='819' AND Z=1");
+        callInjectWhere("SELECT X AS id, count(*) FROM Y GROUP BY id HAVING Z=1 ORDER BY ID",
+                "819", "X",
+                "SELECT X AS id, count(*) FROM Y WHERE X='819' GROUP BY id HAVING Z=1 ORDER BY ID");
+    }
+
+    @Test
+    public void testGetAllTables() throws Exception {
+        String[] t = classToTest.getAllTables();
+        assertEquals("coubiogeoreg", t[0]);
+        assertEquals("events", t[1]);
+    }
+
+
+    private boolean callSwitch(Object id, Object currentId) {
+        return (currentId != null && !currentId.equals(id));
+    }
+
+    @Test
+    public void testIdSwitch() {
+        assertEquals(false, callSwitch(null, null));
+        assertEquals(true, callSwitch(null, (Object) "/.."));
+        assertEquals(false, callSwitch((Object) "x", (Object) "x"));
+        assertEquals(true, callSwitch((Object) "A", (Object) "x"));
+        assertEquals(false, callSwitch((Object) "id", null));
+    }
+
+    @Test
+    public void writeFooter() throws Exception {
+        classToTest.writeRdfFooter();
+        testWriter.close();
+        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
+            + " xmlns=\"http://voc\">\n"
+            + "\n"
+            + "</rdf:RDF>\n";
+        assertEquals(expected, testOutput.toString());
+    }
+
+    @Test
+    public void testDocumentInformation() throws Exception {
+        classToTest.exportDocumentInformation();
+        testWriter.close();
+        assertEquals("", testOutput.toString());
+    }
+
+}
